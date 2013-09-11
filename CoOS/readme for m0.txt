@@ -1,0 +1,1 @@
+If you are using Cortex-M0, use the OsConfig.h in the "Other" forder to instead the one in the "kernel" forder.
