@@ -7,6 +7,7 @@
  */
 
 #include "common.h"
+#include "cmdline.h"
 #include "init.h"
 #include "serial.h"
 
@@ -18,10 +19,24 @@ OS_TID task0id;
 
 void
 task0(void *pdata) {
-	uint8_t data;
+	uint8_t data, err;
+	uint32_t flags;
+	cli_banner();
 	while (1) {
-		data = serial_getc(&Serial4);
-		serial_putc(&Serial1, data);
+		flags = CoWaitForMultipleFlags(0
+				| 1 << Serial1.rx_flag
+				// | 1 << Serial4.rx_flag,
+				, OPT_WAIT_ANY, S2ST(1), &err);
+		if (err != E_OK && err != E_TIMEOUT) {
+			HALT();
+		}
+		if (flags & (1 << Serial1.rx_flag)) {
+			data = Serial1.rx_char;
+			cli_feed(data);
+		}
+		if (flags & (1 << Serial4.rx_flag)) {
+			serial_puts(&Serial1, "got gps\r\n");
+		}
 	}
 }
 
@@ -32,6 +47,7 @@ main(void) {
 	setup_clocks(ONBOARD_CLOCK);
 	serial_start(&Serial1, USART1, 115200);
 	serial_start(&Serial4, UART4, 57600);
+	cli_set_output(&Serial1);
 	task0id = CoCreateTask(task0, NULL, TASK0_PRI,
 			&task0stack[TASK0_STACK-1], TASK0_STACK);
 	CoStartOS();

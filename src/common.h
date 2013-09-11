@@ -19,7 +19,8 @@
 #include <stm32f10x.h>
 
 #define HALT() while(1) {}
-
+#define MS2ST(seconds) (seconds * CFG_SYSTICK_FREQ / 1000)
+#define S2ST(seconds) (seconds * CFG_SYSTICK_FREQ)
 #define SET_BITS(var, mask, value) \
 	(var) = ((var) & ~(mask)) | ((value) & (mask))
 
