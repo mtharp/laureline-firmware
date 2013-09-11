@@ -35,7 +35,7 @@ LDFLAGS += -Wl,--gc-sections
 endif
 
 # Targets
-all: $(OUT).elf
+all: $(OUT).elf $(OUT).hex $(OUT).lst
 
 clean:
 	rm -rf $(BUILD)

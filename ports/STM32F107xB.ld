@@ -74,7 +74,7 @@ SECTIONS
     } > flash
 
     _etext = .;
-    _sidata = .;
+    _sidata = ALIGN(4);
 
     .stacks :
     {
