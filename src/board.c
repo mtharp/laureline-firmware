@@ -12,7 +12,6 @@
 
 void
 SystemInit(void) {
-	uint32_t n;
 	/* Enable peripheral clocks */
 	RCC->AHBENR |= 0
 		| RCC_AHBENR_DMA1EN
@@ -36,18 +35,10 @@ SystemInit(void) {
 		;
 
 	/* Drive mux to select onboard TCXO */
-#if CKSEL_PNUM < 8
-	n = CKSEL_PAD->CRL;
-	n &= ~(0xFFFF << (CKSEL_PNUM*4));
-	n |= 0b0010 << (CKSEL_PNUM*4);
-	CKSEL_PAD->CRL = n;
-#else
-	n = CKSEL_PAD->CRH;
-	n &= ~(0xFFFF << ((CKSEL_PNUM-8)*4));
-	n |= 0b0010 << ((CKSEL_PNUM-8)*4);
-	CKSEL_PAD->CRH = n;
-#endif
-	CKSEL_PAD->BRR = CKSEL_PIN;
+	setup_gpio(CKSEL_PAD, CKSEL_PNUM, GPIO_MODE_2MHZ | GPIO_OUTPUT_PP, 0);
+
+	setup_gpio(GPIOA, 9, GPIO_MODE_2MHZ | GPIO_AFIO_PP, 1);
+	setup_gpio(GPIOA, 10, GPIO_MODE_INPUT | GPIO_INPUT_PUPD, 1);
 
 	/* Configure clocking */
 	RCC->CR |= RCC_CR_HSEBYP | RCC_CR_HSEON;

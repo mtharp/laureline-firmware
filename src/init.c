@@ -78,3 +78,24 @@ void setup_clocks(double hse_freq) {
 	SysTick->LOAD = system_frequency / CFG_SYSTICK_FREQ - 1;
 	SysTick->VAL = 0;
 }
+
+
+void
+setup_gpio(GPIO_TypeDef *bank, int pin, int flags, int value) {
+	uint32_t mask;
+	volatile uint32_t *reg;
+	if (value) {
+		bank->BSRR = 1 << pin;
+	} else {
+		bank->BRR = 1 << pin;
+	}
+	if (pin < 8) {
+		reg = &bank->CRL;
+	} else {
+		reg = &bank->CRH;
+		pin -= 8;
+	}
+	mask = 0xF << (pin * 4);
+	flags <<= (pin * 4);
+	*reg = (*reg & ~mask) | flags;
+}
