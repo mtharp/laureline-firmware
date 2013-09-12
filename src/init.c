@@ -99,3 +99,25 @@ setup_gpio(GPIO_TypeDef *bank, int pin, int flags, int value) {
 	flags <<= (pin * 4);
 	*reg = (*reg & ~mask) | flags;
 }
+
+
+void
+setup_bank(GPIO_TypeDef *bank, const gpio_cfg_t *pins) {
+	int i;
+	uint32_t crl = 0, crh = 0, bsrr = 0;
+	for (i = 0; i < 16; i++) {
+		if (i < 8) {
+			crl |= pins[i].flags << (4 * i);
+		} else {
+			crh |= pins[i].flags << (4 * (i - 8));
+		}
+		if (pins[i].value) {
+			bsrr |= (1 << i);
+		} else {
+			bsrr |= (1 << (i + 16));
+		}
+	}
+	bank->BSRR = bsrr;
+	bank->CRL = crl;
+	bank->CRH = crh;
+}

@@ -25,7 +25,13 @@
 
 extern double system_frequency;
 
+typedef struct {
+	uint8_t flags;
+	uint8_t value;
+} gpio_cfg_t;
+
 void setup_clocks(double hse_freq);
 void setup_gpio(GPIO_TypeDef *bank, int pin, int flags, int value);
+void setup_bank(GPIO_TypeDef *bank, const gpio_cfg_t *pins);
 
 #endif
