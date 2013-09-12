@@ -16,7 +16,7 @@
 #include "init.h"
 //#include "lwip/def.h"
 //#include "lwipthread.h"
-//#include "eeprom.h"
+#include "eeprom.h"
 #include "uptime.h"
 #include "util.h"
 //#include "version.h"
@@ -82,12 +82,10 @@ const clicmd_t cmd_table[] = {
 #define CMD_COUNT (sizeof(cmd_table) / sizeof(cmd_table[0]))
 
 const clivalue_t value_table[] = {
-#if 0
 	{ "gps_baud_rate", VAR_UINT32, &cfg.gps_baud_rate },
 	{ "ip_addr", VAR_IP4, &cfg.ip_addr },
 	{ "ip_gateway", VAR_IP4, &cfg.ip_gateway },
 	{ "ip_netmask", VAR_IP4, &cfg.ip_netmask },
-#endif
 };
 #define VALUE_COUNT (sizeof(value_table) / sizeof(value_table[0]))
 
@@ -242,19 +240,18 @@ cli_feed(char c) {
 
 static void
 cliWriteConfig(void) {
-	/*
-	msg_t result;
+	int16_t result;
 	uartPrint("Writing EEPROM...\r\n");
 	result = eeprom_write_cfg();
-	if (result == RDY_TIMEOUT) {
+	if (result == EERR_TIMEOUT) {
 		uartPrint("ERROR: timeout while writing EEPROM\r\n");
 	} else if (result == EERR_NACK) {
 		uartPrint("ERROR: EEPROM is faulty or missing\r\n");
 	} else if (result == EERR_FAULT) {
 		uartPrint("ERROR: EEPROM is faulty\r\n");
-	} else if (result != RDY_OK) {
+	} else if (result != EERR_OK) {
 		uartPrint("FAIL: unable to write EEPROM\r\n");
-	} else */{
+	} else {
 		uartPrint("OK\r\n");
 		CoTickDelay(S2ST(1));
 		/* reset */
@@ -265,8 +262,8 @@ cliWriteConfig(void) {
 
 static void
 cliDefaults(char *cmdline) {
-	/*memset(cfg_bytes, 0, EEPROM_CFG_SIZE);
-	cfg.version = CFG_VERSION;*/
+	memset(cfg_bytes, 0, EEPROM_CFG_SIZE);
+	cfg.version = CFG_VERSION;
 	cliWriteConfig();
 }
 

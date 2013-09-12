@@ -81,6 +81,38 @@ static const gpio_cfg_t gpio_cfg[4][16] = {
 	}};
 
 
+static void
+delay10us(void) {
+	int i;
+	for (i = 0; i < 350; i++) {}
+}
+
+
+static void
+unstick_i2c(void) {
+	int i;
+	setup_gpio(GPIOB, 6, GPIO_MODE_2MHZ | GPIO_OUTPUT_OD, 1);
+	setup_gpio(GPIOB, 7, GPIO_MODE_2MHZ | GPIO_OUTPUT_OD, 1);
+	for (i = 0; i < 8; i++) {
+		while (!(GPIOB->IDR & (1<<6))) { delay10us(); }
+		GPIOB->BRR = (1<<6);
+		delay10us();
+		GPIOB->BSRR = (1<<6);
+		delay10us();
+	}
+	GPIOB->BRR = (1<<7);
+	delay10us();
+	GPIOB->BRR = (1<<6);
+	delay10us();
+	GPIOB->BSRR = (1<<6);
+	delay10us();
+	GPIOB->BSRR = (1<<7);
+	delay10us();
+	setup_gpio(GPIOB, 6, GPIO_MODE_2MHZ | GPIO_AFIO_OD, 1);
+	setup_gpio(GPIOB, 7, GPIO_MODE_2MHZ | GPIO_AFIO_OD, 1);
+}
+
+
 void
 SystemInit(void) {
 	/* Enable peripheral clocks */
@@ -104,6 +136,8 @@ SystemInit(void) {
 		| AFIO_MAPR_TIM3_REMAP_FULLREMAP
 		| AFIO_MAPR_SWJ_CFG_JTAGDISABLE
 		;
+
+	unstick_i2c();
 
 	setup_bank(GPIOA, gpio_cfg[0]);
 	setup_bank(GPIOB, gpio_cfg[1]);

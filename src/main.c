@@ -8,13 +8,33 @@
 
 #include "common.h"
 #include "cmdline.h"
+#include "eeprom.h"
 #include "init.h"
 #include "serial.h"
+
+#include <string.h>
 
 #define TASK0_PRI 10
 #define TASK0_STACK 512
 OS_STK task0stack[TASK0_STACK];
 OS_TID task0id;
+
+
+static void
+load_eeprom(void) {
+	int16_t rc;
+	rc = eeprom_read_cfg();
+	if (rc == EERR_UPGRADE
+			|| (rc == EERR_OK && cfg.version == 0)) {
+		memset(&cfg_bytes[12], 0, EEPROM_CFG_SIZE - 12);
+		cfg.version = CFG_VERSION;
+		rc = eeprom_write_cfg();
+	} else if (rc != EERR_OK) {
+		memset(cfg_bytes, 0, EEPROM_CFG_SIZE);
+		cfg.version = CFG_VERSION;
+		rc = eeprom_write_cfg();
+	}
+}
 
 
 void
@@ -48,6 +68,7 @@ main(void) {
 	serial_start(&Serial1, USART1, 115200);
 	serial_start(&Serial4, UART4, 57600);
 	cli_set_output(&Serial1);
+	load_eeprom();
 	task0id = CoCreateTask(task0, NULL, TASK0_PRI,
 			&task0stack[TASK0_STACK-1], TASK0_STACK);
 	CoStartOS();
