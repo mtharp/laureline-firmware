@@ -34,6 +34,8 @@ CFLAGS += -ffunction-sections -fdata-sections -fno-common
 LDFLAGS += -Wl,--gc-sections
 endif
 
+CFLAGS += -MD -MP -MF $@.d
+
 # Targets
 all: $(OUT).elf $(OUT).bin $(OUT).hex $(OUT).lst
 
@@ -78,3 +80,6 @@ $(OUT).elf: $(OBJS) $(LDSCRIPT)
 
 %.hex: %.elf
 	$(HEX) $< $@
+
+
+-include $(shell [ -d $(BUILD) ] && find $(BUILD) -name \*.d)

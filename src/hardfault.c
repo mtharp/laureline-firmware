@@ -31,5 +31,9 @@ HardFault_Handler_c(uint32_t *args) {
 	hfsr = SCB->HFSR;
 	dfsr = SCB->DFSR;
 	afsr = SCB->AFSR;
+	(void)r0; (void)r1; (void)r2; (void)r3;
+	(void)r12; (void)lr; (void)pc; (void)psr;
+	(void)bfar; (void)cfsr; (void)hfsr;
+	(void)dfsr; (void)afsr;
 	while (1) {}
 }
