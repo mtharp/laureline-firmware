@@ -36,11 +36,11 @@ load_eeprom(void) {
 	}
 }
 
-
 void
 task0(void *pdata) {
 	uint8_t data, err;
 	uint32_t flags;
+	load_eeprom();
 	cli_banner();
 	while (1) {
 		flags = CoWaitForMultipleFlags(0
@@ -68,7 +68,6 @@ main(void) {
 	serial_start(&Serial1, USART1, 115200);
 	serial_start(&Serial4, UART4, 57600);
 	cli_set_output(&Serial1);
-	load_eeprom();
 	task0id = CoCreateTask(task0, NULL, TASK0_PRI,
 			&task0stack[TASK0_STACK-1], TASK0_STACK);
 	CoStartOS();
