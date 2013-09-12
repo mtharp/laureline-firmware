@@ -8,9 +8,12 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 #include "common.h"
 #include "cmdline.h"
+#include "init.h"
 //#include "lwip/def.h"
 //#include "lwipthread.h"
 //#include "eeprom.h"
@@ -24,9 +27,11 @@ uint8_t cl_enabled;
 serial_t *cl_out;
 
 static char cl_buf[64];
+static char fmt_buf[64];
 static uint8_t cl_count;
 
 static void uartPrint(const char *value);
+static void uart_printf(const char *fmt, ...);
 
 static void cliDefaults(char *cmdline);
 static void cliExit(char *cmdline);
@@ -100,6 +105,16 @@ uartPrint(const char *value) {
 }
 
 
+static void
+uart_printf(const char *fmt, ...) {
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(fmt_buf, sizeof(fmt_buf), fmt, ap);
+	va_end(ap);
+	serial_puts(cl_out, fmt_buf);
+}
+
+
 /* Command-line helpers */
 
 static void
@@ -121,15 +136,15 @@ static void
 cliPrintVar(const clivalue_t *var, uint8_t full) {
 	switch (var->type) {
 	case VAR_UINT32:
-		//chprintf(CHB, "%u", *(uint32_t*)var->ptr);
+		uart_printf("%u", *(uint32_t*)var->ptr);
 		break;
 	case VAR_BOOL:
-		//chprintf(CHB, "%u", !!*(uint8_t*)var->ptr);
+		uart_printf("%u", !!*(uint8_t*)var->ptr);
 		break;
 	case VAR_IP4:
 		{
 			uint8_t *addr = (uint8_t*)var->ptr;
-			//chprintf(CHB, "%d.%d.%d.%d", addr[0], addr[1], addr[2], addr[3]);
+			uart_printf("%d.%d.%d.%d", addr[0], addr[1], addr[2], addr[3]);
 			break;
 		}
 	}
@@ -271,7 +286,7 @@ cliHelp(char *cmdline) {
 	uint8_t i;
 	uartPrint("Available commands:\r\n");
 	for (i = 0; i < CMD_COUNT; i++) {
-		//chprintf(CHB, "%s\t%s\r\n", cmd_table[i].name, cmd_table[i].param);
+		uart_printf("%s\t%s\r\n", cmd_table[i].name, cmd_table[i].param);
 	}
 }
 
@@ -282,7 +297,7 @@ cliInfo(char *cmdline) {
 	cli_print_hwaddr();
 	//print_netif(CHB);
 	cliUptime(NULL);
-	//chprintf(CHB, "System clock:   %d Hz (nominal)\r\n", STM32_SYSCLK);
+	uart_printf("System clock:   %d Hz (nominal)\r\n", (int)system_frequency);
 }
 
 
@@ -303,7 +318,7 @@ cliSet(char *cmdline) {
 		uartPrint("Current settings:\r\n");
 		for (i = 0; i < VALUE_COUNT; i++) {
 			val = &value_table[i];
-			//chprintf(CHB, "%s = ", value_table[i].name);
+			uart_printf("%s = ", value_table[i].name);
 			cliPrintVar(val, len);
 			uartPrint("\r\n");
 		}
@@ -319,7 +334,7 @@ cliSet(char *cmdline) {
 			if (strncasecmp(cmdline, value_table[i].name,
 						strlen(value_table[i].name)) == 0) {
 				cliSetVar(val, eqptr);
-				//chprintf(CHB, "%s set to ", value_table[i].name);
+				uart_printf("%s set to ", value_table[i].name);
 				cliPrintVar(val, 0);
 				return;
 			}

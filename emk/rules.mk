@@ -35,12 +35,12 @@ LDFLAGS += -Wl,--gc-sections
 endif
 
 # Targets
-all: $(OUT).elf $(OUT).hex $(OUT).lst
+all: $(OUT).elf $(OUT).bin $(OUT).hex $(OUT).lst
 
 clean:
 	rm -rf $(BUILD)
 
-install: $(OUT).elf
+install: all
 ifdef BMP
 	@echo -e "tar ext $(BMP)\nmon swdp_scan\natt 1" >$(BMP_SCRIPT)
 	$(GDB) $(OUT).elf -x $(BMP_SCRIPT) --batch -ex load -ex kill

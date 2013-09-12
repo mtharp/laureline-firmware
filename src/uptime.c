@@ -9,13 +9,15 @@
 #include "common.h"
 #include "uptime.h"
 
+#include <stdio.h>
+
 
 #define SEC_DAY		86400
 #define SEC_HOUR	3600
 #define SEC_MINUTE	60
 
 
-static char *fmt_buf[40];
+static char fmt_buf[50];
 
 
 uint32_t
@@ -26,24 +28,22 @@ uptime_get(void) {
 
 const char *
 uptime_format(void) {
-	return "omgwtfbbq";
-	/*
-	uint32_t t, n;
+	unsigned int t, n;
+	char *ptr = fmt_buf;
 	t = uptime_get();
 
 	n = t / SEC_DAY;
-	if (n) {
-		chprintf(ch, "%d day%s, ", n, (n != 1) ? "s" : "");
-		t -= (n * SEC_DAY);
-	}
+	ptr += sprintf(ptr, "%u day%s, ", n, (n != 1) ? "s" : "");
+	t -= (n * SEC_DAY);
 
 	n = t / SEC_HOUR;
-	if (n) {
-		chprintf(ch, "%d hour%s, ", n, (n != 1) ? "s" : "");
-		t -= (n * SEC_HOUR);
-	}
+	ptr += sprintf(ptr, "%u hour%s, ", n, (n != 1) ? "s" : "");
+	t -= (n * SEC_HOUR);
 
 	n = t / SEC_MINUTE;
-	chprintf(ch, "%d minute%s", n, (n != 1) ? "s" : "");
-	*/
+	ptr += sprintf(ptr, "%u minute%s, ", n, (n != 1) ? "s" : "");
+	t -= (n * SEC_MINUTE);
+
+	ptr += sprintf(ptr, "%u second%s", t, (t != 1) ? "s" : "");
+	return fmt_buf;
 }

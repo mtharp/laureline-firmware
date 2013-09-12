@@ -83,7 +83,7 @@ void
 serial_putc(serial_t *serial, const char value) {
 	USART_TypeDef *u = serial->device;
 	CoEnterMutexSection(serial->mutex_id);
-	u->CR1 |= USART_CR1_TXEIE;
+	//u->CR1 |= USART_CR1_TXEIE;
 	while (!(u->SR & USART_SR_TXE)) {
 		/* Interrupt handler will set flag when TXE is set */
 		CoWaitForSingleFlag(serial->tx_flag, 1);
@@ -98,10 +98,10 @@ serial_puts(serial_t *serial, const char *value) {
 	USART_TypeDef *u = serial->device;
 	CoEnterMutexSection(serial->mutex_id);
 	while (*value) {
-		u->CR1 |= USART_CR1_TXEIE;
+		//u->CR1 |= USART_CR1_TXEIE;
 		while (!(u->SR & USART_SR_TXE)) {
 			/* Interrupt handler will set flag when TXE is set */
-			CoWaitForSingleFlag(serial->tx_flag, 1);
+			//CoWaitForSingleFlag(serial->tx_flag, 1);
 		}
 		u->DR = *value++;
 	}

@@ -12,7 +12,7 @@
 #include "serial.h"
 
 #define TASK0_PRI 10
-#define TASK0_STACK 100
+#define TASK0_STACK 512
 OS_STK task0stack[TASK0_STACK];
 OS_TID task0id;
 
