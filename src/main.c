@@ -9,9 +9,12 @@
 #include "common.h"
 #include "cmdline.h"
 #include "eeprom.h"
+#include "gps/parser.h"
+#include "gps/ublox.h"
 #include "init.h"
 #include "ppscapture.h"
 #include "serial.h"
+#include "vtimer.h"
 
 #include <string.h>
 
@@ -38,24 +41,24 @@ load_eeprom(void) {
 
 void
 main_thread(void *pdata) {
-	uint8_t data, err;
+	uint8_t err;
 	uint32_t flags;
 	load_eeprom();
 	cli_banner();
+	ublox_configure(&Serial4);
 	while (1) {
 		flags = CoWaitForMultipleFlags(0
 				| 1 << Serial1.rx_flag
-				// | 1 << Serial4.rx_flag,
+				| 1 << Serial4.rx_flag
 				, OPT_WAIT_ANY, S2ST(1), &err);
 		if (err != E_OK && err != E_TIMEOUT) {
 			HALT();
 		}
 		if (flags & (1 << Serial1.rx_flag)) {
-			data = Serial1.rx_char;
-			cli_feed(data);
+			cli_feed(Serial1.rx_char);
 		}
 		if (flags & (1 << Serial4.rx_flag)) {
-			serial_puts(&Serial1, "got gps\r\n");
+			gps_byte_received(Serial4.rx_char);
 		}
 	}
 }

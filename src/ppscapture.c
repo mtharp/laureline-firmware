@@ -105,16 +105,6 @@ _monotonic_nowI(void) {
 
 
 uint64_t
-monotonic_now(void) {
-	uint64_t ret;
-	__disable_irq();
-	ret = _monotonic_now();
-	__enable_irq();
-	return ret;
-}
-
-
-uint64_t
 monotonic_get_capture(void) {
 	/* Get the previous PPS capture */
 	uint64_t ret;

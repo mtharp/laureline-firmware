@@ -10,7 +10,7 @@ PROJECT = laureline
 BOARD = boards/v5
 USE_LINK_GC = yes
 
-SRCS = $(wildcard src/*.c)
+SRCS = $(wildcard src/*.c src/gps/*.c)
 SRCS += $(wildcard ports/*.c ports/*.s)
 SRCS += $(wildcard CoOS/kernel/*.c)
 SRCS += $(wildcard CoOS/portable/*.c )

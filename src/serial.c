@@ -114,6 +114,22 @@ serial_puts(serial_t *serial, const char *value) {
 }
 
 
+void
+serial_write(serial_t *serial, const char *value, uint16_t size) {
+	USART_TypeDef *u = serial->device;
+	CoEnterMutexSection(serial->mutex_id);
+	while (size--) {
+		//u->CR1 |= USART_CR1_TXEIE;
+		while (!(u->SR & USART_SR_TXE)) {
+			/* Interrupt handler will set flag when TXE is set */
+			//CoWaitForSingleFlag(serial->tx_flag, 1);
+		}
+		u->DR = *value++;
+	}
+	CoLeaveMutexSection(serial->mutex_id);
+}
+
+
 static void
 service_interrupt(serial_t *serial) {
 	USART_TypeDef *u = serial->device;

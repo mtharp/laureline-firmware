@@ -32,5 +32,6 @@ void serial_set_speed(serial_t *serial);
 char serial_getc(serial_t *serial);
 void serial_putc(serial_t *serial, const char value);
 void serial_puts(serial_t *serial, const char *value);
+void serial_write(serial_t *serial, const char *value, uint16_t size);
 
 #endif
