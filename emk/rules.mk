@@ -70,7 +70,7 @@ endef
 $(foreach src,$(S_SRCS),$(eval $(call s_template,$(BUILD)/$(src:.s=.o),$(src))))
 
 $(OUT).elf: $(OBJS) $(LDSCRIPT)
-	$(LD) $(LDFLAGS) $(OBJS) -o $@
+	$(LD) $(LDFLAGS) $(OBJS) -o $@ $(LDLIBS)
 
 %.lst: %.elf
 	$(OD) -S $< > $@

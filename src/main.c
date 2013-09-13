@@ -10,14 +10,14 @@
 #include "cmdline.h"
 #include "eeprom.h"
 #include "init.h"
+#include "ppscapture.h"
 #include "serial.h"
 
 #include <string.h>
 
-#define TASK0_PRI 10
-#define TASK0_STACK 512
-OS_STK task0stack[TASK0_STACK];
-OS_TID task0id;
+#define MAIN_STACK 512
+OS_STK main_stack[MAIN_STACK];
+OS_TID main_tid;
 
 
 static void
@@ -37,7 +37,7 @@ load_eeprom(void) {
 }
 
 void
-task0(void *pdata) {
+main_thread(void *pdata) {
 	uint8_t data, err;
 	uint32_t flags;
 	load_eeprom();
@@ -68,8 +68,10 @@ main(void) {
 	serial_start(&Serial1, USART1, 115200);
 	serial_start(&Serial4, UART4, 57600);
 	cli_set_output(&Serial1);
-	task0id = CoCreateTask(task0, NULL, TASK0_PRI,
-			&task0stack[TASK0_STACK-1], TASK0_STACK);
+	ppscapture_start();
+	vtimer_start();
+	main_tid = CoCreateTask(main_thread, NULL, THREAD_PRIO_MAIN,
+			&main_stack[MAIN_STACK-1], MAIN_STACK);
 	CoStartOS();
 	while (1) {}
 }

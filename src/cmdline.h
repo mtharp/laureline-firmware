@@ -11,12 +11,15 @@
 
 #include "serial.h"
 
-//#define cli_printf(...) if (!cl_enabled) { chprintf(CHB, __VA_ARGS__); }
+#define no_cli_printf(...) if (!cl_enabled) { cli_printf(__VA_ARGS__); }
 
 extern uint8_t cl_enabled;
 
 void cli_set_output(serial_t *output);
+void cli_printf(const char *fmt, ...);
+void cli_puts(const char *value);
 void cli_banner(void);
 void cli_feed(char c);
+
 
 #endif

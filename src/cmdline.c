@@ -30,9 +30,6 @@ static char cl_buf[64];
 static char fmt_buf[64];
 static uint8_t cl_count;
 
-static void uartPrint(const char *value);
-static void uart_printf(const char *fmt, ...);
-
 static void cliDefaults(char *cmdline);
 static void cliExit(char *cmdline);
 static void cliHelp(char *cmdline);
@@ -97,14 +94,14 @@ cli_set_output(serial_t *output) {
 	cl_out = output;
 }
 
-static void
-uartPrint(const char *value) {
+void
+cli_puts(const char *value) {
 	serial_puts(cl_out, value);
 }
 
 
-static void
-uart_printf(const char *fmt, ...) {
+void
+cli_printf(const char *fmt, ...) {
 	va_list ap;
 	va_start(ap, fmt);
 	vsnprintf(fmt_buf, sizeof(fmt_buf), fmt, ap);
@@ -119,7 +116,7 @@ static void
 cliPrompt(void) {
 	cl_count = 0;
 	cl_enabled = 1;
-	uartPrint("\r\n# ");
+	cli_puts("\r\n# ");
 }
 
 
@@ -134,15 +131,15 @@ static void
 cliPrintVar(const clivalue_t *var, uint8_t full) {
 	switch (var->type) {
 	case VAR_UINT32:
-		uart_printf("%u", *(uint32_t*)var->ptr);
+		cli_printf("%u", *(uint32_t*)var->ptr);
 		break;
 	case VAR_BOOL:
-		uart_printf("%u", !!*(uint8_t*)var->ptr);
+		cli_printf("%u", !!*(uint8_t*)var->ptr);
 		break;
 	case VAR_IP4:
 		{
 			uint8_t *addr = (uint8_t*)var->ptr;
-			uart_printf("%d.%d.%d.%d", addr[0], addr[1], addr[2], addr[3]);
+			cli_printf("%d.%d.%d.%d", addr[0], addr[1], addr[2], addr[3]);
 			break;
 		}
 	}
@@ -192,14 +189,14 @@ cli_feed(char c) {
 		cliExit(cl_buf);
 	} else if (c == 12) {
 		/* Clear screen */
-		uartPrint("\033[2J\033[1;1H");
+		cli_puts("\033[2J\033[1;1H");
 		cliPrompt();
 	} else if (c == '\n' || c == '\r') {
 		if (cl_count) {
 			/* Enter pressed */
 			clicmd_t *cmd = NULL;
 			clicmd_t target;
-			uartPrint("\r\n");
+			cli_puts("\r\n");
 			cl_buf[cl_count] = 0;
 
 			target.name = cl_buf;
@@ -209,7 +206,7 @@ cli_feed(char c) {
 			if (cmd) {
 				cmd->func(cl_buf + strlen(cmd->name) + 1);
 			} else {
-				uartPrint("ERR: Unknown command, try 'help'\r\n");
+				cli_puts("ERR: Unknown command, try 'help'\r\n");
 			}
 			memset(cl_buf, 0, sizeof(cl_buf));
 		} else if (c == '\n' && cl_buf[0] == '\r') {
@@ -224,7 +221,7 @@ cli_feed(char c) {
 		/* Backspace */
 		if (cl_count) {
 			cl_buf[--cl_count] = 0;
-			uartPrint("\010 \010");
+			cli_puts("\010 \010");
 		}
 	} else if (cl_count < sizeof(cl_buf) && c >= 32 && c <= 126) {
 		if (!cl_count && c == 32) {
@@ -241,21 +238,20 @@ cli_feed(char c) {
 static void
 cliWriteConfig(void) {
 	int16_t result;
-	uartPrint("Writing EEPROM...\r\n");
+	cli_puts("Writing EEPROM...\r\n");
 	result = eeprom_write_cfg();
 	if (result == EERR_TIMEOUT) {
-		uartPrint("ERROR: timeout while writing EEPROM\r\n");
+		cli_puts("ERROR: timeout while writing EEPROM\r\n");
 	} else if (result == EERR_NACK) {
-		uartPrint("ERROR: EEPROM is faulty or missing\r\n");
+		cli_puts("ERROR: EEPROM is faulty or missing\r\n");
 	} else if (result == EERR_FAULT) {
-		uartPrint("ERROR: EEPROM is faulty\r\n");
+		cli_puts("ERROR: EEPROM is faulty\r\n");
 	} else if (result != EERR_OK) {
-		uartPrint("FAIL: unable to write EEPROM\r\n");
+		cli_puts("FAIL: unable to write EEPROM\r\n");
 	} else {
-		uartPrint("OK\r\n");
+		cli_puts("OK\r\n");
 		CoTickDelay(S2ST(1));
-		/* reset */
-		SCB->AIRCR = 0x05FA0000 | 0x04;
+		NVIC_SystemReset();
 	}
 }
 
@@ -272,7 +268,7 @@ static void
 cliExit(char *cmdline) {
 	cl_count = 0;
 	cl_enabled = 0;
-	uartPrint("Exiting cmdline mode.\r\n"
+	cli_puts("Exiting cmdline mode.\r\n"
 			"Configuration changes have not been saved.\r\n"
 			"Press Enter to enable cmdline.\r\n");
 }
@@ -281,9 +277,9 @@ cliExit(char *cmdline) {
 static void
 cliHelp(char *cmdline) {
 	uint8_t i;
-	uartPrint("Available commands:\r\n");
+	cli_puts("Available commands:\r\n");
 	for (i = 0; i < CMD_COUNT; i++) {
-		uart_printf("%s\t%s\r\n", cmd_table[i].name, cmd_table[i].param);
+		cli_printf("%s\t%s\r\n", cmd_table[i].name, cmd_table[i].param);
 	}
 }
 
@@ -294,7 +290,7 @@ cliInfo(char *cmdline) {
 	cli_print_hwaddr();
 	//print_netif(CHB);
 	cliUptime(NULL);
-	uart_printf("System clock:   %d Hz (nominal)\r\n", (int)system_frequency);
+	cli_printf("System clock:   %d Hz (nominal)\r\n", (int)system_frequency);
 }
 
 
@@ -312,12 +308,12 @@ cliSet(char *cmdline) {
 
 	len = strlen(cmdline);
 	if (len == 0 || (len == 1 && cmdline[0] == '*')) {
-		uartPrint("Current settings:\r\n");
+		cli_puts("Current settings:\r\n");
 		for (i = 0; i < VALUE_COUNT; i++) {
 			val = &value_table[i];
-			uart_printf("%s = ", value_table[i].name);
+			cli_printf("%s = ", value_table[i].name);
 			cliPrintVar(val, len);
-			uartPrint("\r\n");
+			cli_puts("\r\n");
 		}
 	} else if ((eqptr = strstr(cmdline, "="))) {
 		eqptr++;
@@ -331,27 +327,27 @@ cliSet(char *cmdline) {
 			if (strncasecmp(cmdline, value_table[i].name,
 						strlen(value_table[i].name)) == 0) {
 				cliSetVar(val, eqptr);
-				uart_printf("%s set to ", value_table[i].name);
+				cli_printf("%s set to ", value_table[i].name);
 				cliPrintVar(val, 0);
 				return;
 			}
 		}
-		uartPrint("ERR: Unknown variable name\r\n");
+		cli_puts("ERR: Unknown variable name\r\n");
 	}
 }
 
 
 static void
 cliUptime(char *cmdline) {
-	uartPrint("Uptime:         ");
-	uartPrint(uptime_format());
-	uartPrint("\r\n");
+	cli_puts("Uptime:         ");
+	cli_puts(uptime_format());
+	cli_puts("\r\n");
 }
 
 
 static void
 cliVersion(char *cmdline) {
-	uartPrint(
+	cli_puts(
 		"Hardware:       " BOARD_REV "\r\n"
 		"Software:       " VERSION "\r\n");
 }
@@ -359,16 +355,16 @@ cliVersion(char *cmdline) {
 
 static void
 cli_print_hwaddr(void) {
-	uartPrint("MAC Address:    ");
+	cli_puts("MAC Address:    ");
 	//print_hwaddr(CHB);
-	uartPrint("\r\n");
+	cli_puts("\r\n");
 }
 
 
 void
 cli_banner(void) {
-	uartPrint("\r\n\r\nLaureline GPS NTP Server\r\n");
+	cli_puts("\r\n\r\nLaureline GPS NTP Server\r\n");
 	cliVersion(NULL);
 	cli_print_hwaddr();
-	uartPrint("\r\nPress Enter to enable command-line\r\n");
+	cli_puts("\r\nPress Enter to enable command-line\r\n");
 }

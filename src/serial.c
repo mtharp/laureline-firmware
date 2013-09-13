@@ -22,18 +22,23 @@ serial_start(serial_t *serial, USART_TypeDef *u, int speed) {
 	serial->rx_char = NO_CHAR;
 	if (u == USART1) {
 		RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
+		NVIC_SetPriority(USART1_IRQn, IRQ_PRIO_USART);
 		NVIC_EnableIRQ(USART1_IRQn);
 	} else if (u == USART2) {
 		RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
+		NVIC_SetPriority(USART2_IRQn, IRQ_PRIO_USART);
 		NVIC_EnableIRQ(USART2_IRQn);
 	} else if (u == USART3) {
 		RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
+		NVIC_SetPriority(USART3_IRQn, IRQ_PRIO_USART);
 		NVIC_EnableIRQ(USART3_IRQn);
 	} else if (u == UART4) {
 		RCC->APB1ENR |= RCC_APB1ENR_UART4EN;
+		NVIC_SetPriority(UART4_IRQn, IRQ_PRIO_USART);
 		NVIC_EnableIRQ(UART4_IRQn);
 	} else if (u == UART5) {
 		RCC->APB1ENR |= RCC_APB1ENR_UART5EN;
+		NVIC_SetPriority(UART5_IRQn, IRQ_PRIO_USART);
 		NVIC_EnableIRQ(UART5_IRQn);
 	} else {
 		HALT();

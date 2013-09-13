@@ -39,5 +39,6 @@ CFLAGS += -O3 -fomit-frame-pointer
 endif
 ASFLAGS = $(MCFLAGS)
 LDFLAGS = $(MCFLAGS)
+LDLIBS = -lm
 
 include emk/rules.mk
