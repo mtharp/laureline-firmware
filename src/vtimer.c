@@ -140,14 +140,10 @@ pll_thread(void *p) {
 			GPIO_ON(LED3);
 			GPIO_OFF(LED4);
 		}
-		tmp = (uint64_t)PPS_BLINK_TIME * NTP_SECOND;
-		delta = tmp * vt_rate_inv_sys;
-		CoTickDelay(delta);
+		CoTickDelay(PPS_BLINK_TIME * NTP_SECOND * vt_rate_inv_sys);
 		GPIO_OFF(LED1);
 		GPIO_OFF(LED2);
-		tmp = (uint64_t)(PLL_SUB_TIME - PPS_BLINK_TIME) * NTP_SECOND;
-		delta = tmp * vt_rate_inv_sys;
-		CoTickDelay(delta);
+		CoTickDelay((PLL_SUB_TIME - PPS_BLINK_TIME) * NTP_SECOND * vt_rate_inv_sys);
 	}
 }
 
