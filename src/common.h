@@ -24,14 +24,14 @@
 
 #define HALT()				while(1) {}
 #define ASSERT(x)			if (!(x)) { HALT(); }
-#define SET_IRQ(save, pri)	do { (save) = __get_BASEPRI(); __set_BASEPRI((pri)); } while(0)
-#define ADD_IRQ(save, pri)	do { (save) = __get_BASEPRI(); if ((pri) > (save)) __set_BASEPRI(pri); } while(0)
-#define DISABLE_IRQ(save)	SET_IRQ(save, 0xFF)
-#define RESTORE_IRQ(save)	__set_BASEPRI((save))
 #define MS2ST(seconds)		(seconds * CFG_SYSTICK_FREQ / 1000)
 #define S2ST(seconds)		(seconds * CFG_SYSTICK_FREQ)
 #define SET_BITS(var, mask, value) \
 	(var) = ((var) & ~(mask)) | ((value) & (mask))
+
+extern uint32_t _irq_disabled;
+#define DISABLE_IRQ()		do { __disable_irq(); _irq_disabled++; } while(0)
+#define ENABLE_IRQ()		do { if (--_irq_disabled == 0) { __enable_irq(); } } while(0)
 
 #define GPIO_ON(pfx)		_PASTE2(pfx, _PAD)->BSRR = _PASTE2(pfx, _PIN);
 #define GPIO_OFF(pfx)		_PASTE2(pfx, _PAD)->BRR  = _PASTE2(pfx, _PIN);

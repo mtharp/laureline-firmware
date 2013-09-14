@@ -63,7 +63,6 @@ pll_thread(void *p) {
 	static int64_t tmps;
 	static double delta;
 	static uint8_t desync;
-	uint32_t save;
 	desync = 0;
 	while (1) {
 		tmp = monotonic_get_capture();
@@ -102,7 +101,7 @@ pll_thread(void *p) {
 		kern_freq(delta);
 
 		/* Update vtimer */
-		DISABLE_IRQ(save);
+		DISABLE_IRQ();
 		vtimer_updateI();
 		tmps = 0;
 		last = vt_last;
@@ -110,7 +109,7 @@ pll_thread(void *p) {
 			tmps = (int64_t)utc_next - (int64_t)(last >> 32);
 			utc_next = 0;
 		}
-		RESTORE_IRQ(save);
+		ENABLE_IRQ();
 
 		if (tmps != 0) {
 			no_cli_printf("step(UTC) %d us\r\n", (int32_t)(tmps * 1e6));
@@ -173,8 +172,7 @@ vtimer_get_frac_delta(uint64_t mono_capture) {
 	 * fractional second part is kept. */
 	uint64_t vt_capture;
 	double frac, corr;
-	uint32_t save;
-	DISABLE_IRQ(save);
+	DISABLE_IRQ();
 	vt_capture = vtimer_getI(mono_capture);
 	corr = quant_corr;
 	quant_corr = 0.0;
@@ -183,7 +181,7 @@ vtimer_get_frac_delta(uint64_t mono_capture) {
 	} else {
 		status_flags &= ~STATUS_USED_QUANT;
 	}
-	RESTORE_IRQ(save);
+	ENABLE_IRQ();
 	vt_capture &= NTP_MASK_FRAC;
 	frac = (double)(uint32_t)vt_capture / NTP_TO_FLOAT;
 	frac += corr;
@@ -199,7 +197,6 @@ kern_freq(double f) {
 	/* Change the rate at which the vtimer ticks */
 	double next_rate;
 	float next_inv;
-	uint32_t save;
 	if (f > 500e-6) {
 		f = 500e-6;
 	} else if (f < -500e-6) {
@@ -207,31 +204,29 @@ kern_freq(double f) {
 	}
 	next_rate = vt_rate_nominal * (1.0 + f);
 	next_inv = vt_rate_inv_sys_nominal / (1.0 + f);
-	DISABLE_IRQ(save);
+	DISABLE_IRQ();
 	vt_rate = next_rate;
 	vt_rate_inv_sys = next_inv;
-	RESTORE_IRQ(save);
+	ENABLE_IRQ();
 }
 
 
 static void
 vtimer_step(double dd) {
 	/* Apply a step change to the vtimer */
-	uint32_t save;
-	DISABLE_IRQ(save);
+	DISABLE_IRQ();
 	vt_last += (int64_t)((double)dd * NTP_TO_FLOAT);
-	RESTORE_IRQ(save);
+	ENABLE_IRQ();
 }
 
 
 uint64_t
 vtimer_now(void) {
-	uint32_t save;
 	uint64_t tmp;
-	DISABLE_IRQ(save);
+	DISABLE_IRQ();
 	tmp = _monotonic_nowI();
 	tmp = vtimer_getI(tmp);
-	RESTORE_IRQ(save);
+	ENABLE_IRQ();
 	return tmp;
 }
 
@@ -239,21 +234,19 @@ vtimer_now(void) {
 void
 vtimer_set_utc(uint16_t year, uint8_t month, uint8_t day,
 		uint8_t hour, uint8_t minute, uint8_t second, uint8_t leap) {
-	uint32_t save;
 	uint32_t ntp_seconds;
 	ntp_seconds = datetime_to_ntp(year, month, day, hour, minute, second);
-	DISABLE_IRQ(save);
+	DISABLE_IRQ();
 	utc_next = ntp_seconds;
 	status_flags |= STATUS_TOD_OK;
-	RESTORE_IRQ(save);
+	ENABLE_IRQ();
 }
 
 
 
 void
 vtimer_set_correction(double corr) {
-	uint32_t save;
-	DISABLE_IRQ(save);
+	DISABLE_IRQ();
 	quant_corr = corr;
-	RESTORE_IRQ(save);
+	ENABLE_IRQ();
 }

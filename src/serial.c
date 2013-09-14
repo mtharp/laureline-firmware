@@ -17,8 +17,8 @@ serial_t Serial4;
 
 static void
 outqueue_init(queue_t *q, uint8_t *buf, uint8_t size) {
-	q->flag = CoCreateFlag(1, 0);
-	ASSERT(q->flag != E_CREATE_FAIL);
+	q->sem = CoCreateSem(size, size, EVENT_SORT_TYPE_FIFO);
+	ASSERT(q->sem != E_CREATE_FAIL);
 	q->p_bot = q->p_read = q->p_write = buf;
 	q->p_top = buf + size;
 	q->count = size;
@@ -28,22 +28,18 @@ outqueue_init(queue_t *q, uint8_t *buf, uint8_t size) {
 static StatusType
 outqueue_put(queue_t *q, uint8_t value, uint32_t timeout) {
 	StatusType rc;
-	uint32_t save;
-	DISABLE_IRQ(save);
-	while (q->count == 0) {
-		RESTORE_IRQ(save);
-		rc = CoWaitForSingleFlag(q->flag, 0);
-		if (rc != E_OK) {
-			return rc;
-		}
-		DISABLE_IRQ(save);
+	rc = CoPendSem(q->sem, 0);
+	if (rc != E_OK) {
+		return rc;
 	}
+	DISABLE_IRQ();
+	ASSERT(q->count > 0);
 	q->count--;
 	*q->p_write++ = value;
 	if (q->p_write == q->p_top) {
 		q->p_write = q->p_bot;
 	}
-	RESTORE_IRQ(save);
+	ENABLE_IRQ();
 	return E_OK;
 }
 
@@ -59,7 +55,7 @@ outqueue_getI(queue_t *q) {
 	if (q->p_read == q->p_top) {
 		q->p_read = q->p_bot;
 	}
-	isr_SetFlag(q->flag);
+	isr_PostSem(q->sem);
 	return ret;
 }
 
@@ -172,14 +168,13 @@ service_interrupt(serial_t *serial) {
 		serial->rx_char = dr;
 		isr_SetFlag(serial->rx_flag);
 	}
-	while (sr & USART_SR_TXE) {
+	if (sr & USART_SR_TXE) {
 		dr = outqueue_getI(&serial->out_q);
 		if (dr == NO_CHAR) {
 			u->CR1 &= ~USART_CR1_TXEIE;
-			break;
+		} else {
+			u->DR = dr;
 		}
-		u->DR = dr;
-		sr = u->SR;
 	}
 }
 

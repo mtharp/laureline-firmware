@@ -84,7 +84,6 @@ _monotonic_nowI(void) {
 	/* Get value of monotonic clock */
 	uint64_t ret;
 	uint16_t tmr1, tmr2;
-	uint32_t save;
 	while (1) {
 		tmr1 = TIM3->CNT;
 		ret = mono_epoch;
@@ -97,11 +96,11 @@ _monotonic_nowI(void) {
 		/* TODO: make sure this can't stall for a whole timer period if tickled
 		 * the wrong way */
 		while (mono_epoch == ret) {
-			SET_IRQ(save, 0);
+			ENABLE_IRQ();
 			/* ISB is required to ensure pending interrupts fire before they
 			 * get disabled again */
 			__ISB();
-			RESTORE_IRQ(save);
+			DISABLE_IRQ();
 		}
 	}
 	return ret + tmr2;
@@ -112,10 +111,9 @@ uint64_t
 monotonic_get_capture(void) {
 	/* Get the previous PPS capture */
 	uint64_t ret;
-	uint32_t save;
-	DISABLE_IRQ(save);
+	DISABLE_IRQ();
 	ret = mono_capture;
 	mono_capture = 0;
-	RESTORE_IRQ(save);
+	ENABLE_IRQ();
 	return ret;
 }
