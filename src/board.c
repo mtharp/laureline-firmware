@@ -135,6 +135,7 @@ SystemInit(void) {
 	AFIO->MAPR |= 0
 		| AFIO_MAPR_TIM3_REMAP_FULLREMAP
 		| AFIO_MAPR_SWJ_CFG_JTAGDISABLE
+		| AFIO_MAPR_MII_RMII_SEL
 		;
 
 	unstick_i2c();
