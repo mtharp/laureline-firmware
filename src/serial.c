@@ -15,6 +15,55 @@ serial_t Serial1;
 serial_t Serial4;
 
 
+static void
+outqueue_init(queue_t *q, uint8_t *buf, uint8_t size) {
+	q->flag = CoCreateFlag(1, 0);
+	ASSERT(q->flag != E_CREATE_FAIL);
+	q->p_bot = q->p_read = q->p_write = buf;
+	q->p_top = buf + size;
+	q->count = size;
+}
+
+
+static StatusType
+outqueue_put(queue_t *q, uint8_t value, uint32_t timeout) {
+	StatusType rc;
+	uint32_t save;
+	DISABLE_IRQ(save);
+	while (q->count == 0) {
+		RESTORE_IRQ(save);
+		rc = CoWaitForSingleFlag(q->flag, 0);
+		if (rc != E_OK) {
+			return rc;
+		}
+		DISABLE_IRQ(save);
+	}
+	q->count--;
+	*q->p_write++ = value;
+	if (q->p_write == q->p_top) {
+		q->p_write = q->p_bot;
+	}
+	RESTORE_IRQ(save);
+	return E_OK;
+}
+
+
+static uint16_t
+outqueue_getI(queue_t *q) {
+	uint16_t ret;
+	if (q->p_write == q->p_read && q->count != 0) {
+		return NO_CHAR;
+	}
+	q->count++;
+	ret = *q->p_read++;
+	if (q->p_read == q->p_top) {
+		q->p_read = q->p_bot;
+	}
+	isr_SetFlag(q->flag);
+	return ret;
+}
+
+
 void
 serial_start(serial_t *serial, USART_TypeDef *u, int speed) {
 	serial->device = u;
@@ -51,11 +100,10 @@ serial_start(serial_t *serial, USART_TypeDef *u, int speed) {
 		| USART_CR1_RXNEIE
 		;
 	serial->mutex_id = CoCreateMutex();
-	if (serial->mutex_id == E_CREATE_FAIL) { HALT(); }
-	serial->tx_flag = CoCreateFlag(1, 0);
-	if (serial->tx_flag == E_CREATE_FAIL) { HALT(); }
+	ASSERT(serial->mutex_id != E_CREATE_FAIL);
 	serial->rx_flag = CoCreateFlag(1, 0);
-	if (serial->rx_flag == E_CREATE_FAIL) { HALT(); }
+	ASSERT(serial->rx_flag != E_CREATE_FAIL);
+	outqueue_init(&serial->out_q, serial->out_buf, USART_TX_BUF);
 }
 
 
@@ -75,9 +123,7 @@ serial_set_speed(serial_t *serial) {
 char
 serial_getc(serial_t *serial) {
 	char ret;
-	if (CoWaitForSingleFlag(serial->rx_flag, 0) != E_OK) {
-		HALT();
-	}
+	ASSERT(CoWaitForSingleFlag(serial->rx_flag, 0) == E_OK);
 	ret = (char)serial->rx_char;
 	serial->rx_char = NO_CHAR;
 	return ret;
@@ -86,29 +132,19 @@ serial_getc(serial_t *serial) {
 
 void
 serial_putc(serial_t *serial, const char value) {
-	USART_TypeDef *u = serial->device;
 	CoEnterMutexSection(serial->mutex_id);
-	//u->CR1 |= USART_CR1_TXEIE;
-	while (!(u->SR & USART_SR_TXE)) {
-		/* Interrupt handler will set flag when TXE is set */
-		CoWaitForSingleFlag(serial->tx_flag, 1);
-	}
-	u->DR = value;
+	outqueue_put(&serial->out_q, value, 0);
+	serial->device->CR1 |= USART_CR1_TXEIE;
 	CoLeaveMutexSection(serial->mutex_id);
 }
 
 
 void
 serial_puts(serial_t *serial, const char *value) {
-	USART_TypeDef *u = serial->device;
 	CoEnterMutexSection(serial->mutex_id);
 	while (*value) {
-		//u->CR1 |= USART_CR1_TXEIE;
-		while (!(u->SR & USART_SR_TXE)) {
-			/* Interrupt handler will set flag when TXE is set */
-			//CoWaitForSingleFlag(serial->tx_flag, 1);
-		}
-		u->DR = *value++;
+		outqueue_put(&serial->out_q, *value++, 0);
+		serial->device->CR1 |= USART_CR1_TXEIE;
 	}
 	CoLeaveMutexSection(serial->mutex_id);
 }
@@ -116,15 +152,10 @@ serial_puts(serial_t *serial, const char *value) {
 
 void
 serial_write(serial_t *serial, const char *value, uint16_t size) {
-	USART_TypeDef *u = serial->device;
 	CoEnterMutexSection(serial->mutex_id);
 	while (size--) {
-		//u->CR1 |= USART_CR1_TXEIE;
-		while (!(u->SR & USART_SR_TXE)) {
-			/* Interrupt handler will set flag when TXE is set */
-			//CoWaitForSingleFlag(serial->tx_flag, 1);
-		}
-		u->DR = *value++;
+		outqueue_put(&serial->out_q, *value++, 0);
+		serial->device->CR1 |= USART_CR1_TXEIE;
 	}
 	CoLeaveMutexSection(serial->mutex_id);
 }
@@ -133,8 +164,7 @@ serial_write(serial_t *serial, const char *value, uint16_t size) {
 static void
 service_interrupt(serial_t *serial) {
 	USART_TypeDef *u = serial->device;
-	uint16_t cr1, sr, dr;
-	cr1 = u->CR1;
+	uint16_t sr, dr;
 	sr = u->SR;
 	dr = u->DR;
 
@@ -142,9 +172,14 @@ service_interrupt(serial_t *serial) {
 		serial->rx_char = dr;
 		isr_SetFlag(serial->rx_flag);
 	}
-	if ((cr1 & USART_CR1_TXEIE) && (sr & USART_SR_TXE)) {
-		u->CR1 &= ~USART_CR1_TXEIE;
-		isr_SetFlag(serial->tx_flag);
+	while (sr & USART_SR_TXE) {
+		dr = outqueue_getI(&serial->out_q);
+		if (dr == NO_CHAR) {
+			u->CR1 &= ~USART_CR1_TXEIE;
+			break;
+		}
+		u->DR = dr;
+		sr = u->SR;
 	}
 }
 

@@ -14,11 +14,23 @@
 
 #define NO_CHAR 0xFFFF
 
+#define USART_TX_BUF 16
+
+typedef struct {
+	OS_FlagID flag;
+	volatile uint8_t count;
+	uint8_t *p_bot, *p_top, *p_write, *p_read;
+} queue_t;
+
+
 typedef struct {
 	USART_TypeDef *device;
 	unsigned int speed;
 	OS_MutexID mutex_id;
-	OS_FlagID tx_flag;
+
+	uint8_t out_buf[USART_TX_BUF];
+	queue_t out_q;
+
 	uint16_t rx_char;
 	OS_FlagID rx_flag;
 } serial_t;
