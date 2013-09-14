@@ -14,15 +14,17 @@ uint16_t status_flags;
 
 void
 set_status(uint16_t mask) {
-	__disable_irq();
+	uint32_t save;
+	DISABLE_IRQ(save);
 	status_flags |= mask;
-	__enable_irq();
+	RESTORE_IRQ(save);
 }
 
 
 void
 clear_status(uint16_t mask) {
-	__disable_irq();
+	uint32_t save;
+	DISABLE_IRQ(save);
 	status_flags &= ~mask;
-	__enable_irq();
+	RESTORE_IRQ(save);
 }
