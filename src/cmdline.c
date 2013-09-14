@@ -17,6 +17,7 @@
 //#include "lwip/def.h"
 //#include "lwipthread.h"
 #include "eeprom.h"
+#include "tcpip.h"
 #include "uptime.h"
 #include "util.h"
 //#include "version.h"
@@ -355,9 +356,9 @@ cliVersion(char *cmdline) {
 
 static void
 cli_print_hwaddr(void) {
-	cli_puts("MAC Address:    ");
-	//print_hwaddr(CHB);
-	cli_puts("\r\n");
+	cli_printf("MAC Address:    %02x:%02x:%02x:%02x:%02x:%02x\r\n",
+			tcpip_hwaddr[0], tcpip_hwaddr[1], tcpip_hwaddr[2],
+			tcpip_hwaddr[3], tcpip_hwaddr[4], tcpip_hwaddr[5]);
 }
 
 

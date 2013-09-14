@@ -52,7 +52,7 @@ vtimer_start(void) {
 	vt_rate_inv_sys_nominal = CFG_SYSTICK_FREQ / NTP_TO_FLOAT;
 	vtimer_tid = CoCreateTask(pll_thread, NULL, THREAD_PRIO_VTIMER,
 			&vtimer_stack[VTIMER_STACK-1], VTIMER_STACK);
-	if (vtimer_tid == E_CREATE_FAIL) { HALT(); }
+	ASSERT(vtimer_tid != E_CREATE_FAIL);
 }
 
 

@@ -135,6 +135,8 @@
 #define LED4_PAD			GPIOA
 #define LED4_PIN			(1<<0)
 
+#define ETH_LED_PAD			GPIOB
+#define ETH_LED_PIN			(1<<14)
 #define E_NRST_PAD			GPIOA
 #define E_NRST_PIN			(1<<4)
 #define CKSEL_PAD			GPIOC

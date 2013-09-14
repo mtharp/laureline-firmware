@@ -9,12 +9,12 @@
 #include "common.h"
 #include "cmdline.h"
 #include "eeprom.h"
-#include "eth_mac.h"
 #include "gps/parser.h"
 #include "gps/ublox.h"
 #include "init.h"
 #include "ppscapture.h"
 #include "serial.h"
+#include "tcpip.h"
 #include "vtimer.h"
 
 #include <string.h>
@@ -74,9 +74,10 @@ main(void) {
 	cli_set_output(&Serial1);
 	ppscapture_start();
 	vtimer_start();
-	mac_start();
+	tcpip_start();
 	main_tid = CoCreateTask(main_thread, NULL, THREAD_PRIO_MAIN,
 			&main_stack[MAIN_STACK-1], MAIN_STACK);
+	ASSERT(main_tid != E_CREATE_FAIL);
 	CoStartOS();
 	while (1) {}
 }
