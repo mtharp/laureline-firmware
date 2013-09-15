@@ -10,7 +10,9 @@
 #include "cmdline.h"
 #include "eeprom.h"
 #include "eth_mac.h"
+#include "ntpserver.h"
 #include "tcpip.h"
+
 #include "lwip/dhcp.h"
 #include "lwip/init.h"
 #include "lwip/stats.h"
@@ -57,9 +59,9 @@ static void
 tcpip_thread(void *p) {
 	uint32_t flags;
 	StatusType rc;
-
 	lwip_init();
 	configure_interface();
+	ntp_server_start();
 	while (1) {
 		flags = CoWaitForMultipleFlags(0
 				| (1 << timer_flag)
@@ -69,14 +71,14 @@ tcpip_thread(void *p) {
 		if (flags & (1 << timer_flag)) {
 			if (smi_poll_link_status()) {
 				if (!netif_is_link_up(&thisif)) {
-					netif_set_link_up(&thisif);
 					no_cli_puts("Ethernet link up\r\n");
+					netif_set_link_up(&thisif);
 				}
 				GPIO_OFF(ETH_LED);
 			} else {
 				if (netif_is_link_up(&thisif)) {
+					no_cli_puts("Ethernet link is down\r\n");
 					netif_set_link_down(&thisif);
-					no_cli_puts("Ethernet link down\r\n");
 				}
 				GPIO_ON(ETH_LED);
 			}

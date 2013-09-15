@@ -45,6 +45,7 @@ main_thread(void *pdata) {
 	uint8_t err;
 	uint32_t flags;
 	load_eeprom();
+	tcpip_start();
 	cli_banner();
 	ublox_configure(&Serial4);
 	while (1) {
@@ -74,7 +75,6 @@ main(void) {
 	cli_set_output(&Serial1);
 	ppscapture_start();
 	vtimer_start();
-	tcpip_start();
 	main_tid = CoCreateTask(main_thread, NULL, THREAD_PRIO_MAIN,
 			&main_stack[MAIN_STACK-1], MAIN_STACK);
 	ASSERT(main_tid != E_CREATE_FAIL);

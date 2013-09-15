@@ -14,8 +14,7 @@
 #include "common.h"
 #include "cmdline.h"
 #include "init.h"
-//#include "lwip/def.h"
-//#include "lwipthread.h"
+#include "lwip/def.h"
 #include "eeprom.h"
 #include "tcpip.h"
 #include "uptime.h"
@@ -41,6 +40,7 @@ static void cliUptime(char *cmdline);
 static void cliVersion(char *cmdline);
 
 static void cli_print_hwaddr(void);
+static void cli_print_netif(void);
 
 
 typedef struct {
@@ -169,7 +169,7 @@ cliSetVar(const clivalue_t *var, const char *str) {
 			str++;
 		}
 		val = (val << 8) | val2;
-		//*(uint32_t*)var->ptr = lwip_htonl(val);
+		*(uint32_t*)var->ptr = lwip_htonl(val);
 		break;
 	}
 }
@@ -289,7 +289,7 @@ static void
 cliInfo(char *cmdline) {
 	cliVersion(NULL);
 	cli_print_hwaddr();
-	//print_netif(CHB);
+	cli_print_netif();
 	cliUptime(NULL);
 	cli_printf("System clock:   %d Hz (nominal)\r\n", (int)system_frequency);
 }
@@ -359,6 +359,28 @@ cli_print_hwaddr(void) {
 	cli_printf("MAC Address:    %02x:%02x:%02x:%02x:%02x:%02x\r\n",
 			thisif.hwaddr[0], thisif.hwaddr[1], thisif.hwaddr[2],
 			thisif.hwaddr[3], thisif.hwaddr[4], thisif.hwaddr[5]);
+}
+
+
+static void
+print_ipaddr(uint32_t addr) {
+	cli_printf("%d.%d.%d.%d",
+			(addr      ) & 0xff,
+			(addr >>  8) & 0xff,
+			(addr >> 16) & 0xff,
+			(addr >> 24) & 0xff);
+}
+
+
+static void
+cli_print_netif(void) {
+	cli_puts("IP:             ");
+	print_ipaddr(thisif.ip_addr.addr);
+	cli_puts("\r\nNetmask:        ");
+	print_ipaddr(thisif.netmask.addr);
+	cli_puts("\r\nGateway:        ");
+	print_ipaddr(thisif.gw.addr);
+	cli_puts("\r\n");
 }
 
 

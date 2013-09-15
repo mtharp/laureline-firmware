@@ -23,7 +23,7 @@ typedef uint32_t		mem_ptr_t;
 #define U16_F "%hu"
 #define U32_F "%u"
 
-#define LWIP_PLATFORM_DIAG(x) no_cli_printf(x)
+#define LWIP_PLATFORM_DIAG(x)
 #define LWIP_PLATFORM_ASSERT(x) { HALT(); }
 
 #define BYTE_ORDER LITTLE_ENDIAN
