@@ -32,7 +32,7 @@ static void tcpip_thread(void *p);
 static void configure_interface(void);
 static err_t ethernetif_init(struct netif *netif);
 static err_t low_level_output(struct netif *netif, struct pbuf *p);
-static void ethernetif_input(struct netif *netif);
+static int ethernetif_input(struct netif *netif);
 static void tcpip_timer(void);
 
 
@@ -86,7 +86,7 @@ tcpip_thread(void *p) {
 			sys_check_timeouts();
 		}
 		if (flags & (1 << mac_rx_flag)) {
-			ethernetif_input(&thisif);
+			while (ethernetif_input(&thisif)) {}
 		}
 	}
 }
@@ -145,7 +145,7 @@ low_level_output(struct netif *netif, struct pbuf *p) {
 }
 
 
-static void
+static int
 ethernetif_input(struct netif *netif) {
 	struct pbuf *p, *q;
 	uint16_t len;
@@ -153,14 +153,14 @@ ethernetif_input(struct netif *netif) {
 
 	(void)netif;
 	if ((rdesc = mac_get_rx_descriptor()) == NULL) {
-		return;
+		return 0;
 	}
 	len = rdesc->size + ETH_PAD_SIZE;
 	if ((p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL)) == NULL) {
 		mac_release_rx_descriptor(rdesc);
 		LINK_STATS_INC(link.memerr);
 		LINK_STATS_INC(link.drop);
-		return;
+		return 1;
 	}
 	pbuf_header(p, -ETH_PAD_SIZE);
 	for (q = p; q != NULL; q = q->next) {
@@ -172,4 +172,5 @@ ethernetif_input(struct netif *netif) {
 	if (netif->input(p, netif) != ERR_OK) {
 		pbuf_free(p);
 	}
+	return 1;
 }
