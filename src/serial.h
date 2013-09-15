@@ -17,7 +17,7 @@
 #define USART_TX_BUF 16
 
 typedef struct {
-	OS_EventID sem;
+	OS_FlagID flag;
 	volatile uint8_t count;
 	uint8_t *p_bot, *p_top, *p_write, *p_read;
 } queue_t;

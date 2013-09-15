@@ -242,7 +242,7 @@ mac_get_tx_descriptor(uint32_t timeout) {
 		timeout += CoGetOSTime();
 	}
 	while (1) {
-		if (!link_up || CoGetOSTime() > timeout) {
+		if (!link_up || (timeout && CoGetOSTime() > timeout)) {
 			return NULL;
 		}
 		if ((tdes = mac_get_tx_descriptor_once()) != NULL) {
