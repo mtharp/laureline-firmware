@@ -38,6 +38,10 @@ static void tcpip_timer(void);
 
 void
 tcpip_start(void) {
+	lwip_init();
+	configure_interface();
+	ntp_server_start();
+
 	ASSERT((timer_flag = CoCreateFlag(1, 0)) != E_CREATE_FAIL);
 	timer = CoCreateTmr(TMR_TYPE_PERIODIC, S2ST(1), S2ST(1), tcpip_timer);
 	ASSERT(timer != E_CREATE_FAIL);
@@ -59,9 +63,6 @@ static void
 tcpip_thread(void *p) {
 	uint32_t flags;
 	StatusType rc;
-	lwip_init();
-	configure_interface();
-	ntp_server_start();
 	while (1) {
 		flags = CoWaitForMultipleFlags(0
 				| (1 << timer_flag)

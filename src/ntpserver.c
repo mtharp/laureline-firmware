@@ -43,7 +43,7 @@ ntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, u16_t 
 
 	/* FIXME: leap seconds */
 	buf[0] = LEAP_NONE | VN_4 | MODE_SERVER;
-	if (1 /* FIXME */|| isSettled()) {
+	if (isSettled()) {
 		/* operating normally */
 		buf[1] = 1;
 	} else {
