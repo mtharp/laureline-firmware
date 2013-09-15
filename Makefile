@@ -10,11 +10,19 @@ PROJECT = laureline
 BOARD = boards/v5
 USE_LINK_GC = yes
 
-SRCS = $(wildcard src/*.c src/gps/*.c)
-SRCS += $(wildcard ports/*.c ports/*.s)
+SRCS = $(wildcard src/*.c)
+SRCS += $(wildcard src/gps/*.c)
+SRCS += $(wildcard ports/*.c)
+SRCS += $(wildcard ports/*.s)
+SRCS += $(wildcard ports/arch/*.c)
 SRCS += $(wildcard CoOS/kernel/*.c)
 SRCS += $(wildcard CoOS/portable/*.c )
 SRCS += $(wildcard CoOS/portable/GCC/*.c)
+SRCS += $(wildcard lwip/src/core/*.c)
+SRCS += $(wildcard lwip/src/core/ipv4/*.c)
+SRCS += $(wildcard lwip/src/core/api/*.c)
+SRCS += $(wildcard lwip/src/api/*.c)
+SRCS += lwip/src/netif/etharp.c
 LDSCRIPT = ports/STM32F107xB.ld
 
 PATH := /opt/tnt/bin:$(PATH)
@@ -25,6 +33,9 @@ CFLAGS = \
 	-Iports \
 	-ICoOS/kernel \
 	-ICoOS/portable \
+	-Ilwip/src/include \
+	-Ilwip/src/include/ipv4 \
+	-Ilwip/src/include/ipv6 \
 	\
 	$(MCFLAGS) \
 	-falign-functions=16 \

@@ -357,8 +357,8 @@ cliVersion(char *cmdline) {
 static void
 cli_print_hwaddr(void) {
 	cli_printf("MAC Address:    %02x:%02x:%02x:%02x:%02x:%02x\r\n",
-			tcpip_hwaddr[0], tcpip_hwaddr[1], tcpip_hwaddr[2],
-			tcpip_hwaddr[3], tcpip_hwaddr[4], tcpip_hwaddr[5]);
+			thisif.hwaddr[0], thisif.hwaddr[1], thisif.hwaddr[2],
+			thisif.hwaddr[3], thisif.hwaddr[4], thisif.hwaddr[5]);
 }
 
 

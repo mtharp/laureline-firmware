@@ -9,17 +9,20 @@
 #include "common.h"
 #include "eth_mac.h"
 #include "mii.h"
+#include <string.h>
 
 #define RX_BUFS 4
 #define TX_BUFS 2
-#define BUF_SIZE 1522
-#define BUF_WORDS ((((BUF_SIZE - 1) | 3) + 1) / 4)
+#define BUF_WORDS ((((MAC_BUF_SIZE - 1) | 3) + 1) / 4)
 
+OS_FlagID mac_rx_flag, mac_tx_flag;
 
-static volatile uint32_t rx_descs[RX_BUFS][4];
-static volatile uint32_t tx_descs[TX_BUFS][4];
+static mac_desc_t rx_descs[RX_BUFS];
+static mac_desc_t tx_descs[RX_BUFS];
+static mac_desc_t *rx_ptr, *tx_ptr;
 static uint32_t rx_bufs[RX_BUFS][BUF_WORDS];
 static uint32_t tx_bufs[TX_BUFS][BUF_WORDS];
+static uint8_t link_up;
 
 
 void
@@ -61,6 +64,7 @@ smi_poll_link_status(void) {
 	if (bmcr & BMCR_ANENABLE) {
 		if ((bmsr & (BMSR_LSTATUS | BMSR_RFAULT | BMSR_ANEGCOMPLETE))
 				!= (BMSR_LSTATUS | BMSR_ANEGCOMPLETE)) {
+			link_up = 0;
 			return 0;
 		}
 		lpa = smi_read(MII_LPA);
@@ -76,6 +80,7 @@ smi_poll_link_status(void) {
 		}
 	} else {
 		if (!(bmsr & BMSR_LSTATUS)) {
+			link_up = 0;
 			return 0;
 		}
 		if (bmcr & BMCR_SPEED100) {
@@ -89,7 +94,8 @@ smi_poll_link_status(void) {
 			maccr &= ~ETH_MACCR_DM;
 		}
 	}
-	ETH->MACCR = maccr;
+	//ETH->MACCR = maccr;
+	link_up = 1;
 	return 1;
 }
 
@@ -110,7 +116,29 @@ mac_start(void) {
 	int i;
 	RCC->AHBRSTR |=  RCC_AHBRSTR_ETHMACRST;
 	RCC->AHBRSTR &= ~RCC_AHBRSTR_ETHMACRST;
-	RCC->AHBENR |= RCC_AHBENR_ETHMACEN;
+	RCC->AHBENR |= RCC_AHBENR_ETHMACEN
+		| RCC_AHBENR_ETHMACTXEN
+		| RCC_AHBENR_ETHMACRXEN;
+
+	/* Configure DMA */
+	for (i = 0; i < RX_BUFS; i++) {
+		rx_descs[i].des0 = STM32_RDES0_OWN;
+		rx_descs[i].des1 = STM32_RDES1_RCH | MAC_BUF_SIZE;
+		rx_descs[i].des_buf = (uint8_t*)rx_bufs[i];
+		rx_descs[i].des_next = &rx_descs[(i+1) % RX_BUFS];
+	}
+	for (i = 0; i < TX_BUFS; i++) {
+		tx_descs[i].des0 = STM32_TDES0_TCH;
+		tx_descs[i].des1 = 0;
+		tx_descs[i].des_buf = (uint8_t*)tx_bufs[i];
+		tx_descs[i].des_next = &tx_descs[(i+1) % TX_BUFS];
+	}
+	rx_ptr = &rx_descs[0];
+	tx_ptr = &tx_descs[0];
+	ETH->DMABMR |= ETH_DMABMR_SR;
+	while (ETH->DMABMR & ETH_DMABMR_SR) {}
+	ETH->DMARDLAR = (uint32_t)rx_ptr;
+	ETH->DMATDLAR = (uint32_t)tx_ptr;
 
 	/* MAC configuration */
 	ETH->MACFFR = 0;
@@ -129,32 +157,20 @@ mac_start(void) {
 	ETH->MACHTLR = 0;
 
 	ETH->MACCR = 0
+#if STM32_IP_CHECKSUM_OFFLOAD
 		| ETH_MACCR_IPCO
+#endif
 		| ETH_MACCR_RE
 		| ETH_MACCR_TE
+		| ETH_MACCR_FES
+		| ETH_MACCR_DM
 		;
 
 	/* Reset PHY */
 	smi_write(MII_BMCR, BMCR_RESET);
 	while (smi_read(MII_BMCR) & BMCR_RESET) {}
 
-	/* Configure DMA */
-	for (i = 0; i < RX_BUFS; i++) {
-		rx_descs[i][0] = STM32_RDES0_OWN;
-		rx_descs[i][1] = STM32_RDES1_RCH | BUF_SIZE;
-		rx_descs[i][2] = (uint32_t)rx_bufs[i];
-		rx_descs[i][3] = (uint32_t)&rx_descs[(i+1) % RX_BUFS];
-	}
-	for (i = 0; i < TX_BUFS; i++) {
-		tx_descs[i][0] = STM32_TDES0_TCH;
-		tx_descs[i][1] = 0;
-		tx_descs[i][2] = (uint32_t)tx_bufs[i];
-		tx_descs[i][3] = (uint32_t)&tx_descs[(i+1) % TX_BUFS];
-	}
-	ETH->DMABMR |= ETH_DMABMR_SR;
-	while (ETH->DMABMR & ETH_DMABMR_SR) {}
-	ETH->DMARDLAR = (uint32_t)rx_descs;
-	ETH->DMATDLAR = (uint32_t)tx_descs;
+	/* Enable DMA */
 	ETH->DMASR = ETH->DMASR;
 	ETH->DMAIER = 0
 		| ETH_DMAIER_NISE
@@ -175,4 +191,153 @@ mac_start(void) {
 		| ETH_DMAOMR_ST
 		| ETH_DMAOMR_SR
 		;
+
+	ASSERT((mac_rx_flag = CoCreateFlag(1, 0)) != E_CREATE_FAIL);
+	ASSERT((mac_tx_flag = CoCreateFlag(1, 0)) != E_CREATE_FAIL);
+
+	NVIC_SetPriority(ETH_IRQn, IRQ_PRIO_ETH);
+	NVIC_EnableIRQ(ETH_IRQn);
+}
+
+
+void
+ETH_IRQHandler(void) {
+	uint32_t dmasr;
+	CoEnterISR();
+	dmasr = ETH->DMASR;
+	ETH->DMASR = dmasr;
+	if (dmasr & ETH_DMASR_RS) {
+		isr_SetFlag(mac_rx_flag);
+	}
+	if (dmasr & ETH_DMASR_TS) {
+		isr_SetFlag(mac_tx_flag);
+	}
+	CoExitISR();
+}
+
+
+static mac_desc_t *
+mac_get_tx_descriptor_once(void) {
+	mac_desc_t *tdes;
+	DISABLE_IRQ();
+	tdes = tx_ptr;
+	if (tdes->des0 & (STM32_TDES0_OWN | STM32_TDES0_LOCKED)) {
+		ENABLE_IRQ();
+		return NULL;
+	}
+	tdes->des0 |= STM32_TDES0_LOCKED;
+	tdes->size = MAC_BUF_SIZE;
+	tdes->offset = 0;
+	tx_ptr = tdes->des_next;
+	ENABLE_IRQ();
+	return tdes;
+}
+
+
+mac_desc_t *
+mac_get_tx_descriptor(uint32_t timeout) {
+	mac_desc_t *tdes;
+	StatusType rc;
+	if (timeout) {
+		timeout += CoGetOSTime();
+	}
+	while (1) {
+		if (!link_up || CoGetOSTime() > timeout) {
+			return NULL;
+		}
+		if ((tdes = mac_get_tx_descriptor_once()) != NULL) {
+			return tdes;
+		}
+		rc = CoWaitForSingleFlag(mac_tx_flag, timeout ? (timeout - CoGetOSTime()) : 0);
+		ASSERT(rc == E_OK || rc == E_TIMEOUT);
+	}
+}
+
+
+uint16_t
+mac_write_tx_descriptor(mac_desc_t *tdes, const uint8_t *buf, uint16_t size) {
+	if (size > tdes->size - tdes->offset) {
+		size = tdes->size - tdes->offset;
+	}
+	if (size > 0) {
+		memcpy(tdes->des_buf + tdes->offset, buf, size);
+		tdes->offset = tdes->offset + size;
+	}
+	return size;
+}
+
+
+void
+mac_release_tx_descriptor(mac_desc_t *tdes) {
+	DISABLE_IRQ();
+	tdes->des1 = tdes->offset;
+	tdes->des0 = 0
+		| STM32_TDES0_CIC(STM32_IP_CHECKSUM_OFFLOAD)
+		| STM32_TDES0_IC
+		| STM32_TDES0_LS
+		| STM32_TDES0_FS
+		| STM32_TDES0_TCH
+		| STM32_TDES0_OWN
+		;
+	if ((ETH->DMASR & ETH_DMASR_TPS) == ETH_DMASR_TPS_Suspended) {
+		ETH->DMASR   = ETH_DMASR_TBUS;
+		ETH->DMATPDR = ETH_DMASR_TBUS;
+	}
+	ENABLE_IRQ();
+}
+
+
+mac_desc_t *
+mac_get_rx_descriptor(void) {
+	mac_desc_t *rdes;
+	DISABLE_IRQ();
+	rdes = rx_ptr;
+	while (1) {
+		if (rdes->des0 & STM32_RDES0_OWN) {
+			break;
+		}
+		if (!(rdes->des0 & (STM32_RDES0_AFM | STM32_RDES0_ES))
+#if STM32_IP_CHECKSUM_OFFLOAD
+				&& !(rdes->des0 & STM32_RDES0_FT & (STM32_RDES0_IPHCE | STM32_RDES0_PCE))
+#endif
+				&& (rdes->des0 & STM32_RDES0_FS) && (rdes->des0 & STM32_RDES0_LS)) {
+			/* Valid frame */
+			rdes->size = ((rdes->des0 & STM32_RDES0_FL_MASK) >> 16) - 4;
+			rdes->offset = 0;
+			rx_ptr = rdes->des_next;
+			ENABLE_IRQ();
+			return rdes;
+		} else {
+			/* Invalid frame, release it now */
+			rdes->des0 = STM32_RDES0_OWN;
+			rx_ptr = rdes = rdes->des_next;
+		}
+	}
+	ENABLE_IRQ();
+	return NULL;
+}
+
+
+uint16_t
+mac_read_rx_descriptor(mac_desc_t *rdes, uint8_t *buf, uint16_t size) {
+	if (size > rdes->size - rdes->offset) {
+		size = rdes->size - rdes->offset;
+	}
+	if (size > 0) {
+		memcpy(buf, rdes->des_buf + rdes->offset, size);
+		rdes->offset += size;
+	}
+	return size;
+}
+
+
+void
+mac_release_rx_descriptor(mac_desc_t *rdes) {
+	DISABLE_IRQ();
+	rdes->des0 = STM32_RDES0_OWN;
+	if ((ETH->DMASR & ETH_DMASR_RPS) == ETH_DMASR_RPS_Suspended) {
+		ETH->DMASR   = ETH_DMASR_RBUS;
+		ETH->DMARPDR = ETH_DMASR_RBUS;
+	}
+	ENABLE_IRQ();
 }

@@ -9,11 +9,32 @@
 #ifndef _ETH_MAC_H
 #define _ETH_MAC_H
 
+#define MAC_BUF_SIZE 1522
+
+typedef struct mac_desc {
+	volatile uint32_t des0;
+	volatile uint32_t des1;
+	uint8_t *des_buf;
+	struct mac_desc *des_next;
+
+	uint32_t size;
+	uint32_t offset;
+} mac_desc_t;
+
+extern OS_FlagID mac_rx_flag, mac_tx_flag;
+
 void smi_write(uint32_t reg, uint32_t value);
 uint32_t smi_read(uint32_t reg);
 uint8_t smi_poll_link_status(void);
-void mac_set_hwaddr(const uint8_t *hwaddr);
+
 void mac_start(void);
+void mac_set_hwaddr(const uint8_t *hwaddr);
+mac_desc_t *mac_get_tx_descriptor(uint32_t timeout);
+uint16_t mac_write_tx_descriptor(mac_desc_t *tdes, const uint8_t *buf, uint16_t size);
+void mac_release_tx_descriptor(mac_desc_t *tdes);
+mac_desc_t *mac_get_rx_descriptor(void);
+uint16_t mac_read_rx_descriptor(mac_desc_t *rdes, uint8_t *buf, uint16_t size);
+void mac_release_rx_descriptor(mac_desc_t *rdes);
 
 
 #define STM32_RDES0_OWN             0x80000000
@@ -72,5 +93,7 @@ void mac_start(void);
 
 #define STM32_TDES1_TBS2_MASK       0x1FFF0000
 #define STM32_TDES1_TBS1_MASK       0x00001FFF
+
+#define STM32_IP_CHECKSUM_OFFLOAD   3
 
 #endif

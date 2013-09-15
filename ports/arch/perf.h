@@ -6,13 +6,10 @@
  * be found at http://opensource.org/licenses/MIT
  */
 
-#ifndef _TCPIP_H
-#define _TCPIP_H
+#ifndef __PERF_H__
+#define __PERF_H__
 
-#include "lwip/netif.h"
+#define PERF_START
+#define PERF_STOP(x)
 
-extern struct netif thisif;
-
-void tcpip_start(void);
-
-#endif
+#endif /* __PERF_H__ */

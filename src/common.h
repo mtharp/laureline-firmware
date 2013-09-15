@@ -24,7 +24,7 @@
 
 #define HALT()				while(1) {}
 #define ASSERT(x)			if (!(x)) { HALT(); }
-#define MS2ST(seconds)		(seconds * CFG_SYSTICK_FREQ / 1000)
+#define MS2ST(msec)			((((msec - 1L) * CFG_SYSTICK_FREQ) / 1000L) + 1L)
 #define S2ST(seconds)		(seconds * CFG_SYSTICK_FREQ)
 #define SET_BITS(var, mask, value) \
 	(var) = ((var) & ~(mask)) | ((value) & (mask))
@@ -44,6 +44,7 @@ extern uint32_t _irq_disabled;
 
 /* Highest priority (lowest number) */
 #define IRQ_PRIO_PPSCAPTURE			0x20
+#define IRQ_PRIO_ETH				0x40
 #define IRQ_PRIO_SYSTICK			0x80
 #define IRQ_PRIO_I2C				0xC0
 #define IRQ_PRIO_USART				0xC0
