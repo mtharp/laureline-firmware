@@ -32,6 +32,8 @@
 extern uint32_t _irq_disabled;
 #define DISABLE_IRQ()		do { __disable_irq(); _irq_disabled++; } while(0)
 #define ENABLE_IRQ()		do { if (--_irq_disabled == 0) { __enable_irq(); } } while(0)
+#define SAVE_ENABLE_IRQ(save) do { (save) = _irq_disabled; _irq_disabled = 0; __enable_irq(); } while(0)
+#define RESTORE_DISABLE_IRQ(save) do { __disable_irq(); if ((_irq_disabled = (save)) == 0) { __enable_irq(); } } while(0)
 
 #define GPIO_ON(pfx)		_PASTE2(pfx, _PAD)->BSRR = _PASTE2(pfx, _PIN);
 #define GPIO_OFF(pfx)		_PASTE2(pfx, _PAD)->BRR  = _PASTE2(pfx, _PIN);

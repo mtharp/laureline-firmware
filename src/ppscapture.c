@@ -83,6 +83,7 @@ uint64_t
 _monotonic_nowI(void) {
 	/* Get value of monotonic clock */
 	uint64_t ret;
+	uint32_t save;
 	uint16_t tmr1, tmr2;
 	while (1) {
 		tmr1 = TIM3->CNT;
@@ -96,11 +97,11 @@ _monotonic_nowI(void) {
 		/* TODO: make sure this can't stall for a whole timer period if tickled
 		 * the wrong way */
 		while (mono_epoch == ret) {
-			ENABLE_IRQ();
-			/* ISB is required to ensure pending interrupts fire before they
-			 * get disabled again */
+			SAVE_ENABLE_IRQ(save);
+			/* ISB might be required to ensure pending interrupts fire before
+			 * they get disabled again */
 			__ISB();
-			DISABLE_IRQ();
+			RESTORE_DISABLE_IRQ(save);
 		}
 	}
 	return ret + tmr2;
