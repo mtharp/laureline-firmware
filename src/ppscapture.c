@@ -11,7 +11,7 @@
 
 
 /* High-order part of the monotonic timer */
-static uint64_t mono_epoch;
+static volatile uint64_t mono_epoch;
 /* Last monotonic capture, or 0 if there are no pending captures */
 static uint64_t mono_capture;
 
