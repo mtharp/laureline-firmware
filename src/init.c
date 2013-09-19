@@ -18,9 +18,10 @@ void setup_clocks(double hse_freq) {
 	int div, mul;
 	int best_div, best_mul;
 	uint32_t reg;
-	double best_freq = 0;
+	double best_freq;
 	double f;
 
+	best_freq = best_div = best_mul = 0;
 	for (div = 1; div <= 16; div++) {
 		/* Check PLL input clock */
 		f = hse_freq / div;

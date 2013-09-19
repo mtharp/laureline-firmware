@@ -229,7 +229,7 @@ cli_feed(char c) {
 			return;
 		}
 		cl_buf[cl_count++] = c;
-		serial_putc(cl_out, c);
+		serial_write(cl_out, &c, 1);
 	}
 }
 
