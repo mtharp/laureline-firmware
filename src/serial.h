@@ -11,17 +11,11 @@
 #define _SERIAL_H
 
 #include "common.h"
+#include "util/queue.h"
 
 #define NO_CHAR 0xFFFF
 
 #define USART_TX_BUF 16
-
-typedef struct {
-	OS_FlagID flag;
-	volatile uint8_t count;
-	uint8_t *p_bot, *p_top, *p_write, *p_read;
-} queue_t;
-
 
 typedef struct {
 	USART_TypeDef *device;

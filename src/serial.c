@@ -15,58 +15,6 @@ serial_t Serial1;
 serial_t Serial4;
 
 
-static void
-outqueue_init(queue_t *q, uint8_t *buf, uint8_t size) {
-	ASSERT((q->flag = CoCreateFlag(1, 0)) != E_CREATE_FAIL);
-	q->p_bot = q->p_read = q->p_write = buf;
-	q->p_top = buf + size;
-	q->count = size;
-}
-
-
-static StatusType
-outqueue_put(queue_t *q, uint8_t value, uint32_t timeout) {
-	StatusType rc;
-	if (timeout) {
-		timeout += CoGetOSTime();
-	}
-	while (1) {
-		DISABLE_IRQ();
-		if (q->count > 0) {
-			break;
-		}
-		ENABLE_IRQ();
-		rc = CoWaitForSingleFlag(q->flag,
-				timeout ? (timeout - CoGetOSTime()) : 0);
-		if (rc != E_OK) {
-			return rc;
-		}
-	}
-	q->count--;
-	*q->p_write++ = value;
-	if (q->p_write == q->p_top) {
-		q->p_write = q->p_bot;
-	}
-	ENABLE_IRQ();
-	return E_OK;
-}
-
-
-static uint16_t
-outqueue_getI(queue_t *q) {
-	uint16_t ret;
-	if (q->p_write == q->p_read && q->count != 0) {
-		return NO_CHAR;
-	}
-	q->count++;
-	ret = *q->p_read++;
-	if (q->p_read == q->p_top) {
-		q->p_read = q->p_bot;
-	}
-	isr_SetFlag(q->flag);
-	return ret;
-}
-
 
 void
 serial_start(serial_t *serial, USART_TypeDef *u, int speed) {

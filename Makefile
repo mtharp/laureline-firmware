@@ -12,6 +12,7 @@ USE_LINK_GC = yes
 
 SRCS = $(wildcard src/*.c)
 SRCS += $(wildcard src/gps/*.c)
+SRCS += $(wildcard src/util/*.c)
 SRCS += $(wildcard ports/*.c)
 SRCS += $(wildcard ports/*.s)
 SRCS += $(wildcard ports/arch/*.c)
