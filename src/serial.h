@@ -15,13 +15,12 @@
 
 #define NO_CHAR 0xFFFF
 
-#define USART_TX_BUF 16
 
 typedef struct {
-	USART_TypeDef *device;
-	DMA_TypeDef *dma;
-	DMA_Channel_TypeDef *dma_channel;
-	uint8_t dma_channel_num;
+	USART_TypeDef		*usart;
+	DMA_TypeDef			*dma;
+	DMA_Channel_TypeDef	*tx_dma_ch;
+	uint8_t				tx_dma_chnum;
 
 	unsigned int speed;
 	OS_MutexID mutex_id;
@@ -35,9 +34,8 @@ extern serial_t Serial1;
 extern serial_t Serial4;
 
 
-void serial_start(serial_t *serial, USART_TypeDef *u, int speed);
+void serial_start(serial_t *serial, int speed);
 void serial_set_speed(serial_t *serial);
-char serial_getc(serial_t *serial);
 void serial_puts(serial_t *serial, const char *value);
 void serial_write(serial_t *serial, const char *value, uint16_t size);
 

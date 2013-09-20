@@ -70,8 +70,8 @@ void
 main(void) {
 	CoInitOS();
 	setup_clocks(ONBOARD_CLOCK);
-	serial_start(&Serial1, USART1, 115200);
-	serial_start(&Serial4, UART4, 57600);
+	serial_start(&Serial1, 115200);
+	serial_start(&Serial4, 57600);
 	cli_set_output(&Serial1);
 	ppscapture_start();
 	vtimer_start();
