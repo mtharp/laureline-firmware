@@ -132,6 +132,10 @@ service_interrupt(serial_t *serial) {
 		serial->rx_char = dr;
 		isr_SetFlag(serial->rx_flag);
 	}
+	if (sr & USART_SR_TXE) {
+		serial->device->CR1 &= ~USART_CR1_TXEIE;
+		isr_PostSem(serial->tx_sem);
+	}
 }
 
 
@@ -139,7 +143,7 @@ static void
 service_dma_interrupt(serial_t *serial) {
 	serial->dma->IFCR = 0xF << (4 * (serial->dma_channel_num - 1));
 	serial->dma_channel->CCR &= ~DMA_CCR1_EN;
-	isr_PostSem(serial->tx_sem);
+	serial->device->CR1 |= USART_CR1_TXEIE;
 }
 
 
