@@ -42,6 +42,7 @@ typedef  struct TCB
     U8          prio;                   /*!< Task priority.                   */
     U8          state;                  /*!< TaSk status.                     */
     OS_TID      taskID;                 /*!< Task ID.                         */
+	const char *name;
 
 #if CFG_MUTEX_EN > 0
     OS_MutexID  mutexID;                /*!< Mutex ID.                        */

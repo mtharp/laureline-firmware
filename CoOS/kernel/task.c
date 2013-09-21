@@ -819,7 +819,8 @@ static P_OSTCB AssignTCB(void)
  *             to mark this task.
  *******************************************************************************
  */
-OS_TID CreateTask(FUNCPtr task,void *argv,U32 parameter,OS_STK *stk)
+OS_TID
+CreateTask(FUNCPtr task,void *argv,U32 parameter,OS_STK *stk, const char *name)
 {
     OS_STK* stkTopPtr;
     P_OSTCB ptcb;
@@ -868,7 +869,8 @@ OS_TID CreateTask(FUNCPtr task,void *argv,U32 parameter,OS_STK *stk)
     {
         return E_CREATE_FAIL;           /* Yes,error return                   */
     }
-    
+
+	ptcb->name = name;
     ptcb->stkPtr = stkTopPtr;           /* Initialize TCB as user set         */
     ptcb->prio   = prio;
 #if CFG_STK_CHECKOUT_EN >0

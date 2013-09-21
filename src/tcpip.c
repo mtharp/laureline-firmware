@@ -48,7 +48,7 @@ tcpip_start(void) {
 	CoStartTmr(timer);
 
 	tcpip_tid = CoCreateTask(tcpip_thread, NULL, THREAD_PRIO_TCPIP,
-			&tcpip_stack[TCPIP_STACK-1], TCPIP_STACK);
+			&tcpip_stack[TCPIP_STACK-1], TCPIP_STACK, "tcpip");
 	ASSERT(tcpip_tid != E_CREATE_FAIL);
 }
 

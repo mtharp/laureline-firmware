@@ -119,12 +119,12 @@ extern OS_VER  CoGetOSVersion(void);    /*!< Get OS version value             */
 
 
 /* Implement in file "task.c"      */
-#define CoCreateTask(task,argv,prio,stk,stkSz)              \
-            CreateTask(task,argv,(prio)|(((stkSz)<<8) &0x000FFF00 ),stk)
+#define CoCreateTask(task,argv,prio,stk,stkSz,name)              \
+            CreateTask(task,argv,(prio)|(((stkSz)<<8) &0x000FFF00 ),stk,name)
 
 
-#define CoCreateTaskEx(task,argv,prio,stk,stkSz,timeSlice,isWaitting)  \
-           CreateTask(task,argv,(prio)|(((stkSz)<<8)&0x000FFF00)|(((timeSlice)<<20)&0x7FF00000)|((isWaitting<<31)&0x80000000),stk)
+#define CoCreateTaskEx(task,argv,prio,stk,stkSz,name,timeSlice,isWaitting)  \
+           CreateTask(task,argv,(prio)|(((stkSz)<<8)&0x000FFF00)|(((timeSlice)<<20)&0x7FF00000)|((isWaitting<<31)&0x80000000),stk,name)
 
 extern void        CoExitTask(void);
 extern OS_TID      CoGetCurTaskID(void);
@@ -133,7 +133,7 @@ extern StatusType  CoActivateTask(OS_TID taskID,void *argv);
 extern StatusType  CoAwakeTask(OS_TID taskID);
 extern StatusType  CoSuspendTask(OS_TID taskID);
 extern StatusType  CoSetPriority(OS_TID taskID,U8 priority);
-extern OS_TID      CreateTask(FUNCPtr task,void *argv,U32 parameter,OS_STK *stk);
+extern OS_TID      CreateTask(FUNCPtr task,void *argv,U32 parameter,OS_STK *stk,const char *name);
 
 /* Implement in file "time.c"      */
 extern U64         CoGetOSTime(void);

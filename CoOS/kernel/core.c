@@ -187,8 +187,8 @@ void CoInitOS(void)
                                              Co_NULL,
                                   CFG_LOWEST_PRIO,
                  &idle_stk[CFG_IDLE_STACK_SIZE-1],
-                              CFG_IDLE_STACK_SIZE
-                 );
+                              CFG_IDLE_STACK_SIZE,
+		"idle");
 				                  /* Set PSP for CoIdleTask coming in */ 
 	SetEnvironment(&idle_stk[CFG_IDLE_STACK_SIZE-1]);
 }

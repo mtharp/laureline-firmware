@@ -76,7 +76,7 @@ main(void) {
 	ppscapture_start();
 	vtimer_start();
 	main_tid = CoCreateTask(main_thread, NULL, THREAD_PRIO_MAIN,
-			&main_stack[MAIN_STACK-1], MAIN_STACK);
+			&main_stack[MAIN_STACK-1], MAIN_STACK, "main");
 	ASSERT(main_tid != E_CREATE_FAIL);
 	CoStartOS();
 	while (1) {}
