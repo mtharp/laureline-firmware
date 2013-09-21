@@ -80,11 +80,11 @@ TIM3_IRQHandler(void) {
 
 
 uint64_t
-_monotonic_nowI(void) {
+monotonic_now(void) {
 	/* Get value of monotonic clock */
 	uint64_t ret;
-	uint32_t save;
 	uint16_t tmr1, tmr2;
+	DISABLE_IRQ();
 	while (1) {
 		tmr1 = TIM3->CNT;
 		ret = mono_epoch;
@@ -92,18 +92,13 @@ _monotonic_nowI(void) {
 		if (tmr2 > tmr1) {
 			break;
 		}
-		/* Timer rolled over while we were sampling. Wait for the rollover
-		 * interrupt to finish then try again. */
-		/* TODO: make sure this can't stall for a whole timer period if tickled
-		 * the wrong way */
+		/* Timer rolled over while we were sampling. Process the update event
+		 * now */
 		while (mono_epoch == ret) {
-			SAVE_ENABLE_IRQ(save);
-			/* ISB might be required to ensure pending interrupts fire before
-			 * they get disabled again */
-			__ISB();
-			RESTORE_DISABLE_IRQ(save);
+			TIM3_IRQHandler();
 		}
 	}
+	ENABLE_IRQ();
 	return ret + tmr2;
 }
 

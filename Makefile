@@ -42,6 +42,7 @@ CFLAGS = \
 	-Wall -Wextra -Wstrict-prototypes \
 	-Wno-unused-parameter \
 	-Wno-main \
+	-Wno-address \
 	-ggdb3
 ifdef DEBUG
 CFLAGS += -O0

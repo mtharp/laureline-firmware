@@ -17,7 +17,5 @@ uint64_t monotonic_getI(void);
 uint64_t monotonic_now(void);
 uint64_t monotonic_get_capture(void);
 
-uint64_t _monotonic_nowI(void);
-
 
 #endif

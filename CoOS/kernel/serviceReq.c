@@ -22,7 +22,7 @@
 
 #if CFG_MAX_SERVICE_REQUEST > 0
 /*---------------------------- Variable Define -------------------------------*/
-SRQ   ServiceReq = {0,0};             /*!< ISR server request queue         */		     
+SRQ   ServiceReq = {0,0,{{0}}};            /*!< ISR server request queue         */
 #endif       
 BOOL  IsrReq   = Co_FALSE;
 #if (CFG_TASK_WAITTING_EN > 0)

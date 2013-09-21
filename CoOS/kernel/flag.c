@@ -113,7 +113,7 @@ StatusType CoDelFlag(OS_FlagID id,U8 opt)
                 if(pnode->waitType == OPT_WAIT_ALL)
                 {
                     /* If the flag is only required by NODE                   */
-                    if( pnode->waitFlags == (1<<id) )	
+                    if( pnode->waitFlags == (U32)(1<<id) )	
                     {
                         /* Remove the NODE from waiting list                  */
                         pnode = RemoveFromLink(pnode); 	

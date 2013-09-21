@@ -159,7 +159,7 @@ vtimer_updateI(void) {
 	/* Advance the vtimer's "base". Must be called once per second to maintain
 	 * accuracy. */
 	uint64_t mono_next, vt_next;
-	mono_next = _monotonic_nowI();
+	mono_next = monotonic_now();
 	vt_next = vtimer_getI(mono_next);
 	vt_last = vt_next;
 	mono_last = mono_next;
@@ -224,7 +224,7 @@ uint64_t
 vtimer_now(void) {
 	uint64_t tmp;
 	DISABLE_IRQ();
-	tmp = _monotonic_nowI();
+	tmp = monotonic_now();
 	tmp = vtimer_getI(tmp);
 	ENABLE_IRQ();
 	return tmp;
