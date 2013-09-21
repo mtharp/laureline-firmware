@@ -21,6 +21,11 @@
 //#include "version.h"
 #define VERSION "1.2.3.4"
 
+#ifdef PROFILE_TASKS
+#include "OsTask.h"
+static void cliProfile(char *cmdline);
+#endif
+
 
 uint8_t cl_enabled;
 serial_t *cl_out;
@@ -70,6 +75,9 @@ const clicmd_t cmd_table[] = {
 	{ "exit", "leave command mode", cliExit },
 	{ "help", "", cliHelp },
 	{ "info", "show runtime information", cliInfo },
+#ifdef PROFILE_TASKS
+	{ "profile", "", cliProfile },
+#endif
 	{ "save", "save changes and reboot", cliSave },
 	{ "set", "name=value or blank or * for list", cliSet },
 	{ "uptime", "show the system uptime", cliUptime },
@@ -276,6 +284,60 @@ cliInfo(char *cmdline) {
 	cliUptime(NULL);
 	cli_printf("System clock:   %d Hz (nominal)\r\n", (int)system_frequency);
 }
+
+
+#ifdef PROFILE_TASKS
+#define NUM_IRQS 72
+extern U64 isr_ticks[NUM_IRQS];
+
+static void
+cliProfile(char *cmdline) {
+	uint64_t task_counts[CFG_MAX_USER_TASKS+SYS_TASK_NUM];
+	//uint64_t irq_counts[NUM_IRQS];
+	uint64_t count, pct, total = 0;
+	int i;
+
+	DISABLE_IRQ();
+	for(i = 0; i < CFG_MAX_USER_TASKS+SYS_TASK_NUM; i++) {
+		task_counts[i] = count = TCBTbl[i].tick_count;
+		total += count;
+	}
+	/*
+	for(i = 0; i < NUM_IRQS; i++) {
+		irq_counts[i] = count = isr_ticks[i];
+		total += count;
+	}*/
+	ENABLE_IRQ();
+
+	cli_printf("#      Counts         %%    Name\r\n");
+	for(i = 0; i < CFG_MAX_USER_TASKS+SYS_TASK_NUM; i++) {
+		count = task_counts[i];
+		pct = 10000 * count / total;
+		cli_printf("%2d %08x%08x %3u.%02u%% %s\r\n",
+				i,
+				(uint32_t)(count >> 32),
+				(uint32_t)count,
+				(uint32_t)(pct / 100),
+				(uint32_t)(pct % 100),
+				TCBTbl[i].name);
+	}
+	/*
+	cli_printf(" -- interrupt handlers --\r\n");
+	for(i = 0; i < NUM_IRQS; i++) {
+		count = irq_counts[i];
+		if (count == 0) {
+			continue;
+		}
+		cli_printf("%2d %08x%08x %3u.%02u%% %s\r\n",
+				i,
+				(uint32_t)(count >> 32),
+				(uint32_t)count,
+				(uint32_t)(pct / 100),
+				(uint32_t)(pct % 100),
+				"");
+	}*/
+}
+#endif
 
 
 static void

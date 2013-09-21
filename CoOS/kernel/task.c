@@ -767,7 +767,15 @@ void Schedule(void)
         CoStkOverflowHook(pCurTcb->taskID);       /* Yes,call handler         */		
     }   
 #endif
- 	
+#ifdef PROFILE_TASKS
+	{
+		U64 monotonic_now(void);
+		static U64 last_tick;
+		U64 now = monotonic_now();
+		pCurTcb->tick_count += now - last_tick;
+		last_tick = now;
+	}
+#endif
     SwitchContext();                              /* Call task context switch */
 }
 
@@ -886,6 +894,9 @@ CreateTask(FUNCPtr task,void *argv,U32 parameter,OS_STK *stk, const char *name)
 	ptcb->taskFuc = task;
 	ptcb->taskStk = stk;
 #endif     
+#ifdef PROFILE_TASKS
+	ptcb->tick_count = 0;
+#endif
     ptcb->TCBnext = Co_NULL;               /* Initialize TCB link in READY list  */
     ptcb->TCBprev = Co_NULL;
 

@@ -79,6 +79,9 @@ typedef  struct TCB
 #if CFG_TASK_WAITTING_EN >0
     U32         delayTick;              /*!< The number of ticks which delay. */
 #endif    
+#ifdef PROFILE_TASKS
+	U64			tick_count;
+#endif
     struct TCB  *TCBnext;               /*!< The pointer to next TCB.         */
     struct TCB  *TCBprev;               /*!< The pointer to prev TCB.         */
 
