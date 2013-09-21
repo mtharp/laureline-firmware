@@ -49,6 +49,7 @@ CFLAGS += -O0
 else
 CFLAGS += -Os -fomit-frame-pointer
 endif
+CFLAGS += $(CFLAGS_EXTRA)
 ASFLAGS = $(MCFLAGS)
 LDFLAGS = $(MCFLAGS)
 LDLIBS = -lm

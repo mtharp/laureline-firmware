@@ -11,10 +11,13 @@
 #include "init.h"
 #include "serial.h"
 #include <string.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 serial_t Serial1;
 serial_t Serial4;
 
+static void _serial_writeI(serial_t *serial, const char *value, uint16_t size);
 
 
 void
@@ -100,20 +103,43 @@ serial_set_speed(serial_t *serial) {
 
 void
 serial_puts(serial_t *serial, const char *value) {
-	serial_write(serial, value, strlen(value));
+	CoEnterMutexSection(serial->mutex_id);
+	_serial_writeI(serial, value, strlen(value));
+	CoLeaveMutexSection(serial->mutex_id);
 }
 
 
 void
 serial_write(serial_t *serial, const char *value, uint16_t size) {
 	CoEnterMutexSection(serial->mutex_id);
+	_serial_writeI(serial, value, size);
+	CoLeaveMutexSection(serial->mutex_id);
+}
+
+
+static void
+_serial_writeI(serial_t *serial, const char *value, uint16_t size) {
 	serial->tx_dma_ch->CCR &= ~DMA_CCR1_EN;
 	serial->tx_dma_ch->CMAR = (uint32_t)value;
 	serial->tx_dma_ch->CNDTR = size;
 	serial->tx_dma_ch->CCR |= DMA_CCR1_EN;
 	CoPendSem(serial->tx_sem, 0);
+}
+
+
+void
+serial_printf(serial_t *serial, const char *fmt, ...) {
+	static char fmt_buf[64];
+	va_list ap;
+	va_start(ap, fmt);
+	CoEnterMutexSection(serial->mutex_id);
+	if (vsnprintf(fmt_buf, sizeof(fmt_buf), fmt, ap) >= 0) {
+		_serial_writeI(serial, fmt_buf, strlen(fmt_buf));
+	}
+	va_end(ap);
 	CoLeaveMutexSection(serial->mutex_id);
 }
+
 
 
 static void

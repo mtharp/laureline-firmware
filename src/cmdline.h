@@ -11,14 +11,15 @@
 
 #include "serial.h"
 
-#define no_cli_puts(val) if (!cl_enabled) { cli_puts(val); }
-#define no_cli_printf(...) if (!cl_enabled) { cli_printf(__VA_ARGS__); }
+#define cli_puts(val) do { serial_puts(cl_out, val); } while (0)
+#define cli_printf(...) do { serial_printf(cl_out, __VA_ARGS__); } while (0)
+#define idle_puts(val) do { if (!cl_enabled) { serial_puts(cl_out, val); } } while (0)
+#define idle_printf(...) do { if (!cl_enabled) { serial_printf(cl_out, __VA_ARGS__); } } while (0)
 
 extern uint8_t cl_enabled;
+extern serial_t *cl_out;
 
 void cli_set_output(serial_t *output);
-void cli_printf(const char *fmt, ...);
-void cli_puts(const char *value);
 void cli_banner(void);
 void cli_feed(char c);
 

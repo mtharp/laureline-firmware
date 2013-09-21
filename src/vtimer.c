@@ -75,7 +75,7 @@ pll_thread(void *p) {
 			}
 			if (delta < -STEP_THRESH || delta > STEP_THRESH) {
 				if (++desync >= 5) {
-					no_cli_printf("step(PPS) %d us\r\n", (int32_t)(-delta * 1e6));
+					idle_printf("step(PPS) %d us\r\n", (int32_t)(-delta * 1e6));
 					vtimer_step(-delta);
 					init_pllmath();
 					pll_reset();
@@ -88,16 +88,16 @@ pll_thread(void *p) {
 				set_status(STATUS_PPS_OK);
 			}
 			last_pps = CoGetOSTime();
-			no_cli_printf("pps %d ns  ", (int32_t)(delta*1e9));
+			idle_printf("pps %d ns  ", (int32_t)(delta*1e9));
 			delta = pll_math(delta);
 		} else {
 			if ((CoGetOSTime() - last_pps) >= S2ST(5)) {
 				clear_status(STATUS_PPS_OK);
 			}
-			no_cli_printf("NO PPS!  ");
+			idle_printf("NO PPS!  ");
 			delta = pll_poll();
 		}
-		no_cli_printf("freq %d ppb\r\n", (int32_t)(delta*1e9));
+		idle_printf("freq %d ppb\r\n", (int32_t)(delta*1e9));
 		kern_freq(delta);
 
 		/* Update vtimer */
@@ -112,7 +112,7 @@ pll_thread(void *p) {
 		ENABLE_IRQ();
 
 		if (tmps != 0) {
-			no_cli_printf("step(UTC) %d us\r\n", (int32_t)(tmps * 1e6));
+			idle_printf("step(UTC) %d us\r\n", (int32_t)(tmps * 1e6));
 			vtimer_step(tmps);
 		}
 

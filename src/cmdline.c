@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <stdarg.h>
 
 #include "common.h"
 #include "cmdline.h"
@@ -27,7 +26,6 @@ uint8_t cl_enabled;
 serial_t *cl_out;
 
 static char cl_buf[64];
-static char fmt_buf[64];
 static uint8_t cl_count;
 
 static void cliDefaults(char *cmdline);
@@ -93,21 +91,6 @@ const clivalue_t value_table[] = {
 void
 cli_set_output(serial_t *output) {
 	cl_out = output;
-}
-
-void
-cli_puts(const char *value) {
-	serial_puts(cl_out, value);
-}
-
-
-void
-cli_printf(const char *fmt, ...) {
-	va_list ap;
-	va_start(ap, fmt);
-	vsnprintf(fmt_buf, sizeof(fmt_buf), fmt, ap);
-	va_end(ap);
-	serial_puts(cl_out, fmt_buf);
 }
 
 
