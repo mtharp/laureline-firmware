@@ -17,11 +17,9 @@ SECTIONS
     . = 0;
     _text = .;
 
-    .isr_vector :
+    startup : ALIGN(16) SUBALIGN(16)
     {
-        . = ALIGN(4);
-        KEEP(*(.isr_vector))
-        . = ALIGN(4);
+        KEEP(*(isr_vector))
     } > flash
 
     constructors : ALIGN(4) SUBALIGN(4)
