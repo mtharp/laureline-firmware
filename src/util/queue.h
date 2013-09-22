@@ -11,14 +11,20 @@
 
 #include "common.h"
 
+typedef void (*cb_func_t)(void *arg);
+
 typedef struct {
 	OS_FlagID flag;
-	volatile uint8_t count;
+	uint8_t size;
+	volatile uint8_t count, wakeup;
 	uint8_t *p_bot, *p_top, *p_write, *p_read;
+	cb_func_t cb_func;
+	void *cb_arg;
 } queue_t;
 
 void outqueue_init(queue_t *q, uint8_t *buf, uint8_t size);
-StatusType outqueue_put(queue_t *q, uint8_t value, uint32_t timeout);
-uint16_t outqueue_getI(queue_t *q);
+void outqueue_cb(queue_t *q, cb_func_t cb_func, void *arg);
+StatusType outqueue_put(queue_t *q, const uint8_t *value, uint16_t size, uint32_t timeout);
+int16_t outqueue_getI(queue_t *q);
 
 #endif

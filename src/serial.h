@@ -19,15 +19,16 @@
 typedef struct {
 	USART_TypeDef		*usart;
 	DMA_TypeDef			*dma;
-	DMA_Channel_TypeDef	*tx_dma_ch;
-	uint8_t				tx_dma_chnum;
+	//DMA_Channel_TypeDef	*tx_dma_ch;
+	//uint8_t				tx_dma_chnum;
 
 	unsigned int speed;
 	OS_MutexID mutex_id;
 
 	uint16_t rx_char;
 	OS_FlagID rx_flag;
-	OS_EventID tx_sem;
+	queue_t tx_q;
+	uint8_t tx_buf[16];
 } serial_t;
 
 extern serial_t Serial1;

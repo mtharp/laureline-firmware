@@ -17,11 +17,13 @@
 serial_t Serial1;
 serial_t Serial4;
 
-static void _serial_writeI(serial_t *serial, const char *value, uint16_t size);
+static void serial_outq_cb(void *arg);
 
 
 void
 serial_start(serial_t *serial, int speed) {
+	outqueue_init(&serial->tx_q, serial->tx_buf, sizeof(serial->tx_buf));
+	outqueue_cb(&serial->tx_q, &serial_outq_cb, serial);
 	serial->speed = speed;
 	serial->rx_char = NO_CHAR;
 	if (serial == &Serial1) {
@@ -32,8 +34,8 @@ serial_start(serial_t *serial, int speed) {
 		NVIC_EnableIRQ(DMA1_Channel4_IRQn);
 		serial->usart = USART1;
 		serial->dma = DMA1;
-		serial->tx_dma_ch = DMA1_Channel4;
-		serial->tx_dma_chnum = 4;
+		//serial->tx_dma_ch = DMA1_Channel4;
+		//serial->tx_dma_chnum = 4;
 #if 0
 	} else if (u == USART2) {
 		RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
@@ -52,8 +54,8 @@ serial_start(serial_t *serial, int speed) {
 		NVIC_EnableIRQ(DMA2_Channel5_IRQn);
 		serial->usart = UART4;
 		serial->dma = DMA2;
-		serial->tx_dma_ch = DMA2_Channel5;
-		serial->tx_dma_chnum = 5;
+		//serial->tx_dma_ch = DMA2_Channel5;
+		//serial->tx_dma_chnum = 5;
 #if 0
 	} else if (u == UART5) {
 		RCC->APB1ENR |= RCC_APB1ENR_UART5EN;
@@ -64,7 +66,7 @@ serial_start(serial_t *serial, int speed) {
 		HALT();
 	}
 	serial_set_speed(serial);
-	serial->dma->IFCR = 0xF << (4 * (serial->tx_dma_chnum - 1));
+	/*serial->dma->IFCR = 0xF << (4 * (serial->tx_dma_chnum - 1));
 	serial->tx_dma_ch->CCR = 0
 		| DMA_CCR1_TCIE
 		| DMA_CCR1_DIR
@@ -72,7 +74,7 @@ serial_start(serial_t *serial, int speed) {
 		| DMA_CCR1_PL_0
 		;
 	serial->tx_dma_ch->CPAR = (uint32_t)&serial->usart->DR;
-	serial->usart->CR3 = USART_CR3_DMAT;
+	serial->usart->CR3 = USART_CR3_DMAT;*/
 	serial->usart->CR1 = 0
 		| USART_CR1_UE
 		| USART_CR1_TE
@@ -83,8 +85,8 @@ serial_start(serial_t *serial, int speed) {
 	ASSERT(serial->mutex_id != E_CREATE_FAIL);
 	serial->rx_flag = CoCreateFlag(1, 0);
 	ASSERT(serial->rx_flag != E_CREATE_FAIL);
-	serial->tx_sem = CoCreateSem(0, 1, EVENT_SORT_TYPE_FIFO);
-	ASSERT(serial->tx_sem != E_CREATE_FAIL);
+	/*serial->tx_sem = CoCreateSem(0, 1, EVENT_SORT_TYPE_FIFO);
+	ASSERT(serial->tx_sem != E_CREATE_FAIL);*/
 }
 
 
@@ -104,7 +106,7 @@ serial_set_speed(serial_t *serial) {
 void
 serial_puts(serial_t *serial, const char *value) {
 	CoEnterMutexSection(serial->mutex_id);
-	_serial_writeI(serial, value, strlen(value));
+	outqueue_put(&serial->tx_q, (const uint8_t*)value, strlen(value), 0);
 	CoLeaveMutexSection(serial->mutex_id);
 }
 
@@ -112,18 +114,15 @@ serial_puts(serial_t *serial, const char *value) {
 void
 serial_write(serial_t *serial, const char *value, uint16_t size) {
 	CoEnterMutexSection(serial->mutex_id);
-	_serial_writeI(serial, value, size);
+	outqueue_put(&serial->tx_q, (const uint8_t*)value, size, 0);
 	CoLeaveMutexSection(serial->mutex_id);
 }
 
 
 static void
-_serial_writeI(serial_t *serial, const char *value, uint16_t size) {
-	serial->tx_dma_ch->CCR &= ~DMA_CCR1_EN;
-	serial->tx_dma_ch->CMAR = (uint32_t)value;
-	serial->tx_dma_ch->CNDTR = size;
-	serial->tx_dma_ch->CCR |= DMA_CCR1_EN;
-	CoPendSem(serial->tx_sem, 0);
+serial_outq_cb(void *arg) {
+	serial_t *serial = (serial_t*)arg;
+	serial->usart->CR1 |= USART_CR1_TXEIE;
 }
 
 
@@ -134,7 +133,7 @@ serial_printf(serial_t *serial, const char *fmt, ...) {
 	va_start(ap, fmt);
 	CoEnterMutexSection(serial->mutex_id);
 	if (vsnprintf(fmt_buf, sizeof(fmt_buf), fmt, ap) >= 0) {
-		_serial_writeI(serial, fmt_buf, strlen(fmt_buf));
+		outqueue_put(&serial->tx_q, (const uint8_t*)fmt_buf, strlen(fmt_buf), 0);
 	}
 	va_end(ap);
 	CoLeaveMutexSection(serial->mutex_id);
@@ -146,6 +145,7 @@ static void
 service_interrupt(serial_t *serial) {
 	USART_TypeDef *u = serial->usart;
 	uint16_t sr, dr;
+	int16_t val;
 	sr = u->SR;
 	dr = u->DR;
 
@@ -154,18 +154,23 @@ service_interrupt(serial_t *serial) {
 		isr_SetFlag(serial->rx_flag);
 	}
 	if (sr & USART_SR_TXE) {
-		serial->usart->CR1 &= ~USART_CR1_TXEIE;
-		isr_PostSem(serial->tx_sem);
+		if ((val = outqueue_getI(&serial->tx_q)) < 0) {
+			u->CR1 &= ~USART_CR1_TXEIE;
+		} else {
+			u->DR = val;
+		}
 	}
 }
 
 
+/*
 static void
 service_dma_interrupt(serial_t *serial) {
 	serial->dma->IFCR = 0xF << (4 * (serial->tx_dma_chnum - 1));
 	serial->tx_dma_ch->CCR &= ~DMA_CCR1_EN;
 	serial->usart->CR1 |= USART_CR1_TXEIE;
 }
+*/
 
 
 void
@@ -176,12 +181,14 @@ USART1_IRQHandler(void) {
 }
 
 
+/*
 void
 DMA1_Channel4_IRQHandler(void) {
 	CoEnterISR();
 	service_dma_interrupt(&Serial1);
 	CoExitISR();
 }
+*/
 
 
 void
@@ -192,9 +199,11 @@ UART4_IRQHandler(void) {
 }
 
 
+/*
 void
 DMA2_Channel5_IRQHandler(void) {
 	CoEnterISR();
 	service_dma_interrupt(&Serial4);
 	CoExitISR();
 }
+*/
