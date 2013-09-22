@@ -16,6 +16,7 @@
 #include "serial.h"
 #include "tcpip.h"
 #include "vtimer.h"
+#include "util/queue.h"
 
 #include <string.h>
 
@@ -43,6 +44,7 @@ load_eeprom(void) {
 void
 main_thread(void *pdata) {
 	uint8_t err;
+	int16_t val;
 	uint32_t flags;
 	load_eeprom();
 	tcpip_start();
@@ -50,17 +52,21 @@ main_thread(void *pdata) {
 	ublox_configure(&Serial4);
 	while (1) {
 		flags = CoWaitForMultipleFlags(0
-				| 1 << Serial1.rx_flag
-				| 1 << Serial4.rx_flag
+				| 1 << Serial1.rx_q.flag
+				| 1 << Serial4.rx_q.flag
 				, OPT_WAIT_ANY, S2ST(1), &err);
 		if (err != E_OK && err != E_TIMEOUT) {
 			HALT();
 		}
-		if (flags & (1 << Serial1.rx_flag)) {
-			cli_feed(Serial1.rx_char);
+		if (flags & (1 << Serial1.rx_q.flag)) {
+			while ((val = serial_get(&Serial1, TIMEOUT_NOBLOCK)) >= 0) {
+				cli_feed(val);
+			}
 		}
-		if (flags & (1 << Serial4.rx_flag)) {
-			gps_byte_received(Serial4.rx_char);
+		if (flags & (1 << Serial4.rx_q.flag)) {
+			while ((val = serial_get(&Serial4, TIMEOUT_NOBLOCK)) >= 0) {
+				gps_byte_received(val);
+			}
 		}
 	}
 }

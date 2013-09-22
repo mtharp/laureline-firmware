@@ -11,31 +11,30 @@
 
 
 void
-outqueue_init(queue_t *q, uint8_t *buf, uint8_t size) {
+queue_init(queue_t *q, uint8_t *buf, uint8_t size) {
 	ASSERT((q->flag = CoCreateFlag(1, 0)) != E_CREATE_FAIL);
 	q->p_bot = q->p_read = q->p_write = buf;
 	q->p_top = buf + size;
-	/* In an output queue, count is the number of bytes occupied */
-	q->size = size;
-	q->count = q->wakeup = 0;
+	q->size = q->wakeup = size;
+	q->count = 0;
 	q->cb_func = NULL;
 	q->cb_arg = NULL;
 }
 
 
 void
-outqueue_cb(queue_t *q, cb_func_t cb_func, void *arg) {
+queue_cb(queue_t *q, cb_func_t cb_func, void *arg) {
 	q->cb_func = cb_func;
 	q->cb_arg = arg;
 }
 
 
-StatusType
-outqueue_put(queue_t *q, const uint8_t *value, uint16_t size, uint32_t timeout) {
+int16_t
+outqueue_put(queue_t *q, const uint8_t *value, uint16_t size, int timeout) {
 	StatusType rc;
-	if (timeout) {
-		/* relative time -> absolute deadline */
-		timeout += CoGetOSTime();
+	uint64_t deadline = 0;
+	if (timeout > TIMEOUT_NOBLOCK) {
+		deadline = timeout + CoGetOSTime();
 	}
 	DISABLE_IRQ();
 	while (size) {
@@ -51,10 +50,13 @@ outqueue_put(queue_t *q, const uint8_t *value, uint16_t size, uint32_t timeout) 
 			if (q->cb_func) {
 				q->cb_func(q->cb_arg);
 			}
+			if (timeout == TIMEOUT_NOBLOCK) {
+				return EERR_TIMEOUT;
+			}
 			rc = CoWaitForSingleFlag(q->flag,
-					timeout ? (timeout - CoGetOSTime()) : 0);
+					timeout == TIMEOUT_FOREVER ? 0 : (CoGetOSTime() - deadline));
 			if (rc != E_OK) {
-				return rc;
+				return EERR_TIMEOUT;
 			}
 			DISABLE_IRQ();
 		}
@@ -69,7 +71,7 @@ outqueue_put(queue_t *q, const uint8_t *value, uint16_t size, uint32_t timeout) 
 	if (q->cb_func) {
 		q->cb_func(q->cb_arg);
 	}
-	return E_OK;
+	return EERR_OK;
 }
 
 
@@ -87,4 +89,58 @@ outqueue_getI(queue_t *q) {
 		isr_SetFlag(q->flag);
 	}
 	return ret;
+}
+
+
+void
+inqueue_putI(queue_t *q, uint8_t value) {
+	if (q->count == q->size) {
+		return;
+	}
+	*q->p_write++ = value;
+	if (q->p_write == q->p_top) {
+		q->p_write = q->p_bot;
+	}
+	if (++q->count >= q->wakeup) {
+		isr_SetFlag(q->flag);
+	}
+}
+
+
+void
+inqueue_flushI(queue_t *q) {
+	if (q->count > 0) {
+		isr_SetFlag(q->flag);
+	}
+}
+
+
+int16_t
+inqueue_get(queue_t *q, int timeout) {
+	StatusType rc;
+	uint64_t deadline = 0;
+	uint8_t value;
+	if (timeout > TIMEOUT_NOBLOCK) {
+		deadline = timeout + CoGetOSTime();
+	}
+	DISABLE_IRQ();
+	while (q->count == 0) {
+		ENABLE_IRQ();
+		if (timeout == TIMEOUT_NOBLOCK) {
+			return EERR_TIMEOUT;
+		}
+		rc = CoWaitForSingleFlag(q->flag,
+				timeout == TIMEOUT_FOREVER ? 0 : (CoGetOSTime() - deadline));
+		if (rc != E_OK) {
+			return EERR_TIMEOUT;
+		}
+		DISABLE_IRQ();
+	}
+	q->count--;
+	value = *q->p_read++;
+	if (q->p_read == q->p_top) {
+		q->p_read = q->p_bot;
+	}
+	ENABLE_IRQ();
+	return value;
 }

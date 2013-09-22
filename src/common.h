@@ -29,6 +29,12 @@
 #define SET_BITS(var, mask, value) \
 	(var) = ((var) & ~(mask)) | ((value) & (mask))
 
+#define TIMEOUT_NOBLOCK		0
+#define TIMEOUT_FOREVER		-1
+
+#define EERR_OK				0
+#define EERR_TIMEOUT		-1
+
 extern uint32_t _irq_disabled;
 #define DISABLE_IRQ()		do { __disable_irq(); _irq_disabled++; } while(0)
 #define ENABLE_IRQ()		do { if (--_irq_disabled == 0) { __enable_irq(); } } while(0)

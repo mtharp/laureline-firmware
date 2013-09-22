@@ -13,22 +13,15 @@
 #include "common.h"
 #include "util/queue.h"
 
-#define NO_CHAR 0xFFFF
-
 
 typedef struct {
-	USART_TypeDef		*usart;
-	DMA_TypeDef			*dma;
-	//DMA_Channel_TypeDef	*tx_dma_ch;
-	//uint8_t				tx_dma_chnum;
-
-	unsigned int speed;
-	OS_MutexID mutex_id;
-
-	uint16_t rx_char;
-	OS_FlagID rx_flag;
-	queue_t tx_q;
-	uint8_t tx_buf[16];
+	USART_TypeDef	*usart;
+	unsigned int	speed;
+	OS_MutexID		mutex_id;
+	queue_t			tx_q;
+	uint8_t			tx_buf[16];
+	queue_t			rx_q;
+	uint8_t			rx_buf[16];
 } serial_t;
 
 extern serial_t Serial1;
@@ -40,5 +33,6 @@ void serial_set_speed(serial_t *serial);
 void serial_puts(serial_t *serial, const char *value);
 void serial_write(serial_t *serial, const char *value, uint16_t size);
 void serial_printf(serial_t *serial, const char *fmt, ...);
+int16_t serial_get(serial_t *serial, int timeout);
 
 #endif

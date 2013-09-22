@@ -17,14 +17,12 @@
 
 #define CFG_VERSION			1
 
-#define EERR_OK				0
-#define EERR_TIMEOUT		-1
-#define EERR_NACK			-2
-#define EERR_CRCFAIL		-3
-#define EERR_FAULT			-4
-#define EERR_BLANK			-5
-#define EERR_UPGRADE		-6
-#define EERR_ARLO			-20
+#define EERR_NACK			-20
+#define EERR_CRCFAIL		-21
+#define EERR_FAULT			-22
+#define EERR_BLANK			-23
+#define EERR_UPGRADE		-24
+#define EERR_ARLO			-25
 
 
 #pragma pack(push, 0)

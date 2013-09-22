@@ -22,9 +22,14 @@ typedef struct {
 	void *cb_arg;
 } queue_t;
 
-void outqueue_init(queue_t *q, uint8_t *buf, uint8_t size);
-void outqueue_cb(queue_t *q, cb_func_t cb_func, void *arg);
-StatusType outqueue_put(queue_t *q, const uint8_t *value, uint16_t size, uint32_t timeout);
+void queue_init(queue_t *q, uint8_t *buf, uint8_t size);
+void queue_cb(queue_t *q, cb_func_t cb_func, void *arg);
+
+int16_t outqueue_put(queue_t *q, const uint8_t *value, uint16_t size, int timeout);
 int16_t outqueue_getI(queue_t *q);
+
+int16_t inqueue_get(queue_t *q, int timeout);
+void inqueue_putI(queue_t *q, uint8_t value);
+void inqueue_flushI(queue_t *q);
 
 #endif
