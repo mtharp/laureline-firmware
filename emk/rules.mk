@@ -33,6 +33,7 @@ ifeq ($(USE_LINK_GC),yes)
 CFLAGS += -ffunction-sections -fdata-sections -fno-common
 LDFLAGS += -Wl,--gc-sections
 endif
+CPFLAGS = -R boot_stub
 
 CFLAGS += -MD -MP -MF $@.d
 
@@ -76,10 +77,10 @@ $(OUT).elf: $(OBJS) $(LDSCRIPT)
 	$(OD) -S $< > $@
 
 %.bin: %.elf
-	$(BIN) $< $@
+	$(BIN) $(CPFLAGS) $< $@
 
 %.hex: %.elf
-	$(HEX) $< $@
+	$(HEX) $(CPFLAGS) $< $@
 
 
 -include $(shell [ -d $(BUILD) ] && find $(BUILD) -name \*.d)

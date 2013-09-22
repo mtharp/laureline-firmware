@@ -91,7 +91,7 @@ void CAN2_SCE_IRQHandler(void) __attribute__((weak, alias("Default_Handler")));
 void OTG_FS_IRQHandler(void) __attribute__((weak, alias("Default_Handler")));
 
 
-__attribute__ ((section("isr_vector"))) irq_vector_t _vectors[] = {
+__attribute__ ((section("isr_vector"))) irq_vector_t _isr_vector[] = {
 	(irq_vector_t)&_estack,	Reset_Handler,		NMI_Handler,		HardFault_Handler,
 	MemManage_Handler,		BusFault_Handler,	UsageFault_Handler, Default_Handler,
 	Default_Handler,		Default_Handler,	Default_Handler,	SVC_Handler,
@@ -201,4 +201,9 @@ __attribute__ ((section("isr_vector"))) irq_vector_t _vectors[] = {
 	Default_Handler,
 	Default_Handler,
 	(irq_vector_t)BootRAM
+};
+
+
+__attribute__ ((section("boot_stub"))) irq_vector_t _stub_vector[] = {
+	(irq_vector_t)&_estack,	Reset_Handler, Default_Handler, Default_Handler
 };

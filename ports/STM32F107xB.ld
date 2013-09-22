@@ -17,7 +17,22 @@ SECTIONS
     . = 0;
     _text = .;
 
-    startup : ALIGN(16) SUBALIGN(16)
+    /* First a stub vector table that just points to the real init vector. It
+     * is stripped when outputting the .hex file for use with a bootloader.
+     * This allows the main .elf file to be used when debugging without a
+     * bootloader, and the .hex file (minus boot_stub) to be used with a
+     * bootloader that resides in the first page.
+     */
+    boot_stub : ALIGN(16) SUBALIGN(4)
+    {
+        KEEP(*(boot_stub))
+    } > flash
+
+    /* Now the real vector table starts at a 2K offset. Must be aligned to the
+     * size of the table rounded up to a power of 2.
+     */
+    . = 0x800;
+    startup : ALIGN(512) SUBALIGN(4)
     {
         KEEP(*(isr_vector))
     } > flash

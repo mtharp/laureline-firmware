@@ -19,6 +19,8 @@ extern uint32_t _sidata;
 /* Bounds of BSS (zeroed part of RAM) */
 extern uint32_t _sbss;
 extern uint32_t _ebss;
+/* Start of the vector table */
+extern uint32_t _isr_vector[16];
 
 void SystemInit(void);
 void main(void);
@@ -26,6 +28,9 @@ void main(void);
 
 __attribute__((naked)) void
 Reset_Handler(void) {
+	asm volatile ("cpsid i");
+	asm volatile ("msr MSP, %0" : : "r" (_isr_vector[0]));
+	SCB->VTOR = (uint32_t)&_isr_vector;
 	{
 		uint32_t *ptr;
 		for (ptr = &_sbss; ptr < &_ebss; ptr++) {
@@ -40,6 +45,7 @@ Reset_Handler(void) {
 			*dataptr++ = *textptr++;
 		}
 	}
+	asm volatile ("cpsie i");
 
 	SystemInit();
 	main();
