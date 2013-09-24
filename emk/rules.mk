@@ -76,14 +76,14 @@ $(1): $(2)
 	@mkdir -p $(dir $(1))
 	$$(CC) $$(CFLAGS) $$< -c -o $$@
 endef
-$(foreach src,$(C_SRCS),$(eval $(call c_template,$(BUILD)/$(src:.c=.o),$(src))))
+$(foreach src,$(C_SRCS),$(eval $(call c_template,$(BUILD)/$(subst ../,__/,$(src:.c=.o)),$(src))))
 define s_template
 OBJS += $(1)
 $(1): $(2)
 	@mkdir -p $(dir $(1))
 	$$(AS) $$(ASFLAGS) $$< -c -o $$@
 endef
-$(foreach src,$(S_SRCS),$(eval $(call s_template,$(BUILD)/$(src:.s=.o),$(src))))
+$(foreach src,$(S_SRCS),$(eval $(call s_template,$(BUILD)/%(subst ../,__/,$(src:.s=.o)),$(src))))
 
 $(OUT).elf: $(OBJS) $(LDSCRIPT)
 	$(LD) $(LDFLAGS) $(OBJS) -o $@ $(LDLIBS)
