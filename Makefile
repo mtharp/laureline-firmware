@@ -8,7 +8,6 @@
 
 PROJECT = laureline
 BOARD = boards/v5
-USE_LINK_GC = yes
 
 SRCS = $(wildcard src/*.c)
 SRCS += $(wildcard src/gps/*.c)
@@ -27,7 +26,6 @@ SRCS += lwip/src/netif/etharp.c
 LDSCRIPT = ports/STM32F107xB.ld
 
 PATH := /opt/tnt-20130915/bin:$(PATH)
-MCFLAGS = -mcpu=cortex-m3 -mthumb
 CFLAGS = \
 	-Isrc \
 	-Iports \
@@ -37,21 +35,10 @@ CFLAGS = \
 	-Ilwip/src/include/ipv4 \
 	-Ilwip/src/include/ipv6 \
 	\
-	$(MCFLAGS) \
-	-falign-functions=16 \
 	-Wall -Wextra -Wstrict-prototypes \
 	-Wno-unused-parameter \
 	-Wno-main \
-	-Wno-address \
-	-ggdb3
-ifdef DEBUG
-CFLAGS += -O0
-else
-CFLAGS += -Os -fomit-frame-pointer
-endif
-CFLAGS += $(CFLAGS_EXTRA)
-ASFLAGS = $(MCFLAGS)
-LDFLAGS = $(MCFLAGS)
+	-Wno-address
 LDLIBS = -lm
 
 include emk/rules.mk

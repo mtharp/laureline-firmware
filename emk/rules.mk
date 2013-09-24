@@ -9,6 +9,7 @@
 
 BUILD ?= build
 PROJECT ?= target
+USE_LINK_GC = yes
 
 C_SRCS = $(filter %.c,$(SRCS))
 S_SRCS = $(filter %.s,$(SRCS))
@@ -27,15 +28,29 @@ BIN  := $(CP) -O binary
 GDB  := $(TRGT)gdb
 PYTHON := python
 
-CFLAGS += -mno-thumb-interwork -DTHUMB_NO_INTERWORKING
+MCFLAGS = -mcpu=cortex-m3 -mthumb \
+	-mno-thumb-interwork -DTHUMB_NO_INTERWORKING
+ifdef DEBUG
+CFLAGS_OPT = -O0
+else
+CFLAGS_OPT = -Os -fomit-frame-pointer
+endif
+CFLAGS += $(MCFLAGS) $(CFLAGS_OPT) $(CFLAGS_EXTRA)
+CFLAGS += -ggdb3
+CFLAGS += -MD -MP -MF $@.d
+
+LDFLAGS = $(MCFLAGS)
 LDFLAGS += -T$(LDSCRIPT) -Wl,-Map=$(OUT).map,--cref,--no-warn-mismatch
 ifeq ($(USE_LINK_GC),yes)
-CFLAGS += -ffunction-sections -fdata-sections -fno-common
+CFLAGS += -ffunction-sections \
+	  -fdata-sections \
+	  -fno-common \
+	  -falign-functions=16
 LDFLAGS += -Wl,--gc-sections
 endif
-CPFLAGS = -R boot_stub
 
-CFLAGS += -MD -MP -MF $@.d
+ASFLAGS = $(MCFLAGS)
+CPFLAGS = -R boot_stub
 
 # Targets
 all: $(OUT).elf $(OUT).bin $(OUT).hex $(OUT).lst
