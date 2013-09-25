@@ -6,12 +6,13 @@
  * be found at http://opensource.org/licenses/MIT
  */
 
-#ifndef _UBLOX_H
-#define _UBLOX_H
+#ifndef _APP_CONFIG_H
+#define _APP_CONFIG_H
 
-#include "periph/serial.h"
-
-uint8_t ublox_feed(uint8_t data);
-void ublox_configure(serial_t *ch);
+#define USE_SERIAL_USART1		1
+#define USE_SERIAL_USART2		0
+#define USE_SERIAL_USART2		0
+#define USE_SERIAL_UART4		1
+#define USE_SERIAL_UART5		1
 
 #endif

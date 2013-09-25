@@ -7,9 +7,9 @@
  */
 
 #include "common.h"
-#include "serial.h"
 #include "vtimer.h"
 #include "gps/parser.h"
+#include "periph/serial.h"
 
 #define FEED_UNKNOWN 0
 #define FEED_CONTINUE 1

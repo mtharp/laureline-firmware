@@ -11,6 +11,7 @@ BOARD = boards/v5
 
 SRCS = $(wildcard src/*.c)
 SRCS += $(wildcard src/gps/*.c)
+SRCS += $(wildcard src/periph/*.c)
 SRCS += $(wildcard src/util/*.c)
 SRCS += $(wildcard ports/*.c)
 SRCS += $(wildcard ports/*.s)

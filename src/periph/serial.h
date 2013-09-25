@@ -24,8 +24,12 @@ typedef struct {
 	uint8_t			rx_buf[16];
 } serial_t;
 
+#if USE_SERIAL_USART1
 extern serial_t Serial1;
+#endif
+#if USE_SERIAL_UART4
 extern serial_t Serial4;
+#endif
 
 
 void serial_start(serial_t *serial, int speed);

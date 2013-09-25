@@ -13,9 +13,9 @@
 #include "gps/ublox.h"
 #include "init.h"
 #include "ppscapture.h"
-#include "serial.h"
 #include "tcpip.h"
 #include "vtimer.h"
+#include "periph/serial.h"
 #include "util/queue.h"
 
 #include <string.h>

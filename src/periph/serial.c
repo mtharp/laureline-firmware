@@ -9,13 +9,17 @@
 
 #include "common.h"
 #include "init.h"
-#include "serial.h"
+#include "periph/serial.h"
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
 
+#if USE_SERIAL_USART1
 serial_t Serial1;
+#endif
+#if USE_SERIAL_UART4
 serial_t Serial4;
+#endif
 
 static void serial_outq_cb(void *arg);
 
@@ -149,17 +153,21 @@ service_interrupt(serial_t *serial) {
 }
 
 
+#if USE_SERIAL_USART1
 void
 USART1_IRQHandler(void) {
 	CoEnterISR();
 	service_interrupt(&Serial1);
 	CoExitISR();
 }
+#endif
 
 
+#if USE_SERIAL_UART4
 void
 UART4_IRQHandler(void) {
 	CoEnterISR();
 	service_interrupt(&Serial4);
 	CoExitISR();
 }
+#endif

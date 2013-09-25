@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include "board.h"
+#include "app_config.h"
 
 #include <CoOS.h>
 #include <stm32f10x.h>

@@ -14,8 +14,8 @@ SRCS = $(wildcard src/*.c)
 SRCS += \
 	../src/board.c \
 	../src/common.c \
-	../src/init.c \
-	../src/serial.c
+	../src/init.c
+SRCS += $(wildcard $(TOP)/src/periph/*.c)
 SRCS += $(wildcard $(TOP)/src/util/*.c)
 SRCS += $(wildcard $(TOP)/ports/*.c)
 SRCS += $(wildcard $(TOP)/CoOS/kernel/*.c)
@@ -36,6 +36,5 @@ CFLAGS = \
 	-Wno-unused-parameter \
 	-Wno-main \
 	-Wno-address
-LDLIBS = -lm
 
 include $(TOP)/emk/rules.mk

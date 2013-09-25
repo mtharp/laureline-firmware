@@ -8,7 +8,7 @@
 
 #include "common.h"
 #include "init.h"
-#include "serial.h"
+#include "periph/serial.h"
 
 #define MAIN_STACK 512
 OS_STK main_stack[MAIN_STACK];
