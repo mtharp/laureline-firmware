@@ -13,12 +13,11 @@ SRCS = $(wildcard src/*.c)
 SRCS += $(wildcard src/gps/*.c)
 SRCS += $(wildcard src/periph/*.c)
 SRCS += $(wildcard src/util/*.c)
+SRCS += src/lwip/arch/sys_arch.c
 SRCS += $(wildcard ports/*.c)
-SRCS += $(wildcard ports/*.s)
-SRCS += $(wildcard ports/arch/*.c)
 SRCS += $(wildcard CoOS/kernel/*.c)
-SRCS += $(wildcard CoOS/portable/*.c )
-SRCS += $(wildcard CoOS/portable/GCC/*.c)
+SRCS += CoOS/portable/arch.c
+SRCS += CoOS/portable/GCC/port.c
 SRCS += $(wildcard lwip/src/core/*.c)
 SRCS += $(wildcard lwip/src/core/ipv4/*.c)
 SRCS += $(wildcard lwip/src/core/api/*.c)
@@ -29,6 +28,7 @@ LDSCRIPT = ports/STM32F107xB.ld
 PATH := /opt/tnt-20130915/bin:$(PATH)
 CFLAGS = \
 	-Isrc \
+	-Isrc/lwip \
 	-Iports \
 	-ICoOS/kernel \
 	-ICoOS/portable \
