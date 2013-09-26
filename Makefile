@@ -14,10 +14,12 @@ SRCS += $(wildcard src/gps/*.c)
 SRCS += $(wildcard src/periph/*.c)
 SRCS += $(wildcard src/util/*.c)
 SRCS += src/lwip/arch/sys_arch.c
+SRCS += src/fatfs/diskio.c
 SRCS += $(wildcard ports/*.c)
 SRCS += $(wildcard CoOS/kernel/*.c)
 SRCS += CoOS/portable/arch.c
 SRCS += CoOS/portable/GCC/port.c
+SRCS += fatfs/ff.c
 SRCS += $(wildcard lwip/src/core/*.c)
 SRCS += $(wildcard lwip/src/core/ipv4/*.c)
 SRCS += $(wildcard lwip/src/core/api/*.c)
@@ -29,9 +31,11 @@ PATH := /opt/tnt-20130915/bin:$(PATH)
 CFLAGS = \
 	-Isrc \
 	-Isrc/lwip \
+	-Isrc/fatfs \
 	-Iports \
 	-ICoOS/kernel \
 	-ICoOS/portable \
+	-Ifatfs \
 	-Ilwip/src/include \
 	-Ilwip/src/include/ipv4 \
 	-Ilwip/src/include/ipv6 \
