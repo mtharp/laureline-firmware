@@ -45,18 +45,4 @@ extern uint32_t _irq_disabled;
 #define GPIO_ON(pfx)		_PASTE2(pfx, _PAD)->BSRR = _PASTE2(pfx, _PIN);
 #define GPIO_OFF(pfx)		_PASTE2(pfx, _PAD)->BRR  = _PASTE2(pfx, _PIN);
 
-/* Highest priority (lowest number) */
-#define THREAD_PRIO_VTIMER			10
-#define THREAD_PRIO_TCPIP			20
-#define THREAD_PRIO_MAIN			30
-/* Lowest priority (highest number) */
-
-/* Highest priority (lowest number) */
-#define IRQ_PRIO_PPSCAPTURE			0x20
-#define IRQ_PRIO_ETH				0x40
-#define IRQ_PRIO_SYSTICK			0x80
-#define IRQ_PRIO_I2C				0xC0
-#define IRQ_PRIO_USART				0xC0
-/* Lowest priority (highest number) */
-
 #endif

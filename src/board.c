@@ -129,6 +129,7 @@ SystemInit(void) {
 		| RCC_APB2ENR_IOPBEN
 		| RCC_APB2ENR_IOPCEN
 		| RCC_APB2ENR_IOPDEN
+		| RCC_APB2ENR_SPI1EN
 		;
 
 	/* Pin mapping */

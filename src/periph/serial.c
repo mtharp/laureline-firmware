@@ -31,31 +31,41 @@ serial_start(serial_t *serial, int speed) {
 	queue_cb(&serial->tx_q, &serial_outq_cb, serial);
 	queue_init(&serial->rx_q, serial->rx_buf, sizeof(serial->rx_buf));
 	serial->speed = speed;
+#ifdef USE_SERIAL_USART1
 	if (serial == &Serial1) {
 		RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
 		irqn = USART1_IRQn;
 		serial->usart = USART1;
+	} else
+#endif
 #if 0
-	} else if (serial == &Serial2) {
+	if (serial == &Serial2) {
 		RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
 		irqn = USART2_IRQn;
 		serial->usart = USART2;
-	} else if (serial == &Serial3) {
+	} else
+#endif
+#if 0
+	if (serial == &Serial3) {
 		RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
 		irqn = USART3_IRQn;
 		serial->usart = USART3;
+	} else
 #endif
-	} else if (serial == &Serial4) {
+#if USE_SERIAL_UART4
+	if (serial == &Serial4) {
 		RCC->APB1ENR |= RCC_APB1ENR_UART4EN;
 		irqn = UART4_IRQn;
 		serial->usart = UART4;
+	} else
+#endif
 #if 0
-	} else if (serial == &Serial5) {
+	if (serial == &Serial5) {
 		RCC->APB1ENR |= RCC_APB1ENR_UART5EN;
 		irqn = UART5_IRQn;
 		serial->usart = UART5;
 #endif
-	} else {
+	{
 		HALT();
 	}
 	NVIC_SetPriority(irqn, IRQ_PRIO_USART);
