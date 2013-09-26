@@ -14,6 +14,8 @@ SRCS = $(wildcard src/*.c)
 SRCS += \
 	../src/board.c \
 	../src/common.c \
+	../src/crc7.c \
+	../src/hardfault.c \
 	../src/init.c
 SRCS += $(wildcard $(TOP)/src/periph/*.c)
 SRCS += $(wildcard $(TOP)/src/util/*.c)

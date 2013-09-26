@@ -30,6 +30,7 @@ LDSCRIPT = ports/STM32F107xB.ld
 PATH := /opt/tnt-20130915/bin:$(PATH)
 CFLAGS = \
 	-Isrc \
+	-Isrc/conf \
 	-Isrc/lwip \
 	-Isrc/fatfs \
 	-Iports \

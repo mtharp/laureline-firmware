@@ -35,6 +35,8 @@
 
 #define EERR_OK				0
 #define EERR_TIMEOUT		-1
+#define EERR_FAULT			-2
+#define EERR_INVALID		-3
 
 extern uint32_t _irq_disabled;
 #define DISABLE_IRQ()		do { __disable_irq(); _irq_disabled++; } while(0)

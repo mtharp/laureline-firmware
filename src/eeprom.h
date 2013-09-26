@@ -19,10 +19,9 @@
 
 #define EERR_NACK			-20
 #define EERR_CRCFAIL		-21
-#define EERR_FAULT			-22
-#define EERR_BLANK			-23
-#define EERR_UPGRADE		-24
-#define EERR_ARLO			-25
+#define EERR_BLANK			-22
+#define EERR_UPGRADE		-23
+#define EERR_ARLO			-24
 
 
 #pragma pack(push, 0)
