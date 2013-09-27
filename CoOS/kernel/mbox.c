@@ -200,11 +200,11 @@ void* CoPendMail(OS_EventID id,U32 timeout,StatusType* perr)
     }
     else                       /* If message is not available, task will pend */ 
     {
-    	OsSchedUnlock();
         curTCB = TCBRunning;
         if(timeout == 0)                /* If time-out is not configured      */
         {
             EventTaskToWait(pecb,curTCB); /* Block task until event occurs    */
+            OsSchedUnlock();
             *perr = E_OK;
             
             /* Have recived a message or the mailbox have been deleted        */
@@ -214,8 +214,6 @@ void* CoPendMail(OS_EventID id,U32 timeout,StatusType* perr)
         }
         else                            /* If time-out is configured          */
         {
-            OsSchedLock();
-            
             /* Block task until event or timeout occurs                       */
             EventTaskToWait(pecb,curTCB);   
             InsertDelayList(curTCB,timeout);

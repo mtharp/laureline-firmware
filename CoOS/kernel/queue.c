@@ -259,13 +259,12 @@ void* CoPendQueueMail(OS_EventID id,U32 timeout,StatusType* perr)
     }
     else                                /* If there is no message in the queue*/
     {
-    	OsSchedUnlock();
         curTCB = TCBRunning;
         if(timeout == 0)                /* If time-out is not configured      */
         {
             /* Block current task until the event occur                       */
             EventTaskToWait(pecb,curTCB); 
-            
+            OsSchedUnlock();
             /* Have recived message or the queue have been deleted            */
             pmail = curTCB->pmail;              
             curTCB->pmail = Co_NULL;
@@ -274,8 +273,6 @@ void* CoPendQueueMail(OS_EventID id,U32 timeout,StatusType* perr)
         }
         else                            /* If time-out is configured          */
         {
-            OsSchedLock(); 
-            
             /* Block current task until event or timeout occurs               */           
             EventTaskToWait(pecb,curTCB);       
             InsertDelayList(curTCB,timeout);

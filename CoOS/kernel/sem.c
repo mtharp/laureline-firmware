@@ -203,22 +203,19 @@ StatusType CoPendSem(OS_EventID id,U32 timeout)
     }
     else                                /* Resource is not available          */
     {
-    	OsSchedUnlock();
         curTCB = TCBRunning;
         if(timeout == 0)                /* If time-out is not configured      */
         {
             EventTaskToWait(pecb,curTCB); /* Block task until event occurs    */
+            OsSchedUnlock();
             curTCB->pmail = Co_NULL;
             return E_OK;
         }
         else                            /* If time-out is configured          */
         {
-            OsSchedLock();
-            
             /* Block task until event or timeout occurs                       */
             EventTaskToWait(pecb,curTCB);
             InsertDelayList(curTCB,timeout);
-            
             OsSchedUnlock();
             if (curTCB->pmail == Co_NULL)  /* If pmail is Co_NULL, time-out occurred*/
             {
