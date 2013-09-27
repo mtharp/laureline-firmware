@@ -28,8 +28,8 @@ main_thread(void *pdata) {
 	mmc_start();
 	serial_puts(&Serial1, "\r\nstarting\r\n");
 	while (1) {
-		CoTickDelay(MS2ST(250));
-		mmc_disconnect();
+		//CoTickDelay(MS2ST(250));
+		//mmc_disconnect();
 		CoTickDelay(MS2ST(250));
 		rc = mmc_connect();
 		if (rc == EERR_OK) {
@@ -41,28 +41,26 @@ main_thread(void *pdata) {
 			serial_puts(&Serial1, "Failed to connect to SD\r\n");
 			continue;
 		}
-		//CoTickDelay(MS2ST(100));
 		if (mmc_start_read(0)) {
 			serial_puts(&Serial1, "mmc_start_read failed\r\n");
 			continue;
-		} else {
-			serial_puts(&Serial1, "mmc_start_read OK\r\n");
 		}
-		//CoTickDelay(MS2ST(100));
-		if (mmc_read_sector(buf)) {
-			serial_puts(&Serial1, "mmc_read_sector failed\r\n");
-			continue;
-		} else {
-			serial_puts(&Serial1, "mmc_read_sector OK\r\n");
+		i = 0;
+		while (1) {
+			if (mmc_read_sector(buf)) {
+				serial_printf(&Serial1, "mmc_read_sector failed, sector = %d\r\n", i);
+				break;
+			}
+			if (++i % 1000 == 0) {
+				serial_printf(&Serial1, "%d\r\n", i);
+			}
 		}
-		//CoTickDelay(MS2ST(100));
 		if (mmc_stop_read()) {
 			serial_puts(&Serial1, "mmc_stop_read failed\r\n");
 			continue;
 		} else {
-			serial_puts(&Serial1, "mmc_stop_read OK\r\n");
 		}
-		for (i = 0; i < 512; i += 16) {
+		/*for (i = 0; i < 512; i += 16) {
 			serial_printf(&Serial1, "%04x  ", i);
 			for (j = i; j < i + 8; j++) {
 				serial_printf(&Serial1, "%02x ", buf[j]);
@@ -73,7 +71,8 @@ main_thread(void *pdata) {
 			}
 			serial_puts(&Serial1, "\r\n");
 		}
-		serial_puts(&Serial1, "\r\n\r\n");
+		serial_puts(&Serial1, "\r\n\r\n");*/
+		serial_puts(&Serial1, "\r\n");
 	}
 }
 

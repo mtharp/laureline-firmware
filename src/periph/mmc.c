@@ -208,11 +208,9 @@ mmc_sync(void) {
 }
 
 
-#include "periph/serial.h"
 int16_t
 mmc_start_read(uint32_t lba) {
 	if (mmc_state != MMC_READY) {
-		serial_puts(&Serial1, "start_read: not ready\r\n");
 		return EERR_INVALID;
 	}
 	mmc_state = MMC_READING;
@@ -226,7 +224,6 @@ mmc_start_read(uint32_t lba) {
 	}
 	uint8_t rc = mmc_ll_receive_r1();
 	if (rc != 0x00) {
-		serial_printf(&Serial1, "start_read returned failure: %02x\r\n", rc);
 		spi_deselect(MMCSPI);
 		mmc_state = MMC_READY;
 		return EERR_FAULT;
@@ -246,7 +243,6 @@ mmc_read_sector(uint8_t *out) {
 	deadline = CoGetOSTime() + MMC_DATA_DEADLINE;
 	while (1) {
 		spi_exchange(MMCSPI, NULL, &r, 1);
-		serial_printf(&Serial1, "read_sector status %02x\r\n", (unsigned)r);
 		if (r == 0xFE) {
 			spi_exchange(MMCSPI, NULL, out, 512);
 			spi_exchange(MMCSPI, NULL, NULL, 2);

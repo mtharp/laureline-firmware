@@ -72,8 +72,10 @@ static uint32_t rx_dummy;
 
 void
 spi_exchange(spi_t *spi, const uint8_t *tx_buf, uint8_t *rx_buf, uint16_t size) {
+	DISABLE_IRQ();
 	dma_disable(spi->tx_dma);
 	dma_disable(spi->rx_dma);
+	ENABLE_IRQ();
 	if (tx_buf != NULL) {
 		spi->tx_dma->ch->CCR = spi->tx_dma_mode | DMA_CCR1_MINC;
 		spi->tx_dma->ch->CMAR = (uint32_t)tx_buf;
@@ -91,8 +93,10 @@ spi_exchange(spi_t *spi, const uint8_t *tx_buf, uint8_t *rx_buf, uint16_t size) 
 	}
 	spi->tx_dma->ch->CNDTR = size;
 	spi->rx_dma->ch->CNDTR = size;
+	DISABLE_IRQ();
 	dma_enable(spi->tx_dma);
 	dma_enable(spi->rx_dma);
+	ENABLE_IRQ();
 	CoPendSem(spi->sem, 0);
 }
 
