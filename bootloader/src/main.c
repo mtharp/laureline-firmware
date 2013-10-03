@@ -24,7 +24,6 @@ FATFS MMC_FS;
 void
 main_thread(void *pdata) {
 	int16_t rc;
-	static uint8_t buf[512];
 	int i = 0;
 	FIL fp;
 	SPI3_Dev.cs_pad = SDIO_CS_PAD;

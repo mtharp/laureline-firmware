@@ -53,7 +53,7 @@ ASFLAGS = $(MCFLAGS)
 CPFLAGS = -R boot_stub
 
 # Targets
-all: $(OUT).elf $(OUT).bin $(OUT).hex $(OUT).lst
+all: $(OUT).elf $(OUT).hex $(OUT).lst
 
 clean:
 	rm -rf $(BUILD)

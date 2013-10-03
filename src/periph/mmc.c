@@ -12,7 +12,7 @@
 #include "periph/mmc.h"
 #include "periph/spi.h"
 
-#define MMCSPI (&SPI3_Dev)
+#ifdef MMCSPI
 
 mmc_state_t mmc_state;
 
@@ -275,3 +275,5 @@ mmc_stop_read(void) {
 	mmc_state = MMC_READY;
 	return EERR_OK;
 }
+
+#endif
