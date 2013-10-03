@@ -11,12 +11,13 @@ BOARD = boards/v5
 
 TOP = ..
 SRCS = $(wildcard src/*.c)
-SRCS += \
-	../src/board.c \
-	../src/common.c \
-	../src/crc7.c \
-	../src/hardfault.c \
-	../src/init.c
+SRCS += ../fatfs/ff.c
+SRCS += ../src/board.c
+SRCS += ../src/common.c
+SRCS += ../src/crc7.c
+SRCS += ../src/fatfs/diskio.c
+SRCS += ../src/hardfault.c
+SRCS += ../src/init.c
 SRCS += $(wildcard $(TOP)/src/periph/*.c)
 SRCS += $(wildcard $(TOP)/src/util/*.c)
 SRCS += $(wildcard $(TOP)/ports/*.c)
@@ -29,7 +30,9 @@ PATH := /opt/tnt-20130915/bin:$(PATH)
 CFLAGS = \
 	-Isrc \
 	-Iports \
+	-I$(TOP)/fatfs \
 	-I$(TOP)/src \
+	-I$(TOP)/src/fatfs \
 	-I$(TOP)/ports \
 	-I$(TOP)/CoOS/kernel \
 	-I$(TOP)/CoOS/portable \

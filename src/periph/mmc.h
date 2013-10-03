@@ -18,6 +18,8 @@ typedef enum {
 	MMC_WRITING
 } mmc_state_t;
 
+extern mmc_state_t mmc_state;
+
 void mmc_start(void);
 void mmc_sync(void);
 int16_t mmc_connect(void);

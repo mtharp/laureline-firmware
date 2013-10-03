@@ -2,85 +2,23 @@ __main_stack_size__     = 0x0200;
 
 MEMORY
 {
-    flash : org = 0x08000000, len = 128k
-    ram : org = 0x20000000, len = 32k
+    flash1 (rx) : org = 0x08000000, len = 2k
+    flash2 (rx) : org = 0x0801c000, len = 16k
+    ram (!rx) : org = 0x20000000, len = 32k
 }
-
-__ram_start__           = ORIGIN(ram);
-__ram_size__            = LENGTH(ram);
-__ram_end__             = __ram_start__ + __ram_size__;
 
 ENTRY(Reset_Handler)
 
 SECTIONS
 {
-    . = 0;
-    _text = .;
-
-    /DISCARD/ :
-    {
-        *(boot_stub)
-    }
-
     /* The bootloader occuipes the first page of flash (2K), then the remainder
      * goes at the end.
      */
-    startup : ALIGN(512) SUBALIGN(4)
+    . = 0;
+    .startup : ALIGN(512)
     {
         KEEP(*(isr_vector))
-    } > flash
-
-    constructors : ALIGN(4) SUBALIGN(4)
-    {
-        PROVIDE(__init_array_start = .);
-        KEEP(*(SORT(.init_array.*)))
-        KEEP(*(.init_array))
-        PROVIDE(__init_array_end = .);
-    } > flash
-
-    destructors : ALIGN(4) SUBALIGN(4)
-    {
-        PROVIDE(__fini_array_start = .);
-        KEEP(*(.fini_array))
-        KEEP(*(SORT(.fini_array.*)))
-        PROVIDE(__fini_array_end = .);
-    } > flash
-
-    .text : ALIGN(16) SUBALIGN(16)
-    {
-        *(.text.startup.*)
-        *(.text)
-        *(.text.*)
-        *(.rodata)
-        *(.rodata.*)
-        *(.glue_7t)
-        *(.glue_7)
-        *(.gcc*)
-    } > flash
-
-    .ARM.extab :
-    {
-        *(.ARM.extab* .gnu.linkonce.armextab.*)
-    } > flash
-
-    .ARM.exidx : {
-        PROVIDE(__exidx_start = .);
-        *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-        PROVIDE(__exidx_end = .);
-     } > flash
-
-    .eh_frame_hdr :
-    {
-        *(.eh_frame_hdr)
-    } > flash
-
-    .eh_frame : ONLY_IF_RO
-    {
-        *(.eh_frame)
-    } > flash
-
-    _etext = .;
-    _sidata = ALIGN(4);
+    } > flash1
 
     .stacks :
     {
@@ -91,7 +29,7 @@ SECTIONS
         _estack = .;
     } > ram
 
-    .data : AT ( _sidata )
+    .data :
     {
         . = ALIGN(4);
         PROVIDE(_sdata = .);
@@ -99,7 +37,13 @@ SECTIONS
         *(.data.*)
         . = ALIGN(4);
         PROVIDE(_edata = .);
-    } > ram
+    } > ram AT > flash1
+    _sidata = LOADADDR(.data);
+
+    .text :
+    {
+        *(.text)
+    } > flash2
 
     .bss :
     {
@@ -112,9 +56,3 @@ SECTIONS
         PROVIDE(_ebss = .);
     } > ram
 }
-
-PROVIDE(end = .);
-_end            = .;
-
-__heap_base__   = _end;
-__heap_end__    = __ram_end__;

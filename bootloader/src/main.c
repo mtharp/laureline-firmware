@@ -7,6 +7,7 @@
  */
 
 #include "common.h"
+#include "ff.h"
 #include "init.h"
 #include "periph/mmc.h"
 #include "periph/serial.h"
@@ -16,20 +17,22 @@
 OS_STK main_stack[MAIN_STACK];
 OS_TID main_tid;
 
+FATFS MMC_FS;
+#define MMC_FIRMWARE_FILENAME "ll.hex"
+
 
 void
 main_thread(void *pdata) {
 	int16_t rc;
 	static uint8_t buf[512];
-	int i, j;
+	int i = 0;
+	FIL fp;
 	SPI3_Dev.cs_pad = SDIO_CS_PAD;
 	SPI3_Dev.cs_pin = SDIO_CS_PNUM;
 	spi_start(&SPI3_Dev, 0);
 	mmc_start();
 	serial_puts(&Serial1, "\r\nstarting\r\n");
 	while (1) {
-		//CoTickDelay(MS2ST(250));
-		//mmc_disconnect();
 		CoTickDelay(MS2ST(250));
 		rc = mmc_connect();
 		if (rc == EERR_OK) {
@@ -41,38 +44,20 @@ main_thread(void *pdata) {
 			serial_puts(&Serial1, "Failed to connect to SD\r\n");
 			continue;
 		}
-		if (mmc_start_read(0)) {
-			serial_puts(&Serial1, "mmc_start_read failed\r\n");
+
+		serial_puts(&Serial1, "Mounting SD filesystem\r\n");
+		if (f_mount(0, &MMC_FS) != FR_OK) {
+			serial_puts(&Serial1, "ERROR: Unable to mount filesystem\r\n");
 			continue;
 		}
-		i = 0;
-		while (1) {
-			if (mmc_read_sector(buf)) {
-				serial_printf(&Serial1, "mmc_read_sector failed, sector = %d\r\n", i);
-				break;
-			}
-			if (++i % 1000 == 0) {
-				serial_printf(&Serial1, "%d\r\n", i);
-			}
-		}
-		if (mmc_stop_read()) {
-			serial_puts(&Serial1, "mmc_stop_read failed\r\n");
+
+		serial_puts(&Serial1, "Opening file " MMC_FIRMWARE_FILENAME "\r\n");
+		if (f_open(&fp, MMC_FIRMWARE_FILENAME, FA_READ) != FR_OK) {
+			serial_puts(&Serial1, "Error opening file, maybe it does not exist\r\n");
 			continue;
-		} else {
 		}
-		/*for (i = 0; i < 512; i += 16) {
-			serial_printf(&Serial1, "%04x  ", i);
-			for (j = i; j < i + 8; j++) {
-				serial_printf(&Serial1, "%02x ", buf[j]);
-			}
-			serial_puts(&Serial1, " ");
-			for (j = i + 8; j < i + 16; j++) {
-				serial_printf(&Serial1, "%02x ", buf[j]);
-			}
-			serial_puts(&Serial1, "\r\n");
-		}
-		serial_puts(&Serial1, "\r\n\r\n");*/
-		serial_puts(&Serial1, "\r\n");
+		serial_printf(&Serial1, "Done! %d\r\n", ++i);
+		CoTickDelay(S2ST(1));
 	}
 }
 

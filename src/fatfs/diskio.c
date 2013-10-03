@@ -8,23 +8,48 @@
 
 #include "common.h"
 #include "diskio.h"
+#include "periph/mmc.h"
 
 
 DSTATUS
 disk_initialize (BYTE pdrv) {
-	return STA_NOINIT;
+	if (mmc_state == MMC_UNLOADED) {
+		return STA_NODISK;
+	} else {
+		return 0;
+	}
 }
 
 
 DSTATUS
 disk_status (BYTE pdrv) {
-	return STA_NOINIT;
+	if (mmc_state == MMC_UNLOADED) {
+		return STA_NODISK;
+	} else {
+		return 0;
+	}
 }
 
 
 DRESULT
 disk_read (BYTE pdrv, BYTE *buff, DWORD sector, BYTE count) {
-	return RES_PARERR;
+	if (mmc_state != MMC_READY) {
+		return RES_NOTRDY;
+	}
+	if (mmc_start_read(sector)) {
+		return RES_ERROR;
+	}
+	while (count > 0) {
+		if (mmc_read_sector(buff)) {
+			return RES_ERROR;
+		}
+		buff += 512;
+		count--;
+	}
+	if (mmc_stop_read()) {
+		return RES_ERROR;
+	}
+	return RES_OK;
 }
 
 

@@ -14,7 +14,8 @@
 
 #define MMCSPI (&SPI3_Dev)
 
-static mmc_state_t mmc_state;
+mmc_state_t mmc_state;
+
 static uint8_t mmc_block_mode;
 
 
