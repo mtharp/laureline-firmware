@@ -34,4 +34,6 @@
 #define IRQ_PRIO_USART				0xC0
 /* Lowest priority (highest number) */
 
+#define MSP_STACK_SIZE 512
+
 #endif

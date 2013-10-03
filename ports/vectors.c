@@ -16,7 +16,9 @@ Default_Handler(void) {
 typedef void  (*irq_vector_t)(void);
 #define BootRAM 0xF1E0F85F
 
-extern uint32_t _estack;
+uint32_t msp_stack[MSP_STACK_SIZE / 4];
+#define _estack msp_stack[MSP_STACK_SIZE / 4]
+
 void Reset_Handler(void);
 void Vector40(void) __attribute__((weak, alias("Default_Handler")));
 void NMI_Handler(void) __attribute__((weak, alias("Default_Handler")));

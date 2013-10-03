@@ -1,9 +1,7 @@
-__main_stack_size__     = 0x0200;
-
 MEMORY
 {
     flash1 (rx) : org = 0x08000000, len = 2k
-    flash2 (rx) : org = 0x0801c000, len = 16k
+    flash (rx) : org = 0x0801c000, len = 16k
     ram (!rx) : org = 0x20000000, len = 32k
 }
 
@@ -20,15 +18,6 @@ SECTIONS
         KEEP(*(isr_vector))
     } > flash1
 
-    .stacks :
-    {
-        . = ALIGN(8);
-        _sstack = .;
-        . += __main_stack_size__;
-        . = ALIGN(8);
-        _estack = .;
-    } > ram
-
     .data :
     {
         . = ALIGN(4);
@@ -43,7 +32,10 @@ SECTIONS
     .text :
     {
         *(.text)
-    } > flash2
+        *(.text.*)
+        *(.rodata)
+        *(.rodata.*)
+    } > flash
 
     .bss :
     {
