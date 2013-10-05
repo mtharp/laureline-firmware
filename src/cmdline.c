@@ -88,7 +88,7 @@ const clicmd_t cmd_table[] = {
 #define CMD_COUNT (sizeof(cmd_table) / sizeof(cmd_table[0]))
 
 const clivalue_t value_table[] = {
-	{ "auth_key", VAR_HEX, &cfg.auth_key, 8 },
+	{ "admin_key", VAR_HEX, &cfg.admin_key, 8 },
 	{ "gps_baud_rate", VAR_UINT32, &cfg.gps_baud_rate, 0 },
 	{ "ip_addr", VAR_IP4, &cfg.ip_addr, 0 },
 	{ "ip_gateway", VAR_IP4, &cfg.ip_gateway, 0 },
@@ -191,6 +191,10 @@ cliSetVar(const clivalue_t *var, const char *str) {
 					val |= parse_hex(val2);
 				}
 				*ptr++ = val;
+			}
+			/* Pad the remainder with zeroes */
+			for (; i < var->len; i++) {
+				*ptr++ = 0;
 			}
 		}
 	}
