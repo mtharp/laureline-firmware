@@ -84,7 +84,10 @@ static const gpio_cfg_t gpio_cfg[4][16] = {
 static void
 delay10us(void) {
 	int i;
-	for (i = 0; i < 350; i++) {}
+	/* Assumes 8MHz HSI */
+	for (i = 0; i < 27; i++) {
+		__NOP();
+	}
 }
 
 
@@ -141,12 +144,15 @@ SystemInit(void) {
 		| AFIO_MAPR_MII_RMII_SEL
 		;
 
-	unstick_i2c();
-
 	setup_bank(GPIOA, gpio_cfg[0]);
 	setup_bank(GPIOB, gpio_cfg[1]);
 	setup_bank(GPIOC, gpio_cfg[2]);
 	setup_bank(GPIOD, gpio_cfg[3]);
+
+	/* Reset onboard PHY and I2C devices */
+	GPIO_OFF(E_NRST);
+	unstick_i2c();
+	GPIO_ON(E_NRST);
 
 	/* Configure clocking */
 	RCC->CR |= RCC_CR_HSEBYP | RCC_CR_HSEON;
