@@ -56,7 +56,8 @@ typedef struct {
 typedef enum {
 	VAR_UINT32,
 	VAR_BOOL,
-	VAR_IP4
+	VAR_IP4,
+	VAR_HEX
 } vartype_e;
 
 
@@ -64,6 +65,7 @@ typedef struct {
 	const char *name;
 	const uint8_t type; /* vartype_e */
 	void *ptr;
+	uint8_t len;
 } clivalue_t;
 
 static void cliSetVar(const clivalue_t *var, const char *valstr);
@@ -86,10 +88,11 @@ const clicmd_t cmd_table[] = {
 #define CMD_COUNT (sizeof(cmd_table) / sizeof(cmd_table[0]))
 
 const clivalue_t value_table[] = {
-	{ "gps_baud_rate", VAR_UINT32, &cfg.gps_baud_rate },
-	{ "ip_addr", VAR_IP4, &cfg.ip_addr },
-	{ "ip_gateway", VAR_IP4, &cfg.ip_gateway },
-	{ "ip_netmask", VAR_IP4, &cfg.ip_netmask },
+	{ "auth_key", VAR_HEX, &cfg.auth_key, 8 },
+	{ "gps_baud_rate", VAR_UINT32, &cfg.gps_baud_rate, 0 },
+	{ "ip_addr", VAR_IP4, &cfg.ip_addr, 0 },
+	{ "ip_gateway", VAR_IP4, &cfg.ip_gateway, 0 },
+	{ "ip_netmask", VAR_IP4, &cfg.ip_netmask, 0 },
 };
 #define VALUE_COUNT (sizeof(value_table) / sizeof(value_table[0]))
 
@@ -134,6 +137,14 @@ cliPrintVar(const clivalue_t *var, uint8_t full) {
 			cli_printf("%d.%d.%d.%d", addr[0], addr[1], addr[2], addr[3]);
 			break;
 		}
+	case VAR_HEX:
+		{
+			uint8_t *ptr = (uint8_t*)var->ptr;
+			int i;
+			for (i = 0; i < var->len; i++) {
+				cli_printf("%02x", *ptr++);
+			}
+		}
 	}
 }
 
@@ -162,6 +173,26 @@ cliSetVar(const clivalue_t *var, const char *str) {
 		val = (val << 8) | val2;
 		*(uint32_t*)var->ptr = lwip_htonl(val);
 		break;
+	case VAR_HEX:
+		{
+			uint8_t *ptr = (uint8_t*)var->ptr;
+			int i;
+			for (i = 0; i < var->len; i++) {
+				val2 = *str++;
+				if (val2 == 0) {
+					break;
+				} else {
+					val = parse_hex(val2) << 4;
+				}
+				val2 = *str++;
+				if (val2 == 0) {
+					break;
+				} else {
+					val |= parse_hex(val2);
+				}
+				*ptr++ = val;
+			}
+		}
 	}
 }
 

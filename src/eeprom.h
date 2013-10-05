@@ -36,7 +36,8 @@ typedef struct {
 	uint8_t crc1;
 	/* Second chunk */
 	uint32_t gps_baud_rate;
-	uint8_t _reserved2[107];
+	uint8_t auth_key[8];
+	uint8_t _reserved2[99];
 	uint8_t crc;
 } cfgv1_t;
 
