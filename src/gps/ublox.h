@@ -9,7 +9,7 @@
 #ifndef _UBLOX_H
 #define _UBLOX_H
 
-#include "periph/serial.h"
+#include "stm32/serial.h"
 
 uint8_t ublox_feed(uint8_t data);
 void ublox_configure(serial_t *ch);

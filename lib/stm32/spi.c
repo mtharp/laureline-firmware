@@ -8,7 +8,7 @@
 
 #include "common.h"
 #include "init.h"
-#include "periph/spi.h"
+#include "stm32/spi.h"
 
 #if USE_SPI1
 spi_t SPI1_Dev;

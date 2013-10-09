@@ -11,9 +11,9 @@ BOARD = boards/v5
 
 SRCS = $(wildcard src/*.c)
 SRCS += $(wildcard src/gps/*.c)
-SRCS += $(wildcard src/periph/*.c)
 SRCS += $(wildcard src/util/*.c)
 SRCS += src/lwip/arch/sys_arch.c
+SRCS += $(wildcard lib/stm32/*.c)
 SRCS += $(wildcard ports/*.c)
 SRCS += $(wildcard CoOS/kernel/*.c)
 SRCS += CoOS/portable/arch.c
@@ -30,6 +30,7 @@ INCLUDES = \
 	-Isrc \
 	-Isrc/conf \
 	-Isrc/lwip \
+	-Ilib \
 	-Iports \
 	-ICoOS/kernel \
 	-ICoOS/portable \

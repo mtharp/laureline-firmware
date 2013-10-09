@@ -15,7 +15,7 @@
 #include "ppscapture.h"
 #include "tcpip.h"
 #include "vtimer.h"
-#include "periph/serial.h"
+#include "stm32/serial.h"
 #include "util/queue.h"
 
 #include <string.h>

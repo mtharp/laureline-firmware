@@ -9,7 +9,7 @@
 #include "common.h"
 #include "vtimer.h"
 #include "gps/parser.h"
-#include "periph/serial.h"
+#include "stm32/serial.h"
 
 #define FEED_UNKNOWN 0
 #define FEED_CONTINUE 1

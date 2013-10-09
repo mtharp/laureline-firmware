@@ -9,8 +9,8 @@
 #include "common.h"
 #include "crc7.h"
 #include "init.h"
-#include "periph/mmc.h"
-#include "periph/spi.h"
+#include "stm32/mmc.h"
+#include "stm32/spi.h"
 
 #ifdef MMCSPI
 

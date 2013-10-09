@@ -8,7 +8,7 @@
 
 #include "common.h"
 #include "diskio.h"
-#include "periph/mmc.h"
+#include "stm32/mmc.h"
 
 
 DSTATUS

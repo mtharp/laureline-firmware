@@ -9,7 +9,7 @@
 #ifndef _CMDLINE_H
 #define _CMDLINE_H
 
-#include "periph/serial.h"
+#include "stm32/serial.h"
 
 #define cli_puts(val) do { serial_puts(cl_out, val); } while (0)
 #define cli_printf(...) do { serial_printf(cl_out, __VA_ARGS__); } while (0)

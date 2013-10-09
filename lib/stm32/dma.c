@@ -6,7 +6,7 @@
  * be found at http://opensource.org/licenses/MIT
  */
 
-#include "periph/dma.h"
+#include "stm32/dma.h"
 
 const dma_ch_t dma_streams[DMA_STREAMS] = {
 	{DMA1_Channel1, DMA1_Channel1_IRQn,  0, &DMA1->IFCR,  0},

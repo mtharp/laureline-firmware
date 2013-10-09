@@ -9,7 +9,7 @@
 
 #include "common.h"
 #include "init.h"
-#include "periph/serial.h"
+#include "stm32/serial.h"
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>

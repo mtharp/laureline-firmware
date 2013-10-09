@@ -15,9 +15,9 @@
 #define USE_SERIAL_UART4		0
 #define USE_SERIAL_UART5		0
 #define USE_SPI1				0
-#define USE_SPI3				1
+#define USE_SPI3				0
 
-#define MMCSPI (&SPI3_Dev)
+//#define MMCSPI (&SPI3_Dev)
 
 /* Highest priority (lowest number) */
 #define THREAD_PRIO_VTIMER			10

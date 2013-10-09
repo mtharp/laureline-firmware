@@ -10,7 +10,7 @@
 #define _SPI_H
 
 #include "common.h"
-#include "periph/dma.h"
+#include "stm32/dma.h"
 
 
 typedef struct {
