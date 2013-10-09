@@ -22,6 +22,7 @@ extern serial_t *cl_out;
 void cli_set_output(serial_t *output);
 void cli_banner(void);
 void cli_feed(char c);
+void cli_print_link(void);
 
 
 #endif

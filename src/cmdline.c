@@ -12,6 +12,8 @@
 
 #include "common.h"
 #include "cmdline.h"
+#include "eth_mac.h"
+#include "mii.h"
 #include "init.h"
 #include "lwip/def.h"
 #include "eeprom.h"
@@ -315,6 +317,7 @@ static void
 cliInfo(char *cmdline) {
 	cliVersion(NULL);
 	cli_print_hwaddr();
+	cli_print_link();
 	cli_print_netif();
 	cliUptime(NULL);
 	cli_printf("System clock:   %d Hz (nominal)\r\n", (int)system_frequency);
@@ -461,6 +464,50 @@ cli_print_netif(void) {
 	cli_puts("\r\nGateway:        ");
 	print_ipaddr(thisif.gw.addr);
 	cli_puts("\r\n");
+}
+
+
+void
+cli_print_link(void) {
+	uint32_t bmcr, bmsr, lpa;
+	bmsr = smi_read(MII_BMSR);
+	bmcr = smi_read(MII_BMCR);
+	lpa = smi_read(MII_LPA);
+	cli_puts("Link status:    ");
+	if (bmcr & BMCR_ANENABLE) {
+		if ((bmsr & (BMSR_LSTATUS | BMSR_RFAULT | BMSR_ANEGCOMPLETE))
+				!= (BMSR_LSTATUS | BMSR_ANEGCOMPLETE)) {
+			cli_puts("Down\r\n");
+		} else {
+			cli_puts("Auto ");
+			if (lpa & (LPA_100HALF | LPA_100FULL | LPA_100BASE4)) {
+				cli_puts("100M ");
+			} else {
+				cli_puts("10M ");
+			}
+			if (lpa & (LPA_10FULL | LPA_100FULL)) {
+				cli_puts("Full\r\n");
+			} else {
+				cli_puts("Half\r\n");
+			}
+		}
+	} else {
+		if (!(bmsr & BMSR_LSTATUS)) {
+			cli_puts("Down\r\n");
+		} else {
+			cli_puts("Manual ");
+			if (bmcr & BMCR_SPEED100) {
+				cli_puts("100M ");
+			} else {
+				cli_puts("10M ");
+			}
+			if (bmcr & BMCR_FULLDPLX) {
+				cli_puts("Full\r\n");
+			} else {
+				cli_puts("Half\r\n");
+			}
+		}
+	}
 }
 
 

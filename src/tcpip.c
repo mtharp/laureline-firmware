@@ -72,13 +72,13 @@ tcpip_thread(void *p) {
 		if (flags & (1 << timer_flag)) {
 			if (smi_poll_link_status()) {
 				if (!netif_is_link_up(&thisif)) {
-					idle_puts("Ethernet link up\r\n");
+					cli_print_link();
 					netif_set_link_up(&thisif);
 				}
 				GPIO_OFF(ETH_LED);
 			} else {
 				if (netif_is_link_up(&thisif)) {
-					idle_puts("Ethernet link is down\r\n");
+					cli_print_link();
 					netif_set_link_down(&thisif);
 				}
 				GPIO_ON(ETH_LED);

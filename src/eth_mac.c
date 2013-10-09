@@ -60,6 +60,7 @@ smi_poll_link_status(void) {
 	(void)smi_read(MII_BMSR);
 	bmsr = smi_read(MII_BMSR);
 	bmcr = smi_read(MII_BMCR);
+	lpa = smi_read(MII_LPA);
 
 	if (bmcr & BMCR_ANENABLE) {
 		if ((bmsr & (BMSR_LSTATUS | BMSR_RFAULT | BMSR_ANEGCOMPLETE))
@@ -67,7 +68,6 @@ smi_poll_link_status(void) {
 			link_up = 0;
 			return 0;
 		}
-		lpa = smi_read(MII_LPA);
 		if (lpa & (LPA_100HALF | LPA_100FULL | LPA_100BASE4)) {
 			maccr |= ETH_MACCR_FES;
 		} else {
@@ -94,7 +94,7 @@ smi_poll_link_status(void) {
 			maccr &= ~ETH_MACCR_DM;
 		}
 	}
-	//ETH->MACCR = maccr;
+	ETH->MACCR = maccr;
 	link_up = 1;
 	return 1;
 }
