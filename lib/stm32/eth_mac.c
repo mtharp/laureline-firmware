@@ -7,7 +7,7 @@
  */
 
 #include "common.h"
-#include "eth_mac.h"
+#include "stm32/eth_mac.h"
 #include "mii.h"
 #include <string.h>
 

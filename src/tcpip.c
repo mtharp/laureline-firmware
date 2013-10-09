@@ -9,7 +9,7 @@
 #include "common.h"
 #include "cmdline.h"
 #include "eeprom.h"
-#include "eth_mac.h"
+#include "stm32/eth_mac.h"
 #include "ntpserver.h"
 #include "tcpip.h"
 

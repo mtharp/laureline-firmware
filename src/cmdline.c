@@ -12,7 +12,7 @@
 
 #include "common.h"
 #include "cmdline.h"
-#include "eth_mac.h"
+#include "stm32/eth_mac.h"
 #include "mii.h"
 #include "init.h"
 #include "lwip/def.h"
