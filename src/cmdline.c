@@ -19,7 +19,7 @@
 #include "eeprom.h"
 #include "tcpip.h"
 #include "uptime.h"
-#include "util.h"
+#include "util/parse.h"
 //#include "version.h"
 #define VERSION "1.2.3.4"
 

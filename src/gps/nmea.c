@@ -7,9 +7,9 @@
  */
 
 #include "common.h"
-#include "util.h"
 #include "vtimer.h"
 #include "gps/parser.h"
+#include "util/parse.h"
 #include <string.h>
 
 static uint8_t rx_count, rx_cksum;

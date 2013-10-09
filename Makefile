@@ -11,9 +11,12 @@ BOARD = boards/v5
 
 SRCS = $(wildcard src/*.c)
 SRCS += $(wildcard src/gps/*.c)
-SRCS += $(wildcard src/util/*.c)
-SRCS += src/lwip/arch/sys_arch.c
+SRCS += lib/coos_plat.c
+SRCS += lib/hardfault.c
+SRCS += lib/lwip/arch/sys_arch.c
+SRCS += lib/uptime.c
 SRCS += $(wildcard lib/stm32/*.c)
+SRCS += $(wildcard lib/util/*.c)
 SRCS += $(wildcard ports/*.c)
 SRCS += $(wildcard CoOS/kernel/*.c)
 SRCS += CoOS/portable/arch.c
@@ -29,8 +32,8 @@ PATH := /opt/tnt-20130915/bin:$(PATH)
 INCLUDES = \
 	-Isrc \
 	-Isrc/conf \
-	-Isrc/lwip \
 	-Ilib \
+	-Ilib/lwip \
 	-Iports \
 	-ICoOS/kernel \
 	-ICoOS/portable \

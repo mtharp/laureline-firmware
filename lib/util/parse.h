@@ -6,8 +6,8 @@
  * be found at http://opensource.org/licenses/MIT
  */
 
-#ifndef _UTIL_H
-#define _UTIL_H
+#ifndef _UTIL_PARSE_H
+#define _UTIL_PARSE_H
 
 uint8_t parse_hex(char dat);
 uint8_t atoi_2dig(const char *str);

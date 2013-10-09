@@ -7,6 +7,7 @@
  */
 
 #include <stdint.h>
+#include "util/parse.h"
 
 
 uint8_t
