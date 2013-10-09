@@ -16,6 +16,7 @@
 
 /*---------------------------- Include ---------------------------------------*/
 #include <coocox.h>
+#include "profile.h"
 
 /*---------------------------- Variable Define -------------------------------*/
 
@@ -768,13 +769,7 @@ void Schedule(void)
     }   
 #endif
 #ifdef PROFILE_TASKS
-	{
-		U64 monotonic_now(void);
-		static U64 last_tick;
-		U64 now = monotonic_now();
-		pCurTcb->tick_count += now - last_tick;
-		last_tick = now;
-	}
+	PROFILE_EXIT_THREAD(pCurTcb->tick_count);
 #endif
     SwitchContext();                              /* Call task context switch */
 }

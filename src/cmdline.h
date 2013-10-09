@@ -9,19 +9,9 @@
 #ifndef _CMDLINE_H
 #define _CMDLINE_H
 
-#include "stm32/serial.h"
+#include "cmdline/cmdline.h"
 
-#define cli_puts(val) do { serial_puts(cl_out, val); } while (0)
-#define cli_printf(...) do { serial_printf(cl_out, __VA_ARGS__); } while (0)
-#define idle_puts(val) do { if (!cl_enabled) { serial_puts(cl_out, val); } } while (0)
-#define idle_printf(...) do { if (!cl_enabled) { serial_printf(cl_out, __VA_ARGS__); } } while (0)
-
-extern uint8_t cl_enabled;
-extern serial_t *cl_out;
-
-void cli_set_output(serial_t *output);
 void cli_banner(void);
-void cli_feed(char c);
 void cli_print_link(void);
 
 

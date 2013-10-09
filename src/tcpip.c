@@ -72,13 +72,17 @@ tcpip_thread(void *p) {
 		if (flags & (1 << timer_flag)) {
 			if (smi_poll_link_status()) {
 				if (!netif_is_link_up(&thisif)) {
-					cli_print_link();
+					if (!cl_enabled) {
+						cli_print_link();
+					}
 					netif_set_link_up(&thisif);
 				}
 				GPIO_OFF(ETH_LED);
 			} else {
 				if (netif_is_link_up(&thisif)) {
-					cli_print_link();
+					if (!cl_enabled) {
+						cli_print_link();
+					}
 					netif_set_link_down(&thisif);
 				}
 				GPIO_ON(ETH_LED);
