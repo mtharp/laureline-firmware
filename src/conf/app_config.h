@@ -9,6 +9,8 @@
 #ifndef _APP_CONFIG_H
 #define _APP_CONFIG_H
 
+#define USE_I2C1				1
+#define USE_I2C2				0
 #define USE_SERIAL_USART1		1
 #define USE_SERIAL_USART2		0
 #define USE_SERIAL_USART2		0

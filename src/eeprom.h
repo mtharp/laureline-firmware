@@ -10,18 +10,15 @@
 #define _EEPROM_H
 
 #define EEPROM_ADDR			0b1010000
-#define EEPROM_I2C			I2C1
+#define EEPROM_I2C			(&I2C1_Dev)
 
 #define EEPROM_CFG_PAGES	16
 #define EEPROM_CFG_SIZE		(EEPROM_CFG_PAGES*8)
 
 #define CFG_VERSION			1
 
-#define EERR_NACK			-20
-#define EERR_CRCFAIL		-21
-#define EERR_BLANK			-22
-#define EERR_UPGRADE		-23
-#define EERR_ARLO			-24
+#define EERR_BLANK			-20
+#define EERR_UPGRADE		-21
 
 
 #pragma pack(push, 0)

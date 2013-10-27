@@ -20,6 +20,7 @@ SRCS += lib/cmdline/core.c
 SRCS += lib/cmdline/settings.c
 SRCS += lib/stm32/dma.c
 SRCS += lib/stm32/eth_mac.c
+SRCS += lib/stm32/i2c.c
 SRCS += lib/stm32/serial.c
 SRCS += lib/util/parse.c
 SRCS += lib/util/queue.c
