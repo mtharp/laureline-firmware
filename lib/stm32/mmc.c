@@ -236,7 +236,6 @@ mmc_start_read(uint32_t lba) {
 int16_t
 mmc_read_sector(uint8_t *out) {
 	uint8_t r;
-	uint16_t crc;
 	U64 deadline;
 	if (mmc_state != MMC_READING) {
 		return EERR_INVALID;

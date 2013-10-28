@@ -23,6 +23,7 @@ i2c_t I2C2_Dev = {I2C2, I2C_T_INITIALIZER};
 #define FENCE() asm volatile("dmb" ::: "memory")
 
 
+#if USE_I2C1 || USE_I2C2
 static void
 handle_i2c_event(i2c_t *i2c) {
 	I2C_TypeDef *d = i2c->dev;
@@ -155,6 +156,7 @@ handle_i2c_error(i2c_t *i2c) {
 	isr_PostSem(i2c->sem);
 	d->SR1 &= ~0x0F00;
 }
+#endif
 
 
 #if USE_I2C1

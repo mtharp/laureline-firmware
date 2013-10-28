@@ -1,8 +1,8 @@
 MEMORY
 {
     flash1 (rx) : org = 0x08000000, len = 2k
-    flash (rx) : org = 0x0801c000, len = 16k
-    ram (!rx) : org = 0x20000000, len = 32k
+    flash (rx)  : org = 0x08000000 + 256k - 64k, len = 64k
+    ram (!rx)   : org = 0x20000000, len = 64k
 }
 
 ENTRY(Reset_Handler)
@@ -26,7 +26,7 @@ SECTIONS
         *(.data.*)
         . = ALIGN(4);
         PROVIDE(_edata = .);
-    } > ram AT > flash1
+    } > ram AT > flash
     _sidata = LOADADDR(.data);
 
     .text :

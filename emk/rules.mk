@@ -26,7 +26,7 @@ OD   := $(TRGT)objdump
 HEX  := $(CP) -O ihex
 BIN  := $(CP) -O binary
 GDB  := $(TRGT)gdb
-PYTHON := python
+PYTHON := python2
 
 MCFLAGS = -mcpu=cortex-m3 -mthumb \
 	-mno-thumb-interwork -DTHUMB_NO_INTERWORKING

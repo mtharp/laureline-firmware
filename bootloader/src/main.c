@@ -9,9 +9,9 @@
 #include "common.h"
 #include "ff.h"
 #include "init.h"
-#include "periph/mmc.h"
-#include "periph/serial.h"
-#include "periph/spi.h"
+#include "stm32/mmc.h"
+#include "stm32/serial.h"
+#include "stm32/spi.h"
 
 #define MAIN_STACK 512
 OS_STK main_stack[MAIN_STACK];
