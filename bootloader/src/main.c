@@ -9,6 +9,7 @@
 #include "common.h"
 #include "ff.h"
 #include "init.h"
+#include "linker.h"
 #include "stm32/mmc.h"
 #include "stm32/serial.h"
 #include "stm32/spi.h"
@@ -30,6 +31,8 @@ main_thread(void *pdata) {
 	SPI3_Dev.cs_pin = SDIO_CS_PNUM;
 	spi_start(&SPI3_Dev, 0);
 	mmc_start();
+	GPIO_OFF(SDIO_PWR);
+	serial_printf(&Serial1, "%x - %x\r\n%x - %x\r\n", _stub_start, _stub_end, _text_start, _text_end);
 	serial_puts(&Serial1, "\r\nstarting\r\n");
 	while (1) {
 		CoTickDelay(MS2ST(250));

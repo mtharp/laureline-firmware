@@ -17,7 +17,7 @@ static const gpio_cfg_t gpio_cfg[4][16] = {
 		{GPIO_MODE_INPUT	| GPIO_INPUT_PUPD,	1}, /* PA3  - */
 		{GPIO_MODE_2MHZ		| GPIO_OUTPUT_PP,	1}, /* PA4  - ETH_NRST*/
 		{GPIO_MODE_INPUT	| GPIO_INPUT_PUPD,	1}, /* PA5  - */
-		{GPIO_MODE_INPUT	| GPIO_INPUT_PUPD,	1}, /* PA6  - */
+		{GPIO_MODE_2MHZ		| GPIO_OUTPUT_PP,	1}, /* PA6  - SD_PWR */
 		{GPIO_MODE_INPUT	| GPIO_INPUT_PUPD,	1}, /* PA7  - ETH_RMII_CRS_DV */
 		{GPIO_MODE_INPUT	| GPIO_INPUT_PUPD,	1}, /* PA8  - */
 		{GPIO_MODE_2MHZ		| GPIO_AFIO_PP,		1}, /* PA9  - USART1_TX */
