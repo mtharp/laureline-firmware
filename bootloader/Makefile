@@ -54,4 +54,4 @@ CFLAGS = \
 
 include $(TOP)/emk/rules.mk
 
-LD := $(PYTHON) resize_ld.py $(FLASH_SIZE) $(LD)
+LD := $(PYTHON) $(TOP)/util/resize_ld.py $(FLASH_SIZE) $(LD)

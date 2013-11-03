@@ -13,9 +13,13 @@ SECTIONS
      * goes at the end.
      */
     . = 0;
+    _stub_start = .;
     .startup : ALIGN(512)
     {
+        _stub_start = .;
         KEEP(*(isr_vector))
+        . = 2k;
+        _stub_end = .;
     } > flash1
 
     .data :
@@ -28,6 +32,7 @@ SECTIONS
         PROVIDE(_edata = .);
     } > ram AT > flash
     _sidata = LOADADDR(.data);
+    _text_start = _sidata;
 
     .text :
     {
@@ -36,6 +41,7 @@ SECTIONS
         *(.rodata)
         *(.rodata.*)
     } > flash
+    _text_end = .;
 
     .bss :
     {
