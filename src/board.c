@@ -150,9 +150,11 @@ SystemInit(void) {
 	setup_bank(GPIOD, gpio_cfg[3]);
 
 	/* Reset onboard PHY and I2C devices */
+#ifndef BOOTLOADER
 	GPIO_OFF(E_NRST);
 	unstick_i2c();
 	GPIO_ON(E_NRST);
+#endif
 
 	/* Configure clocking */
 	RCC->CR |= RCC_CR_HSEBYP | RCC_CR_HSEON;

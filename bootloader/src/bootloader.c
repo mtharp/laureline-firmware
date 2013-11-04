@@ -16,25 +16,39 @@
 
 
 uint8_t bootloader_status;
-static uint8_t dirty;
+static uint8_t dirty, changed;
 static void *current_page;
 static uint8_t page_buffer[FLASH_PAGE_SIZE];
+
+
+static int
+flush_page(void) {
+	int rv;
+	if (!dirty) {
+		return 0;
+	}
+	rv = flash_page_maybe_write(current_page, page_buffer);
+	if (rv == FLASH_OK) {
+		changed = 1;
+	} else if (rv != FLASH_UNCHANGED) {
+		return rv;
+	}
+	dirty = 0;
+	return 0;
+}
 
 
 static uint8_t
 bootloader_callback(uint32_t address, const uint8_t *data, uint16_t size) {
 	void *addr_ptr = (void*)address;
 	void *new_page;
-	int index, chunk_size, rv;
+	int index, chunk_size, rv = 0;
 	while (size > 0) {
 		new_page = PAGE_OF(addr_ptr);
 		if (new_page != current_page) {
-			/* Write out contents for previous page */
-			if (dirty) {
-				rv = flash_page_maybe_write(current_page, page_buffer);
-				if (rv != FLASH_OK) {
-					break;
-				}
+			rv = flush_page();
+			if (rv) {
+				break;
 			}
 			/* Populate buffer with current contents of new page */
 			memcpy(page_buffer, new_page, FLASH_PAGE_SIZE);
@@ -51,7 +65,7 @@ bootloader_callback(uint32_t address, const uint8_t *data, uint16_t size) {
 		data += chunk_size;
 		dirty = 1;
 	}
-	return 0;
+	return rv;
 }
 
 
@@ -59,7 +73,7 @@ void
 bootloader_start(void) {
 	bootloader_status = BLS_FLASHING;
 	current_page = 0;
-	dirty = 0;
+	dirty = changed = 0;
 	ihex_init();
 }
 
@@ -69,13 +83,8 @@ bootloader_feed(const uint8_t *buf, uint16_t size) {
 	uint8_t rv;
 	rv = ihex_feed(buf, size, bootloader_callback);
 	if (rv == IHEX_EOF) {
-		if (dirty) {
-			rv = flash_page_maybe_write(current_page, page_buffer);
-			if (rv == FLASH_OK) {
-				bootloader_status = BLS_DONE;
-				return NULL;
-			}
-		} else {
+		rv = flush_page();
+		if (rv == 0) {
 			bootloader_status = BLS_DONE;
 			return NULL;
 		}
@@ -96,4 +105,10 @@ bootloader_feed(const uint8_t *buf, uint16_t size) {
 		default:
 			return "malformed ihex";
 	}
+}
+
+
+int
+bootloader_was_changed(void) {
+	return changed;
 }

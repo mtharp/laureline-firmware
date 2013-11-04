@@ -22,32 +22,29 @@ OS_TID main_tid;
 FATFS MMC_FS;
 #define MMC_FIRMWARE_FILENAME "ll.hex"
 
+#define JUMP_TOKEN 0xeefc63d2
+uint32_t __attribute__((section(".uninit"))) jump_token;
+
+
+static void
+reset_and_jump(void) {
+	jump_token = JUMP_TOKEN;
+	NVIC_SystemReset();
+}
+
 
 static void
 jump_application(void) {
 	typedef void (*func_t)(void);
 	uint32_t *vtor = _user_start;
-	func_t func = (func_t)vtor[1];
-	int i;
-
-	serial_printf(&Serial1, "Starting application at %08x, entry point is %08x\r\n", &_user_start, func);
-	CoTickDelay(MS2ST(100));
-	DISABLE_IRQ();
-	/* Clear and disable interrupt vectors */
-	SCB->ICSR = SCB_ICSR_PENDSVCLR | SCB_ICSR_PENDSTCLR;
-	for (i = 0; i < 8; i++) {
-		NVIC->ICER[i] = 0xFFFFFFFF;
-		NVIC->ICPR[i] = 0xFFFFFFFF;
-	}
-	ENABLE_IRQ();
-	SCB->VTOR = (uint32_t)vtor;
-	__set_MSP((uint32_t)vtor[0]);
-	func();
+	func_t entry = (func_t)vtor[1];
+	__set_MSP(vtor[0]);
+	entry();
 }
 
 
-void
-main_thread(void *pdata) {
+static void
+try_flash(void) {
 	int16_t rc;
 	FIL fp;
 	UINT nread;
@@ -59,67 +56,75 @@ main_thread(void *pdata) {
 	spi_start(&SPI3_Dev, 0);
 	mmc_start();
 	GPIO_OFF(SDIO_PWR);
-	serial_printf(&Serial1, "Allowed region: %08x - %08x\r\n", _user_start, _user_end);
-	serial_puts(&Serial1, "\r\nstarting\r\n");
-	while (1) {
-		CoTickDelay(MS2ST(250));
-		rc = mmc_connect();
-		if (rc == EERR_OK) {
-			serial_puts(&Serial1, "SD connected\r\n");
-		} else if (rc == EERR_TIMEOUT) {
-			serial_puts(&Serial1, "Timed out waiting for SD\r\n");
-			continue;
-		} else {
-			serial_puts(&Serial1, "Failed to connect to SD\r\n");
-			continue;
-		}
-		jump_application();
+	CoTickDelay(MS2ST(100));
 
-		serial_puts(&Serial1, "Mounting SD filesystem\r\n");
-		if (f_mount(0, &MMC_FS) != FR_OK) {
-			serial_puts(&Serial1, "ERROR: Unable to mount filesystem\r\n");
-			continue;
-		}
+	rc = mmc_connect();
+	if (rc == EERR_OK) {
+		serial_puts(&Serial1, "SD connected\r\n");
+	} else if (rc == EERR_TIMEOUT) {
+		serial_puts(&Serial1, "Timed out waiting for SD\r\n");
+		return;
+	} else {
+		serial_puts(&Serial1, "Failed to connect to SD\r\n");
+		return;
+	}
 
-		serial_puts(&Serial1, "Opening file " MMC_FIRMWARE_FILENAME "\r\n");
-		if (f_open(&fp, MMC_FIRMWARE_FILENAME, FA_READ) != FR_OK) {
-			serial_puts(&Serial1, "Error opening file, maybe it does not exist\r\n");
-			continue;
-		}
+	serial_puts(&Serial1, "Mounting SD filesystem\r\n");
+	if (f_mount(0, &MMC_FS) != FR_OK) {
+		serial_puts(&Serial1, "ERROR: Unable to mount filesystem\r\n");
+		return;
+	}
 
-		bootloader_start();
-		while (bootloader_status == BLS_FLASHING) {
-			if (f_read(&fp, buf, sizeof(buf), &nread) != FR_OK) {
-				serial_puts(&Serial1, "Error reading file\r\n");
-				break;
-			}
-			if (nread == 0) {
-				serial_puts(&Serial1, "Error: premature end of file\r\n");
-				break;
-			}
-			errmsg = bootloader_feed(buf, nread);
-			if (errmsg != NULL) {
-				serial_printf(&Serial1, "Error flashing firmware: %s\r\n", errmsg);
-				break;
-			}
-		}
+	serial_puts(&Serial1, "Opening file " MMC_FIRMWARE_FILENAME "\r\n");
+	if (f_open(&fp, MMC_FIRMWARE_FILENAME, FA_READ) != FR_OK) {
+		serial_puts(&Serial1, "Error opening file, maybe it does not exist\r\n");
+		return;
+	}
 
-		if (bootloader_status == BLS_DONE) {
+	bootloader_start();
+	while (bootloader_status == BLS_FLASHING) {
+		if (f_read(&fp, buf, sizeof(buf), &nread) != FR_OK) {
+			serial_puts(&Serial1, "Error reading file\r\n");
+			break;
+		}
+		if (nread == 0) {
+			serial_puts(&Serial1, "Error: premature end of file\r\n");
+			break;
+		}
+		errmsg = bootloader_feed(buf, nread);
+		if (errmsg != NULL) {
+			serial_printf(&Serial1, "Error flashing firmware: %s\r\n", errmsg);
+			break;
+		}
+	}
+
+	if (bootloader_status == BLS_DONE) {
+		if (bootloader_was_changed()) {
 			serial_puts(&Serial1, "New firmware successfully loaded\r\n");
-			CoTickDelay(MS2ST(100));
-			jump_application();
 		} else {
-			serial_puts(&Serial1, "ERROR: Reset to try again or load last known good firmware\r\n");
-			//HALT();
+			serial_puts(&Serial1, "Firmware is up-to-date\r\n");
 		}
+	} else {
+		serial_puts(&Serial1, "ERROR: Reset to try again or load last known good firmware\r\n");
 		HALT();
-		CoTickDelay(S2ST(1));
 	}
 }
 
 
 void
+main_thread(void *pdata) {
+	try_flash();
+	CoTickDelay(MS2ST(250));
+	reset_and_jump();
+}
+
+
+void
 main(void) {
+	if (jump_token == JUMP_TOKEN) {
+		jump_token = 0;
+		jump_application();
+	}
 	setup_clocks(ONBOARD_CLOCK);
 	CoInitOS();
 	serial_start(&Serial1, 115200);

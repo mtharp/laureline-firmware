@@ -49,6 +49,7 @@ INCLUDES = \
 
 CFLAGS = \
 	$(INCLUDES) \
+	-DBOOTLOADER \
 	-Wall -Wextra -Wstrict-prototypes \
 	-Wno-unused-parameter \
 	-Wno-main \

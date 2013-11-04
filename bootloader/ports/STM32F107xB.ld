@@ -55,4 +55,9 @@ SECTIONS
         . = ALIGN(4);
         PROVIDE(_ebss = .);
     } > ram
+
+    .uninit :
+    {
+        *(.uninit)
+    } > ram
 }

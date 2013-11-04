@@ -19,12 +19,12 @@ SECTIONS
     boot_stub : ALIGN(16)
     {
         KEEP(*(boot_stub))
+        . = 2k;
     } > flash
 
     /* Now the real vector table starts at a 2K offset. Must be aligned to the
      * size of the table rounded up to a power of 2.
      */
-    . = 0x800;
     startup : ALIGN(512)
     {
         KEEP(*(isr_vector))

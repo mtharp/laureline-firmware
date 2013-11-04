@@ -14,9 +14,10 @@
 #define FLASH_PAGE_SIZE 2048
 #endif
 
-#define FLASH_OK 0
-#define FLASH_DENIED 1
-#define FLASH_FAULT 2
+#define FLASH_OK		0
+#define FLASH_UNCHANGED	1
+#define FLASH_DENIED	2
+#define FLASH_FAULT		3
 
 #define PAGE_OF(addr) ((void*)( ((uint32_t)(addr) / FLASH_PAGE_SIZE) * FLASH_PAGE_SIZE ))
 #define NEXT_PAGE(addr) ((void*)( ((uint8_t*)(addr)) + FLASH_PAGE_SIZE ))

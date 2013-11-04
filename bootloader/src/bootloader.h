@@ -20,5 +20,6 @@ extern uint8_t bootloader_status;
 
 void bootloader_start(void);
 const char *bootloader_feed(const uint8_t *buf, uint16_t size);
+int bootloader_was_changed(void);
 
 #endif

@@ -145,7 +145,7 @@ flash_page_maybe_write(void *page, const uint8_t *data) {
 	status = flash_page_compare(page, data);
 	if (status == 0) {
 		/* Already identical */
-		return FLASH_OK;
+		return FLASH_UNCHANGED;
 	}
 	if (status == 2) {
 		/* Needs an erase */
