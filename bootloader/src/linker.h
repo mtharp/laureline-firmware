@@ -11,3 +11,5 @@ extern uint32_t _stub_start[];
 extern uint32_t _stub_end[];
 extern uint32_t _text_start[];
 extern uint32_t _text_end[];
+extern uint32_t _user_start[];
+extern uint32_t _user_end[];

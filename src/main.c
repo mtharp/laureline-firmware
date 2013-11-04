@@ -74,8 +74,8 @@ main_thread(void *pdata) {
 
 void
 main(void) {
-	CoInitOS();
 	setup_clocks(ONBOARD_CLOCK);
+	CoInitOS();
 	serial_start(&Serial1, 115200);
 	serial_start(&Serial4, 57600);
 	cli_set_output(&Serial1);

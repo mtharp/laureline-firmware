@@ -9,8 +9,8 @@ ENTRY(Reset_Handler)
 
 SECTIONS
 {
-    /* The bootloader occuipes the first page of flash (2K), then the remainder
-     * goes at the end.
+    /* The bootloader occupies the first page of flash (2K), then the remainder
+     * goes at the end of flash.
      */
     . = 0;
     _stub_start = .;
@@ -20,6 +20,7 @@ SECTIONS
         KEEP(*(isr_vector))
         . = 2k;
         _stub_end = .;
+        _user_start = .;
     } > flash1
 
     .data :
@@ -32,6 +33,7 @@ SECTIONS
         PROVIDE(_edata = .);
     } > ram AT > flash
     _sidata = LOADADDR(.data);
+    _user_end = _sidata;
     _text_start = _sidata;
 
     .text :

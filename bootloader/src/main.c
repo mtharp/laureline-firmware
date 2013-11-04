@@ -7,6 +7,7 @@
  */
 
 #include "common.h"
+#include "bootloader.h"
 #include "ff.h"
 #include "init.h"
 #include "linker.h"
@@ -22,17 +23,43 @@ FATFS MMC_FS;
 #define MMC_FIRMWARE_FILENAME "ll.hex"
 
 
+static void
+jump_application(void) {
+	typedef void (*func_t)(void);
+	uint32_t *vtor = _user_start;
+	func_t func = (func_t)vtor[1];
+	int i;
+
+	serial_printf(&Serial1, "Starting application at %08x, entry point is %08x\r\n", &_user_start, func);
+	CoTickDelay(MS2ST(100));
+	DISABLE_IRQ();
+	/* Clear and disable interrupt vectors */
+	SCB->ICSR = SCB_ICSR_PENDSVCLR | SCB_ICSR_PENDSTCLR;
+	for (i = 0; i < 8; i++) {
+		NVIC->ICER[i] = 0xFFFFFFFF;
+		NVIC->ICPR[i] = 0xFFFFFFFF;
+	}
+	ENABLE_IRQ();
+	SCB->VTOR = (uint32_t)vtor;
+	__set_MSP((uint32_t)vtor[0]);
+	func();
+}
+
+
 void
 main_thread(void *pdata) {
 	int16_t rc;
-	int i = 0;
 	FIL fp;
+	UINT nread;
+	const char *errmsg;
+	static uint8_t buf[512];
+
 	SPI3_Dev.cs_pad = SDIO_CS_PAD;
 	SPI3_Dev.cs_pin = SDIO_CS_PNUM;
 	spi_start(&SPI3_Dev, 0);
 	mmc_start();
 	GPIO_OFF(SDIO_PWR);
-	serial_printf(&Serial1, "%x - %x\r\n%x - %x\r\n", _stub_start, _stub_end, _text_start, _text_end);
+	serial_printf(&Serial1, "Allowed region: %08x - %08x\r\n", _user_start, _user_end);
 	serial_puts(&Serial1, "\r\nstarting\r\n");
 	while (1) {
 		CoTickDelay(MS2ST(250));
@@ -46,6 +73,7 @@ main_thread(void *pdata) {
 			serial_puts(&Serial1, "Failed to connect to SD\r\n");
 			continue;
 		}
+		jump_application();
 
 		serial_puts(&Serial1, "Mounting SD filesystem\r\n");
 		if (f_mount(0, &MMC_FS) != FR_OK) {
@@ -58,7 +86,33 @@ main_thread(void *pdata) {
 			serial_puts(&Serial1, "Error opening file, maybe it does not exist\r\n");
 			continue;
 		}
-		serial_printf(&Serial1, "Done! %d\r\n", ++i);
+
+		bootloader_start();
+		while (bootloader_status == BLS_FLASHING) {
+			if (f_read(&fp, buf, sizeof(buf), &nread) != FR_OK) {
+				serial_puts(&Serial1, "Error reading file\r\n");
+				break;
+			}
+			if (nread == 0) {
+				serial_puts(&Serial1, "Error: premature end of file\r\n");
+				break;
+			}
+			errmsg = bootloader_feed(buf, nread);
+			if (errmsg != NULL) {
+				serial_printf(&Serial1, "Error flashing firmware: %s\r\n", errmsg);
+				break;
+			}
+		}
+
+		if (bootloader_status == BLS_DONE) {
+			serial_puts(&Serial1, "New firmware successfully loaded\r\n");
+			CoTickDelay(MS2ST(100));
+			jump_application();
+		} else {
+			serial_puts(&Serial1, "ERROR: Reset to try again or load last known good firmware\r\n");
+			//HALT();
+		}
+		HALT();
 		CoTickDelay(S2ST(1));
 	}
 }
@@ -66,8 +120,8 @@ main_thread(void *pdata) {
 
 void
 main(void) {
-	CoInitOS();
 	setup_clocks(ONBOARD_CLOCK);
+	CoInitOS();
 	serial_start(&Serial1, 115200);
 	main_tid = CoCreateTask(main_thread, NULL, THREAD_PRIO_MAIN,
 			&main_stack[MAIN_STACK-1], MAIN_STACK, "main");
