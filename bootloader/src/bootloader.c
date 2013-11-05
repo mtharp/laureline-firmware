@@ -40,7 +40,7 @@ flush_page(void) {
 
 static uint8_t
 bootloader_callback(uint32_t address, const uint8_t *data, uint16_t size) {
-	void *addr_ptr = (void*)address;
+	uint8_t *addr_ptr = (uint8_t*)address;
 	void *new_page;
 	int index, chunk_size, rv = 0;
 	while (size > 0) {
@@ -55,7 +55,7 @@ bootloader_callback(uint32_t address, const uint8_t *data, uint16_t size) {
 			dirty = 0;
 			current_page = new_page;
 		}
-		index = (int)(addr_ptr - new_page);
+		index = (int)(addr_ptr - (uint8_t*)new_page);
 		chunk_size = FLASH_PAGE_SIZE - index;
 		if (chunk_size > size) {
 			chunk_size = size;
@@ -63,6 +63,7 @@ bootloader_callback(uint32_t address, const uint8_t *data, uint16_t size) {
 		memcpy(page_buffer + index, data, chunk_size);
 		size -= chunk_size;
 		data += chunk_size;
+		addr_ptr += chunk_size;
 		dirty = 1;
 	}
 	return rv;

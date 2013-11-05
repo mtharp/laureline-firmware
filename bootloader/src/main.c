@@ -24,6 +24,7 @@ FATFS MMC_FS;
 
 #define JUMP_TOKEN 0xeefc63d2
 uint32_t __attribute__((section(".uninit"))) jump_token;
+const uint32_t *user_vtor = _user_start;
 
 
 static void
@@ -36,10 +37,11 @@ reset_and_jump(void) {
 static void
 jump_application(void) {
 	typedef void (*func_t)(void);
-	uint32_t *vtor = _user_start;
-	func_t entry = (func_t)vtor[1];
-	__set_MSP(vtor[0]);
-	entry();
+	func_t entry = (func_t)user_vtor[1];
+	if (entry != (void*)0xFFFFFFFF) {
+		__set_MSP(user_vtor[0]);
+		entry();
+	}
 }
 
 
@@ -115,7 +117,13 @@ void
 main_thread(void *pdata) {
 	try_flash();
 	CoTickDelay(MS2ST(250));
-	reset_and_jump();
+	if (user_vtor[1] == 0xFFFFFFFF) {
+		serial_puts(&Serial1, "No application loaded, trying to load again in 10 seconds\r\n");
+		CoTickDelay(S2ST(10));
+		NVIC_SystemReset();
+	} else {
+		reset_and_jump();
+	}
 }
 
 

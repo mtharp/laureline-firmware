@@ -56,7 +56,7 @@ SECTIONS
         PROVIDE(_ebss = .);
     } > ram
 
-    .uninit :
+    .uninit (NOLOAD) :
     {
         *(.uninit)
     } > ram
