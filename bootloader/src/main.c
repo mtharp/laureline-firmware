@@ -69,7 +69,6 @@ try_flash(void) {
 	CoTickDelay(MS2ST(100));
 
 	serial_puts(&Serial1, "Bootloader version: " VERSION "\r\n");
-	return;
 	rc = mmc_connect();
 	if (rc == EERR_OK) {
 		serial_puts(&Serial1, "SD connected\r\n");
