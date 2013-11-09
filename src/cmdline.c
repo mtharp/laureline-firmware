@@ -14,6 +14,7 @@
 #include "cmdline.h"
 #include "stm32/eth_mac.h"
 #include "mii.h"
+#include "info_table.h"
 #include "init.h"
 #include "lwip/def.h"
 #include "eeprom.h"
@@ -24,7 +25,6 @@
 //#include "version.h"
 #include "cmdline/cmdline.h"
 #include "cmdline/settings.h"
-#define VERSION "1.2.3.4"
 
 
 static void cliDefaults(char *cmdline);
@@ -122,9 +122,16 @@ cliUptime(char *cmdline) {
 
 static void
 cliVersion(char *cmdline) {
-	cli_puts(
-		"Hardware:       " BOARD_REV "\r\n"
-		"Software:       " VERSION "\r\n");
+	const char *bootver;
+	uint32_t hwver;
+	hwver = (uint32_t)info_get(boot_table, INFO_HWVER);
+	cli_printf("Hardware:       %d.%d\r\n", hwver >> 8, hwver & 0xff);
+	cli_puts("Software:       " VERSION "\r\n");
+	bootver = info_get(boot_table, INFO_BOOTVER);
+	if (bootver == NULL) {
+		bootver = "no bootloader";
+	}
+	cli_printf("Bootloader:     %s\r\n", bootver);
 }
 
 

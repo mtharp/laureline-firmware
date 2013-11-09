@@ -7,11 +7,13 @@
 #
 
 PROJECT = bootloader
-BOARD = boards/v5
+HW_VERSION = 0
 FLASH_SIZE = 256k
 
 TOP = ..
 SRCS = $(wildcard src/*.c)
+SRCS += $(TOP)/src/board.c
+SRCS += $(TOP)/src/init.c
 SRCS += $(TOP)/fatfs/ff.c
 SRCS += $(TOP)/lib/coos_plat.c
 SRCS += $(TOP)/lib/crc7.c
@@ -29,8 +31,6 @@ SRCS += $(TOP)/ports/core_cm3.c
 SRCS += $(TOP)/ports/crt0.c
 SRCS += $(TOP)/ports/stubs.c
 SRCS += $(TOP)/ports/vectors.c
-SRCS += $(TOP)/src/board.c
-SRCS += $(TOP)/src/init.c
 SRCS += $(wildcard $(TOP)/CoOS/kernel/*.c)
 SRCS += $(TOP)/CoOS/portable/arch.c
 SRCS += $(TOP)/CoOS/portable/GCC/port.c
@@ -47,9 +47,12 @@ INCLUDES = \
 	-I$(TOP)/CoOS/portable \
 	-I$(TOP)/fatfs
 
+VERSION ?= $(shell $(TOP)/util/git_version.sh)
 CFLAGS = \
 	$(INCLUDES) \
 	-DBOOTLOADER \
+	-DVERSION='"$(VERSION)"' \
+	-DHW_VERSION=$(HW_VERSION) \
 	-Wall -Wextra -Wstrict-prototypes \
 	-Wno-unused-parameter \
 	-Wno-main \

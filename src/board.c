@@ -81,6 +81,7 @@ static const gpio_cfg_t gpio_cfg[4][16] = {
 	}};
 
 
+#ifndef BOOTLOADER
 static void
 delay10us(void) {
 	int i;
@@ -114,6 +115,7 @@ unstick_i2c(void) {
 	setup_gpio(GPIOB, 6, GPIO_MODE_2MHZ | GPIO_AFIO_OD, 1);
 	setup_gpio(GPIOB, 7, GPIO_MODE_2MHZ | GPIO_AFIO_OD, 1);
 }
+#endif
 
 
 void

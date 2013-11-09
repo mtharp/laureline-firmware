@@ -6,6 +6,16 @@
  * be found at http://opensource.org/licenses/MIT
  */
 
+#include <stddef.h>
+#include <stdint.h>
+#include "info_table.h"
 
-extern uint32_t _user_start[];
-extern uint32_t _user_end[];
+const void *
+info_get(const info_entry_t *table, uint32_t type) {
+	for (; table->type != 0; table++) {
+		if (table->type == type) {
+			return table->ptr;
+		}
+	}
+	return NULL;
+}

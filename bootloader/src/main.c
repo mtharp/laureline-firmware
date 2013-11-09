@@ -9,6 +9,7 @@
 #include "common.h"
 #include "bootloader.h"
 #include "ff.h"
+#include "info_table.h"
 #include "init.h"
 #include "linker.h"
 #include "stm32/mmc.h"
@@ -26,11 +27,18 @@ FATFS MMC_FS;
 uint32_t __attribute__((section(".uninit"))) jump_token;
 const uint32_t *user_vtor = _user_start;
 
+const info_entry_t info_table[] = {
+	{INFO_BOOTVER, VERSION},
+	{INFO_HWVER, (void*)HW_VERSION},
+	{INFO_END, NULL},
+};
+
 
 static void
 reset_and_jump(void) {
 	jump_token = JUMP_TOKEN;
 	NVIC_SystemReset();
+	while (1) {}
 }
 
 
@@ -60,6 +68,8 @@ try_flash(void) {
 	GPIO_OFF(SDIO_PWR);
 	CoTickDelay(MS2ST(100));
 
+	serial_puts(&Serial1, "Bootloader version: " VERSION "\r\n");
+	return;
 	rc = mmc_connect();
 	if (rc == EERR_OK) {
 		serial_puts(&Serial1, "SD connected\r\n");
@@ -83,6 +93,7 @@ try_flash(void) {
 		return;
 	}
 
+	serial_puts(&Serial1, "Comparing file to current flash contents\r\n");
 	bootloader_start();
 	while (bootloader_status == BLS_FLASHING) {
 		if (f_read(&fp, buf, sizeof(buf), &nread) != FR_OK) {
@@ -95,7 +106,9 @@ try_flash(void) {
 		}
 		errmsg = bootloader_feed(buf, nread);
 		if (errmsg != NULL) {
-			serial_printf(&Serial1, "Error flashing firmware: %s\r\n", errmsg);
+			serial_puts(&Serial1, "Error flashing firmware: ");
+			serial_puts(&Serial1, errmsg);
+			serial_puts(&Serial1, "\r\n");
 			break;
 		}
 	}
@@ -122,6 +135,7 @@ main_thread(void *pdata) {
 		CoTickDelay(S2ST(10));
 		NVIC_SystemReset();
 	} else {
+		serial_puts(&Serial1, "Booting application\r\n");
 		reset_and_jump();
 	}
 }

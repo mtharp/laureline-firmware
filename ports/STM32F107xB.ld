@@ -16,18 +16,23 @@ SECTIONS
      * bootloader, and the .hex file (minus boot_stub) to be used with a
      * bootloader that resides in the first page.
      */
-    boot_stub : ALIGN(16)
+    .boot_stub : ALIGN(512)
     {
         KEEP(*(boot_stub))
+        . = 512;
+        boot_table = .;
         . = 2k;
     } > flash
 
     /* Now the real vector table starts at a 2K offset. Must be aligned to the
      * size of the table rounded up to a power of 2.
      */
-    startup : ALIGN(512)
+    .startup : ALIGN(512)
     {
         KEEP(*(isr_vector))
+        . = 512;
+        app_table = .;
+        KEEP(*(*.info_table))
     } > flash
 
     .data :
@@ -58,5 +63,10 @@ SECTIONS
         *(COMMON)
         . = ALIGN(4);
         PROVIDE(_ebss = .);
+    } > ram
+
+    .uninit (NOLOAD) :
+    {
+        *(.uninit)
     } > ram
 }

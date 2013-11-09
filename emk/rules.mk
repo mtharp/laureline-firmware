@@ -50,20 +50,26 @@ LDFLAGS += -Wl,--gc-sections
 endif
 
 ASFLAGS = $(MCFLAGS)
-CPFLAGS = -R boot_stub
+CPFLAGS = -R boot_stub -R .boot_stub
 
 # Targets
-all: $(OUT).elf $(OUT).hex $(OUT).lst
+all: $(OUT).elf $(OUT).hex $(OUT).bin $(OUT).lst
 
 clean:
 	rm -rf $(BUILD)
 
-install: all
+install: all $(BMP_SCRIPT)
+	$(GDB) $(OUT).elf -x $(BMP_SCRIPT) --batch -ex load -ex kill
+
+install-nostub: all $(BMP_SCRIPT)
+	$(CP) $(CPFLAGS) $(OUT).elf $(OUT).elf.nostub
+	$(GDB) $(OUT).elf.nostub -x $(BMP_SCRIPT) --batch -ex load -ex kill
+
+$(BMP_SCRIPT):
 ifdef BMP
 	@echo -e "tar ext $(BMP)\nmon swdp_scan\natt 1" >$(BMP_SCRIPT)
-	$(GDB) $(OUT).elf -x $(BMP_SCRIPT) --batch -ex load -ex kill
 else
-	@echo usage: make install BMP=/dev/ttyACMx
+	@echo Must pass BMP=/dev/ttyACMx
 	@exit 1
 endif
 

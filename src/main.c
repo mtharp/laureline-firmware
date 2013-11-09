@@ -11,6 +11,7 @@
 #include "eeprom.h"
 #include "gps/parser.h"
 #include "gps/ublox.h"
+#include "info_table.h"
 #include "init.h"
 #include "ppscapture.h"
 #include "tcpip.h"
@@ -23,6 +24,11 @@
 #define MAIN_STACK 512
 OS_STK main_stack[MAIN_STACK];
 OS_TID main_tid;
+
+const info_entry_t info_table[] = {
+	{INFO_APPVER, VERSION},
+	{INFO_END, NULL},
+};
 
 
 static void
