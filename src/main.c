@@ -36,15 +36,10 @@ static void
 load_eeprom(void) {
 	int16_t rc;
 	rc = eeprom_read_cfg();
-	if (rc == EERR_UPGRADE
-			|| (rc == EERR_OK && cfg.version == 0)) {
-		memset(&cfg_bytes[12], 0, EEPROM_CFG_SIZE - 12);
+	if (rc != EERR_OK) {
+		memset(&cfg, 0, sizeof(cfg));
 		cfg.version = CFG_VERSION;
-		rc = eeprom_write_cfg();
-	} else if (rc != EERR_OK) {
-		memset(cfg_bytes, 0, EEPROM_CFG_SIZE);
-		cfg.version = CFG_VERSION;
-		rc = eeprom_write_cfg();
+		cli_puts("ERROR: EEPROM is invalid, run 'save' or 'defaults' to clear\r\n");
 	}
 }
 

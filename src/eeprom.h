@@ -12,42 +12,47 @@
 #define EEPROM_ADDR			0b1010000
 #define EEPROM_I2C			(&I2C1_Dev)
 
-#define EEPROM_CFG_PAGES	16
-#define EEPROM_CFG_SIZE		(EEPROM_CFG_PAGES*8)
+#define EEPROM_PAGE_SIZE	8
+#define EEPROM_PAGES		16
+#define EEPROM_SIZE			(EEPROM_PAGES * EEPROM_PAGE_SIZE)
 
-#define CFG_VERSION			1
+#define CFG_VERSION			2
 
 #define EERR_BLANK			-20
 #define EERR_UPGRADE		-21
 
 
-#pragma pack(push, 0)
+#pragma pack(push, 1)
 
+/* First 8 bytes cannot be modified at runtime */
 typedef struct {
-	/* First chunk */
+	uint16_t hwver;
+	uint8_t serial[6];
+} snumv2_t;
+#define EEPROM_CFG_OFFSET sizeof(snumv2_t)
+
+/* Remainder is user-modifiable configuration */
+typedef struct {
+	uint16_t version;
 	uint32_t ip_addr;
 	uint32_t ip_gateway;
 	uint32_t ip_netmask;
-	uint16_t version;
-	uint8_t _reserved;
-	uint8_t crc1;
-	/* Second chunk */
 	uint32_t gps_baud_rate;
 	uint8_t admin_key[8];
-	uint8_t _reserved2[99];
-	uint8_t crc;
-} cfgv1_t;
+	uint8_t _reserved[92];
+	uint16_t crc;
+} cfgv2_t;
+#define CFG_SIZE sizeof(cfgv2_t)
 
 #pragma pack(pop)
 
 
-extern cfgv1_t cfg;
-extern uint8_t * const cfg_bytes;
+extern snumv2_t snum;
+extern cfgv2_t cfg;
 
 
 int16_t eeprom_read(const uint8_t addr, uint8_t *buf, const uint8_t len);
 int16_t eeprom_read_cfg(void);
 int16_t eeprom_write_cfg(void);
-int16_t eeprom_erase(void);
 
 #endif

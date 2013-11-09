@@ -89,7 +89,7 @@ cliWriteConfig(void) {
 
 static void
 cliDefaults(char *cmdline) {
-	memset(cfg_bytes, 0, EEPROM_CFG_SIZE);
+	memset(&cfg, 0, sizeof(cfg));
 	cfg.version = CFG_VERSION;
 	cliWriteConfig();
 }

@@ -10,12 +10,13 @@
 
 #include "common.h"
 #include "eeprom.h"
-#include "crc8.h"
+#include "lwip/inet_chksum.h"
 #include "stm32/i2c.h"
 
 
-cfgv1_t cfg;
-uint8_t * const cfg_bytes = (uint8_t * const)&cfg;
+snumv2_t snum;
+cfgv2_t cfg;
+static uint8_t * const cfg_bytes = (uint8_t * const)&cfg;
 
 
 static int16_t
@@ -62,61 +63,22 @@ eeprom_read(const uint8_t addr, uint8_t *buf, const uint8_t len) {
 
 int16_t
 eeprom_read_cfg(void) {
-	uint8_t i, crc;
+	uint8_t i;
 	int16_t status;
 	i2c_start(EEPROM_I2C);
-	for (i = 0; i < EEPROM_CFG_SIZE; i += 8) {
-		status = eeprom_do(&i, 1, &cfg_bytes[i], 8);
+	for (i = 0; i < EEPROM_SIZE; i += EEPROM_PAGE_SIZE) {
+		status = eeprom_do(&i, 1,
+			i == 0 ? (void*)&snum : (void*)&cfg_bytes[i-EEPROM_CFG_OFFSET],
+			EEPROM_PAGE_SIZE);
 		if (status != EERR_OK) {
 			i2c_stop(EEPROM_I2C);
 			return status;
 		}
 	}
 	i2c_stop(EEPROM_I2C);
-	crc = 0xFF;
-	status = 1;
-	/* First 16 bytes have their own CRC since that's what the bootloader was
-	 * originally written to.
-	 */
-	for (i = 0; i < 16; i++) {
-		crc = CRC8(crc, cfg_bytes[i]);
-		if (cfg_bytes[i] != 0xFF) {
-			/* First segment is blank */
-			status = 0;
-		}
-	}
-	if (crc != 0) {
-		if (status == 0) {
-			/* Fail now if CRC doesn't match and first segment is not blank */
-			return EERR_CRCFAIL;
-		}
-		/* First segment is blank */
-		status = 1;
-	} else {
-		/* First segment matched but second segment might be blank when
-		 * upgrading.
-		 */
-		status = 2;
-	}
-	/* Remaining bytes are one big chunk */
-	crc = 0xFF;
-	for (i = 16; i < EEPROM_CFG_SIZE; i++) {
-		crc = CRC8(crc, cfg_bytes[i]);
-		if (cfg_bytes[i] != 0xFF) {
-			status = 0;
-		}
-	}
-	if (crc != 0) {
-		if (status == 2) {
-			/* First segment OK, second segment blank */
-			return EERR_UPGRADE;
-		} else if (status == 1) {
-			/* Both segments blank */
-			return EERR_BLANK;
-		} else {
-			/* Either segment CRC failed and not blank */
-			return EERR_CRCFAIL;
-		}
+	/* Validate checksum of user data */
+	if (inet_chksum(&cfg, sizeof(cfg) - 2) != cfg.crc) {
+		return EERR_CRCFAIL;
 	}
 	return EERR_OK;
 }
@@ -124,30 +86,18 @@ eeprom_read_cfg(void) {
 
 int16_t
 eeprom_write_cfg(void) {
-	uint8_t i, j, addr, crc;
-	uint8_t tmp[9];
+	uint8_t j, addr;
+	uint8_t tmp[1 + EEPROM_PAGE_SIZE];
 	uint64_t timeout;
 	int16_t status;
-	crc = 0xFF;
-	for (i = 0; i < 15; i++) {
-		crc = CRC8(crc, cfg_bytes[i]);
-	}
-	cfg_bytes[i] = crc;
-	crc = 0xFF;
-	for (i = 16; i < EEPROM_CFG_SIZE - 1; i++) {
-		crc = CRC8(crc, cfg_bytes[i]);
-	}
-	cfg_bytes[i] = crc;
-
+	cfg.crc = inet_chksum(&cfg, sizeof(cfg) - 2);
 	i2c_start(EEPROM_I2C);
-	for (addr = 0; addr < EEPROM_CFG_SIZE; addr += 8) {
+	for (addr = EEPROM_CFG_OFFSET; addr < EEPROM_SIZE; addr += EEPROM_PAGE_SIZE) {
 		for (j = 3; j; j--) {
 			tmp[0] = addr;
-			for (i = 0; i < 8; i++) {
-				tmp[1+i] = cfg_bytes[addr+i];
-			}
+			memcpy(&tmp[1], &cfg_bytes[addr - EEPROM_CFG_OFFSET], EEPROM_PAGE_SIZE);
 			/* Write EEPROM */
-			status = eeprom_do((uint8_t*)tmp, 9, NULL, 0);
+			status = eeprom_do((uint8_t*)tmp, 1 + EEPROM_PAGE_SIZE, NULL, 0);
 			if (status != EERR_OK) {
 				goto cleanup;
 			}
@@ -158,7 +108,7 @@ eeprom_write_cfg(void) {
 					status = EERR_TIMEOUT;
 					goto cleanup;
 				}
-				status = eeprom_do(&addr, 1, (uint8_t*)tmp, 8);
+				status = eeprom_do(&addr, 1, (uint8_t*)tmp, EEPROM_PAGE_SIZE);
 				if (status == EERR_OK) {
 					/* Done */
 					break;
@@ -168,14 +118,8 @@ eeprom_write_cfg(void) {
 				/* EEPROM is still writing */
 			}
 			status = 0;
-			for (i = 0; i < 8; i++) {
-				if (tmp[i] != cfg_bytes[addr+i]) {
-					status = 1;
-					break;
-				}
-			}
-			if (status == 0) {
-				/* Everything checks out */
+			if (memcmp(tmp, &cfg_bytes[addr - EEPROM_CFG_OFFSET], EEPROM_PAGE_SIZE) == 0) {
+				/* Confirmed valid */
 				break;
 			}
 			/* Read doesn't match write, try again */
@@ -184,55 +128,6 @@ eeprom_write_cfg(void) {
 		if (j == 0) {
 			status = EERR_FAULT;
 			goto cleanup;
-		}
-	}
-	status = EERR_OK;
-cleanup:
-	i2c_stop(EEPROM_I2C);
-	return status;
-}
-
-
-int16_t
-eeprom_erase(void) {
-	int16_t status;
-	uint8_t addr, i;
-	uint8_t tmp[8];
-	uint8_t out[9];
-	for (i = 1; i < 9; i++) {
-		out[i] = 0xFF;
-	}
-	i2c_start(EEPROM_I2C);
-	for (addr = 0x00; addr < 0x80; addr += 8) {
-		/* Check if page is already blank */
-		status = eeprom_do(&addr, 1, (uint8_t*)tmp, 8);
-		if (status != EERR_OK) {
-			goto cleanup;
-		}
-		for (i = 0; i < 8; i++) {
-			if (tmp[i] != 0xFF) {
-				status = 1;
-				break;
-			}
-		}
-		if (status == EERR_OK) {
-			continue;
-		}
-		/* Erase page (write all-ones) */
-		out[0] = addr;
-		status = eeprom_do((uint8_t*)out, 9, NULL, 0);
-		if (status != EERR_OK) {
-			continue;
-		}
-		/* Wait for ACK */
-		while (1) {
-			status = eeprom_do(&addr, 1, (uint8_t*)tmp, 8);
-			if (status == EERR_OK) {
-				break;
-			} else if (status != EERR_NACK) {
-				goto cleanup;
-			}
-			/* Still writing */
 		}
 	}
 	status = EERR_OK;
