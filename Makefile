@@ -22,6 +22,7 @@ SRCS += $(TOP)/lib/cmdline/settings.c
 SRCS += $(TOP)/lib/stm32/dma.c
 SRCS += $(TOP)/lib/stm32/eth_mac.c
 SRCS += $(TOP)/lib/stm32/i2c.c
+SRCS += $(TOP)/lib/stm32/iwdg.c
 SRCS += $(TOP)/lib/stm32/serial.c
 SRCS += $(TOP)/lib/util/parse.c
 SRCS += $(TOP)/lib/util/queue.c

@@ -16,6 +16,7 @@
 #include "ppscapture.h"
 #include "tcpip.h"
 #include "vtimer.h"
+#include "stm32/iwdg.h"
 #include "stm32/serial.h"
 #include "util/queue.h"
 
@@ -47,15 +48,28 @@ load_eeprom(void) {
 	}
 }
 
-void
+
+static void
+test_reset(void) {
+	uint32_t sr = RCC->CSR;
+	RCC->CSR = RCC_CSR_RMVF;
+	if (sr & (RCC_CSR_WWDGRSTF | RCC_CSR_IWDGRSTF)) {
+		cli_puts("ERROR: Device was reset by watchdog timer!\r\n");
+	}
+}
+
+
+static void
 main_thread(void *pdata) {
 	uint8_t err;
 	int16_t val;
 	uint32_t flags;
 	load_eeprom();
 	tcpip_start();
+	test_reset();
 	cli_banner();
 	ublox_configure(&Serial4);
+	cl_enabled = 0;
 	while (1) {
 		flags = CoWaitForMultipleFlags(0
 				| 1 << Serial1.rx_q.flag
@@ -81,10 +95,12 @@ main_thread(void *pdata) {
 void
 main(void) {
 	setup_clocks(ONBOARD_CLOCK);
+	iwdg_start(4, 0xFFF);
 	CoInitOS();
 	serial_start(&Serial1, 115200);
 	serial_start(&Serial4, 57600);
 	cli_set_output(&Serial1);
+	cl_enabled = 1;
 	ppscapture_start();
 	vtimer_start();
 	main_tid = CoCreateTask(main_thread, NULL, THREAD_PRIO_MAIN,

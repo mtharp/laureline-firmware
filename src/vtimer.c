@@ -15,6 +15,7 @@
 #include "ppscapture.h"
 #include "status.h"
 #include "vtimer.h"
+#include "stm32/iwdg.h"
 
 #define VTIMER_STACK 512
 OS_STK vtimer_stack[VTIMER_STACK];
@@ -144,6 +145,7 @@ pll_thread(void *p) {
 		GPIO_OFF(LED1);
 		GPIO_OFF(LED2);
 		CoTickDelay((PLL_SUB_TIME - PPS_BLINK_TIME) * NTP_SECOND * vt_rate_inv_sys);
+		iwdg_clear();
 	}
 }
 

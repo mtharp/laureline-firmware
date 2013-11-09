@@ -129,13 +129,13 @@ try_flash(void) {
 void
 main_thread(void *pdata) {
 	try_flash();
-	CoTickDelay(MS2ST(250));
 	if (user_vtor[1] == 0xFFFFFFFF) {
 		serial_puts(&Serial1, "No application loaded, trying to load again in 10 seconds\r\n");
 		CoTickDelay(S2ST(10));
 		NVIC_SystemReset();
 	} else {
 		serial_puts(&Serial1, "Booting application\r\n");
+		CoTickDelay(MS2ST(250));
 		reset_and_jump();
 	}
 }

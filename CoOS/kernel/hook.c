@@ -16,6 +16,7 @@
 
 /*---------------------------- Inlcude --------------------------------------*/
 #include <coocox.h>
+#include "common.h"
 
 /**
  *******************************************************************************
@@ -33,7 +34,7 @@ void CoIdleTask(void* pdata)
     /* Add your codes here */
     for(; ;) 
     {
-        /* Add your codes here */
+		__WFI();
     }
 }
 
