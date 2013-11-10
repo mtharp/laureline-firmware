@@ -25,6 +25,7 @@
 #define MAIN_STACK 512
 OS_STK main_stack[MAIN_STACK];
 OS_TID main_tid;
+serial_t *const gps_serial = &Serial4;
 
 const info_entry_t info_table[] = {
 	{INFO_APPVER, VERSION},
@@ -63,12 +64,12 @@ main_thread(void *pdata) {
 	tcpip_start();
 	test_reset();
 	cli_banner();
-	ublox_configure(&Serial4);
+	ublox_configure(gps_serial);
 	cl_enabled = 0;
 	while (1) {
 		flags = CoWaitForMultipleFlags(0
 				| 1 << Serial1.rx_q.flag
-				| 1 << Serial4.rx_q.flag
+				| 1 << gps_serial->rx_q.flag
 				, OPT_WAIT_ANY, S2ST(1), &err);
 		if (err != E_OK && err != E_TIMEOUT) {
 			HALT();
@@ -78,8 +79,8 @@ main_thread(void *pdata) {
 				cli_feed(val);
 			}
 		}
-		if (flags & (1 << Serial4.rx_q.flag)) {
-			while ((val = serial_get(&Serial4, TIMEOUT_NOBLOCK)) >= 0) {
+		if (flags & (1 << gps_serial->rx_q.flag)) {
+			while ((val = serial_get(gps_serial, TIMEOUT_NOBLOCK)) >= 0) {
 				gps_byte_received(val);
 			}
 		}
@@ -90,10 +91,10 @@ main_thread(void *pdata) {
 void
 main(void) {
 	setup_clocks(ONBOARD_CLOCK);
-	iwdg_start(4, 0xFFF);
+	//iwdg_start(4, 0xFFF);
 	CoInitOS();
 	serial_start(&Serial1, 115200);
-	serial_start(&Serial4, 57600);
+	serial_start(gps_serial, 57600);
 	cli_set_output(&Serial1);
 	cl_enabled = 1;
 	ppscapture_start();

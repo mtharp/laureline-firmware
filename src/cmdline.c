@@ -56,6 +56,7 @@ const clicmd_t cmd_table[] = {
 const clivalue_t value_table[] = {
 	{ "admin_key", VAR_HEX, &cfg.admin_key, 8 },
 	{ "gps_baud_rate", VAR_UINT32, &cfg.gps_baud_rate, 0 },
+	{ "gps_listen_port", VAR_UINT16, &cfg.gps_listen_port, 0 },
 	{ "ip_addr", VAR_IP4, &cfg.ip_addr, 0 },
 	{ "ip_gateway", VAR_IP4, &cfg.ip_gateway, 0 },
 	{ "ip_netmask", VAR_IP4, &cfg.ip_netmask, 0 },

@@ -7,7 +7,7 @@
  */
 
 #include "common.h"
-//#include "gpsserver.h"
+#include "relay.h"
 #include "ppscapture.h"
 #include "gps/motorola.h"
 #include "gps/nmea.h"
@@ -39,10 +39,10 @@ gps_byte_received(uint8_t data) {
 		/* Clear the current parser if there is an interpacket gap. */
 		current_proto = PROTO_NONE;
 		/* Flush the broadcast buffer */
-		//gps_flush();
+		relay_flush();
 	}
 	time_last_byte = CoGetOSTime();
-	//gps_broadcast(data);
+	relay_push(data);
 
 	if (CoGetOSTime() - time_last_packet > PARSER_TIMEOUT) {
 		/* Clear out the parser state if nothing is recognized for
@@ -65,7 +65,7 @@ gps_byte_received(uint8_t data) {
 			current_proto = PROTO_NONE;
 			last_proto = parser->proto;
 			time_last_packet = CoGetOSTime();
-			//gps_flush();
+			relay_flush();
 			break;
 		}
 	}

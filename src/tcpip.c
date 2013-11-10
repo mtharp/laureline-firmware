@@ -11,6 +11,8 @@
 #include "eeprom.h"
 #include "stm32/eth_mac.h"
 #include "ntpserver.h"
+#include "relay.h"
+#include "tcpapi.h"
 #include "tcpip.h"
 
 #include "lwip/dhcp.h"
@@ -39,8 +41,12 @@ static void tcpip_timer(void);
 void
 tcpip_start(void) {
 	lwip_init();
+	api_start();
 	configure_interface();
 	ntp_server_start();
+	if (cfg.gps_listen_port) {
+		relay_server_start(cfg.gps_listen_port);
+	}
 
 	ASSERT((timer_flag = CoCreateFlag(1, 0)) != E_CREATE_FAIL);
 	timer = CoCreateTmr(TMR_TYPE_PERIODIC, S2ST(1), S2ST(1), tcpip_timer);
@@ -67,6 +73,7 @@ tcpip_thread(void *p) {
 		flags = CoWaitForMultipleFlags(0
 				| (1 << timer_flag)
 				| (1 << mac_rx_flag)
+				| (1 << api_flag)
 				, OPT_WAIT_ANY, 0, &rc);
 		ASSERT(rc == E_OK);
 		if (flags & (1 << timer_flag)) {
@@ -91,6 +98,9 @@ tcpip_thread(void *p) {
 		}
 		if (flags & (1 << mac_rx_flag)) {
 			while (ethernetif_input(&thisif)) {}
+		}
+		if (flags & (1 << api_flag)) {
+			api_accept();
 		}
 	}
 }

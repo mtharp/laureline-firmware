@@ -22,7 +22,6 @@ SRCS += $(TOP)/lib/hardfault.c
 SRCS += $(TOP)/lib/ihex.c
 SRCS += $(TOP)/lib/stm32/dma.c
 SRCS += $(TOP)/lib/stm32/flash.c
-SRCS += $(TOP)/lib/stm32/i2c.c
 SRCS += $(TOP)/lib/stm32/mmc.c
 SRCS += $(TOP)/lib/stm32/serial.c
 SRCS += $(TOP)/lib/stm32/spi.c

@@ -17,6 +17,7 @@
 
 typedef enum {
 	VAR_UINT32,
+	VAR_UINT16,
 	VAR_BOOL,
 #if CLI_TYPE_IP4
 	VAR_IP4,

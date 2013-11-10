@@ -25,6 +25,9 @@ cliPrintVar(const clivalue_t *var, uint8_t full) {
 	case VAR_UINT32:
 		cli_printf("%u", *(uint32_t*)var->ptr);
 		break;
+	case VAR_UINT16:
+		cli_printf("%u", *(uint16_t*)var->ptr);
+		break;
 	case VAR_BOOL:
 		cli_printf("%u", !!*(uint8_t*)var->ptr);
 		break;
@@ -60,6 +63,9 @@ cliSetVar(const clivalue_t *var, const char *str) {
 	switch (var->type) {
 	case VAR_UINT32:
 		*(uint32_t*)var->ptr = atoi_decimal(str);
+		break;
+	case VAR_UINT16:
+		*(uint16_t*)var->ptr = atoi_decimal(str);
 		break;
 	case VAR_BOOL:
 		*(uint8_t*)var->ptr = !!atoi_decimal(str);
