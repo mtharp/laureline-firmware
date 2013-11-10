@@ -12,6 +12,11 @@
 
 void
 iwdg_start(uint8_t prescaler, uint16_t reload) {
+	/* Stop IWDG when halted */
+	*(uint32_t*)0xE0041FB0 = 0xC5ACCE55;
+	*(uint32_t*)0xE0042004 |= (1 << 8); /* DBG_IWDG_STOP */
+	*(uint32_t*)0xE0041FB0 = 0;
+
 	IWDG->KR = IWDG_KEY_UNLOCK;
 	IWDG->PR = prescaler;
 	IWDG->RLR = reload;

@@ -91,7 +91,7 @@ main_thread(void *pdata) {
 void
 main(void) {
 	setup_clocks(ONBOARD_CLOCK);
-	//iwdg_start(4, 0xFFF);
+	iwdg_start(4, 0xFFF);
 	CoInitOS();
 	serial_start(&Serial1, 115200);
 	serial_start(gps_serial, 57600);
