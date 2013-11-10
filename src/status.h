@@ -15,8 +15,12 @@
 #define STATUS_PLL_OK				0x04
 #define STATUS_USED_QUANT			0x08
 
-#define STATUS_SETTLED (STATUS_TOD_OK | STATUS_PPS_OK | STATUS_PLL_OK)
-#define isSettled() ((status_flags & STATUS_SETTLED) == STATUS_SETTLED)
+/* pll is settled */
+#define STATUS_SETTLED (STATUS_PPS_OK | STATUS_PLL_OK)
+/* time of day is correct */
+#define STATUS_VALID (STATUS_PPS_OK | STATUS_TOD_OK)
+/* ready to serve ntp */
+#define STATUS_READY (STATUS_PPS_OK | STATUS_PLL_OK | STATUS_TOD_OK)
 
 extern uint16_t status_flags;
 

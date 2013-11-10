@@ -43,12 +43,12 @@ ntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, u16_t 
 
 	/* FIXME: leap seconds */
 	buf[0] = LEAP_NONE | VN_4 | MODE_SERVER;
-	if (isSettled()) {
-		/* operating normally */
-		buf[1] = 1;
-	} else {
+	if (~status_flags & STATUS_READY) {
 		/* not synced, advertise as such */
 		buf[1] = 16;
+	} else {
+		/* operating normally */
+		buf[1] = 1;
 	}
 	if (buf[2] < 6) {
 		/* Minimum poll interval of 64s */

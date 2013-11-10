@@ -123,23 +123,27 @@ pll_thread(void *p) {
 		tmp += NTP_SECOND; /* top of next second in vtimer time */
 		delta = (tmp - last) * vt_rate_inv_sys; /* in systick time */
 		CoTickDelay(delta);
-		if (isSettled()) {
-			/* bottom: flash green */
-			GPIO_ON(LED2);
-			/* top: solid green (TODO: check GPS health) */
+		if (~status_flags & STATUS_VALID) {
+			GPIO_ON(LED3);
+			if (status_flags & STATUS_PPS_OK) {
+				/* top: solid orange */
+				GPIO_ON(LED4);
+			} else {
+				/* top: solid red */
+				GPIO_OFF(LED4);
+			}
+		} else {
+			/* top: solid green */
 			GPIO_OFF(LED3);
 			GPIO_ON(LED4);
-		} else if (status_flags & STATUS_PPS_OK) {
+		}
+
+		if (~status_flags & STATUS_SETTLED) {
 			/* bottom: flash red */
 			GPIO_ON(LED1);
-			/* top: solid green (TODO: check GPS health) */
-			GPIO_OFF(LED3);
-			GPIO_ON(LED4);
 		} else {
-			/* bottom: off */
-			/* top: solid red */
-			GPIO_ON(LED3);
-			GPIO_OFF(LED4);
+			/* bottom: flash green */
+			GPIO_ON(LED2);
 		}
 		CoTickDelay(PPS_BLINK_TIME * NTP_SECOND * vt_rate_inv_sys);
 		GPIO_OFF(LED1);
