@@ -54,6 +54,7 @@ extern cfgv2_t cfg;
 
 int16_t eeprom_read(const uint8_t addr, uint8_t *buf, const uint8_t len);
 int16_t eeprom_read_cfg(void);
+int16_t eeprom_write_page(uint8_t addr, const uint8_t *buf);
 int16_t eeprom_write_cfg(void);
 
 #endif

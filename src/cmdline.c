@@ -32,14 +32,17 @@ static void cliInfo(char *cmdline);
 static void cliSave(char *cmdline);
 static void cliUptime(char *cmdline);
 static void cliVersion(char *cmdline);
+static void cli_cmd_fsnum(char *cmdline);
 
 static void cli_print_hwaddr(void);
 static void cli_print_netif(void);
+static void cli_print_serial(void);
 
 /* Keep sorted */
 const clicmd_t cmd_table[] = {
 	{ "defaults", "reset to factory defaults and reboot", cliDefaults },
 	{ "exit", "leave command mode", cli_cmd_exit },
+	{ "fsnum", NULL, cli_cmd_fsnum },
 	{ "help", "", cli_cmd_help },
 	{ "info", "show runtime information", cliInfo },
 #ifdef PROFILE_TASKS
@@ -68,22 +71,30 @@ const clivalue_t value_table[] = {
 /* Command implementation */
 
 static void
-cliWriteConfig(void) {
-	int16_t result;
-	cli_puts("Writing EEPROM...\r\n");
-	result = eeprom_write_cfg();
+show_eeprom_error(int16_t result) {
 	if (result == EERR_TIMEOUT) {
 		cli_puts("ERROR: timeout while writing EEPROM\r\n");
 	} else if (result == EERR_NACK) {
 		cli_puts("ERROR: EEPROM is faulty or missing\r\n");
 	} else if (result == EERR_FAULT) {
 		cli_puts("ERROR: EEPROM is faulty\r\n");
-	} else if (result != EERR_OK) {
-		cli_puts("FAIL: unable to write EEPROM\r\n");
 	} else {
+		cli_puts("FAIL: unable to write EEPROM\r\n");
+	}
+}
+
+
+static void
+cliWriteConfig(void) {
+	int16_t result;
+	cli_puts("Writing EEPROM...\r\n");
+	result = eeprom_write_cfg();
+	if (result == EERR_OK) {
 		cli_puts("OK\r\n");
 		CoTickDelay(S2ST(1));
 		NVIC_SystemReset();
+	} else {
+		show_eeprom_error(result);
 	}
 }
 
@@ -99,6 +110,7 @@ cliDefaults(char *cmdline) {
 static void
 cliInfo(char *cmdline) {
 	cliVersion(NULL);
+	cli_print_serial();
 	cli_print_hwaddr();
 	cli_print_link();
 	cli_print_netif();
@@ -124,15 +136,28 @@ cliUptime(char *cmdline) {
 static void
 cliVersion(char *cmdline) {
 	const char *bootver;
-	uint32_t hwver;
-	hwver = (uint32_t)info_get(boot_table, INFO_HWVER);
-	cli_printf("Hardware:       %d.%d\r\n", hwver >> 8, hwver & 0xff);
-	cli_puts("Software:       " VERSION "\r\n");
+	cli_printf("Hardware:       %d.%d\r\n", snum.hwver >> 8, snum.hwver & 0xff);
+	cli_puts(  "Software:       " VERSION "\r\n");
 	bootver = info_get(boot_table, INFO_BOOTVER);
 	if (bootver == NULL) {
 		bootver = "no bootloader";
 	}
 	cli_printf("Bootloader:     %s\r\n", bootver);
+}
+
+
+static void
+cli_cmd_fsnum(char *cmdline) {
+	/* Abuse cli function to parse the hex */
+	int16_t status;
+	static const clivalue_t snum_value = { NULL, VAR_HEX, &snum, 8 };
+	cliSetVar(&snum_value, cmdline);
+	status = eeprom_write_page(0, (uint8_t*)&snum);
+	if (status == EERR_OK) {
+		cliInfo(NULL);
+	} else {
+		show_eeprom_error(status);
+	}
 }
 
 
@@ -156,7 +181,7 @@ print_ipaddr(uint32_t addr) {
 
 static void
 cli_print_netif(void) {
-	cli_puts("IP:             ");
+	cli_puts(    "IP:             ");
 	print_ipaddr(thisif.ip_addr.addr);
 	cli_puts("\r\nNetmask:        ");
 	print_ipaddr(thisif.netmask.addr);
@@ -210,10 +235,34 @@ cli_print_link(void) {
 }
 
 
+static void
+cli_print_serial(void) {
+	uint64_t serial = 0;
+	char formatted[16], *ptr;
+	int i;
+	for (i = 0; i < 6; i++) {
+		serial <<= 8;
+		serial |= snum.serial[i];
+	}
+	ptr = formatted;
+	for (i = 14; i >= 0; i--) {
+		formatted[i] = '0' + (serial % 10);
+		serial /= 10;
+		if (serial == 0) {
+			ptr = &formatted[i];
+			break;
+		}
+	}
+	formatted[15] = 0;
+	cli_printf("Serial number:  %s\r\n", ptr);
+}
+
+
 void
 cli_banner(void) {
 	cli_puts("\r\n\r\nLaureline GPS NTP Server\r\n");
 	cliVersion(NULL);
+	cli_print_serial();
 	cli_print_hwaddr();
 	cli_puts("\r\nPress Enter to enable command-line\r\n");
 }

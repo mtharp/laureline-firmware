@@ -62,6 +62,55 @@ eeprom_read(const uint8_t addr, uint8_t *buf, const uint8_t len) {
 
 
 int16_t
+eeprom_write_page(uint8_t addr, const uint8_t *buf) {
+	uint8_t i;
+	uint8_t tmp[1 + EEPROM_PAGE_SIZE];
+	uint64_t timeout;
+	int16_t status;
+	tmp[0] = addr;
+	memcpy(&tmp[1], buf, EEPROM_PAGE_SIZE);
+	i2c_start(EEPROM_I2C);
+	for (i = 3; i; i--) {
+		/* Write EEPROM */
+		status = eeprom_do((uint8_t*)tmp, 1 + EEPROM_PAGE_SIZE, NULL, 0);
+		if (status != EERR_OK) {
+			goto cleanup;
+		}
+		/* Readback EEPROM and compare */
+		timeout = CoGetOSTime() + MS2ST(250);
+		while (1) {
+			if (CoGetOSTime() > timeout) {
+				status = EERR_TIMEOUT;
+				goto cleanup;
+			}
+			status = eeprom_do(&addr, 1, (uint8_t*)tmp, EEPROM_PAGE_SIZE);
+			if (status == EERR_OK) {
+				/* Done */
+				break;
+			} else if (status != EERR_NACK) {
+				goto cleanup;
+			}
+			/* EEPROM is still writing */
+		}
+		status = 0;
+		if (memcmp(tmp, buf, EEPROM_PAGE_SIZE) == 0) {
+			/* Confirmed valid */
+			break;
+		}
+		/* Read doesn't match write, try again */
+	}
+	/* 3 tries and still can't get it right */
+	if (i == 0) {
+		status = EERR_FAULT;
+		goto cleanup;
+	}
+	status = EERR_OK;
+cleanup:
+	i2c_stop(EEPROM_I2C);
+	return status;
+}
+
+int16_t
 eeprom_read_cfg(void) {
 	uint8_t i;
 	int16_t status;
@@ -86,52 +135,14 @@ eeprom_read_cfg(void) {
 
 int16_t
 eeprom_write_cfg(void) {
-	uint8_t j, addr;
-	uint8_t tmp[1 + EEPROM_PAGE_SIZE];
-	uint64_t timeout;
+	uint8_t addr;
 	int16_t status;
 	cfg.crc = inet_chksum(&cfg, sizeof(cfg) - 2);
-	i2c_start(EEPROM_I2C);
 	for (addr = EEPROM_CFG_OFFSET; addr < EEPROM_SIZE; addr += EEPROM_PAGE_SIZE) {
-		for (j = 3; j; j--) {
-			tmp[0] = addr;
-			memcpy(&tmp[1], &cfg_bytes[addr - EEPROM_CFG_OFFSET], EEPROM_PAGE_SIZE);
-			/* Write EEPROM */
-			status = eeprom_do((uint8_t*)tmp, 1 + EEPROM_PAGE_SIZE, NULL, 0);
-			if (status != EERR_OK) {
-				goto cleanup;
-			}
-			/* Readback EEPROM and compare */
-			timeout = CoGetOSTime() + MS2ST(250);
-			while (1) {
-				if (CoGetOSTime() > timeout) {
-					status = EERR_TIMEOUT;
-					goto cleanup;
-				}
-				status = eeprom_do(&addr, 1, (uint8_t*)tmp, EEPROM_PAGE_SIZE);
-				if (status == EERR_OK) {
-					/* Done */
-					break;
-				} else if (status != EERR_NACK) {
-					goto cleanup;
-				}
-				/* EEPROM is still writing */
-			}
-			status = 0;
-			if (memcmp(tmp, &cfg_bytes[addr - EEPROM_CFG_OFFSET], EEPROM_PAGE_SIZE) == 0) {
-				/* Confirmed valid */
-				break;
-			}
-			/* Read doesn't match write, try again */
-		}
-		/* 3 tries and still can't get it right */
-		if (j == 0) {
-			status = EERR_FAULT;
-			goto cleanup;
+		status = eeprom_write_page(addr, &cfg_bytes[addr - EEPROM_CFG_OFFSET]);
+		if (status != EERR_OK) {
+			return status;
 		}
 	}
-	status = EERR_OK;
-cleanup:
-	i2c_stop(EEPROM_I2C);
-	return status;
+	return EERR_OK;
 }

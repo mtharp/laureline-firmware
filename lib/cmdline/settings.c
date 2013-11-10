@@ -15,11 +15,7 @@
 #endif
 
 
-static void cliPrintVar(const clivalue_t *var, uint8_t full);
-static void cliSetVar(const clivalue_t *var, const char *str);
-
-
-static void
+void
 cliPrintVar(const clivalue_t *var, uint8_t full) {
 	switch (var->type) {
 	case VAR_UINT32:
@@ -56,7 +52,7 @@ cliPrintVar(const clivalue_t *var, uint8_t full) {
 }
 
 
-static void
+void
 cliSetVar(const clivalue_t *var, const char *str) {
 	uint32_t val = 0;
 	uint8_t val2 = 0;

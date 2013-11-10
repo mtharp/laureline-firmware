@@ -110,6 +110,10 @@ cli_cmd_help(char *cmdline) {
 	int i;
 	cli_puts("Available commands:\r\n");
 	for (i = 0; cmd_table[i].name != NULL; i++) {
+		if (cmd_table[i].param == NULL) {
+			/* Hidden */
+			continue;
+		}
 		cli_printf("%s\t%s\r\n", cmd_table[i].name, cmd_table[i].param);
 	}
 }

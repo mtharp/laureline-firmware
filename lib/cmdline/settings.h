@@ -41,5 +41,8 @@ extern const clivalue_t value_table[];
 
 void cli_cmd_set(char *cmdline);
 
+void cliPrintVar(const clivalue_t *var, uint8_t full);
+void cliSetVar(const clivalue_t *var, const char *str);
+
 
 #endif
