@@ -43,6 +43,7 @@ LDSCRIPT = ports/STM32F107xB.ld
 PATH := /opt/tnt-20130915/bin:$(PATH)
 VERSION ?= $(shell $(TOP)/util/git_version.sh)
 INCLUDES = \
+	-I$(BUILD) \
 	-Isrc \
 	-Isrc/conf \
 	-I$(TOP)/lib \
@@ -55,7 +56,6 @@ INCLUDES = \
 	-I$(TOP)/lwip/src/include/ipv6
 CFLAGS = \
 	$(INCLUDES) \
-	-DVERSION='"$(VERSION)"' \
 	-Wall -Wextra -Wstrict-prototypes \
 	-Wno-unused-parameter \
 	-Wno-main \
@@ -63,3 +63,13 @@ CFLAGS = \
 LDLIBS = -lm
 
 include $(TOP)/emk/rules.mk
+
+ifneq ($(shell cat $(BUILD)/version.txt 2>/dev/null),$(VERSION))
+.PHONY: $(BUILD)/version.h
+endif
+
+$(BUILD)/version.h:
+	echo $(VERSION) > $(BUILD)/version.txt
+	echo '#define VERSION "$(VERSION)"' > $@
+
+src/main.c src/cmdline.c: $(BUILD)/version.h

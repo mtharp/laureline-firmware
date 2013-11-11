@@ -12,6 +12,7 @@
 #include "info_table.h"
 #include "init.h"
 #include "linker.h"
+#include "version.h"
 #include "stm32/mmc.h"
 #include "stm32/serial.h"
 #include "stm32/spi.h"

@@ -15,6 +15,7 @@
 #include "init.h"
 #include "ppscapture.h"
 #include "tcpip.h"
+#include "version.h"
 #include "vtimer.h"
 #include "stm32/iwdg.h"
 #include "stm32/serial.h"

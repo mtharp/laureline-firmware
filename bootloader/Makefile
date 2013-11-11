@@ -37,6 +37,7 @@ LDSCRIPT = ports/STM32F107xB.ld
 
 PATH := /opt/tnt-20130915/bin:$(PATH)
 INCLUDES = \
+	-I$(BUILD) \
 	-Isrc \
 	-I$(TOP)/src \
 	-I$(TOP)/lib \
@@ -50,8 +51,6 @@ VERSION ?= $(shell $(TOP)/util/git_version.sh)
 CFLAGS = \
 	$(INCLUDES) \
 	-DBOOTLOADER \
-	-DVERSION='"$(VERSION)"' \
-	-DHW_VERSION=$(HW_VERSION) \
 	-Wall -Wextra -Wstrict-prototypes \
 	-Wno-unused-parameter \
 	-Wno-main \
@@ -60,3 +59,18 @@ CFLAGS = \
 include $(TOP)/emk/rules.mk
 
 LD := $(PYTHON) $(TOP)/util/resize_ld.py $(FLASH_SIZE) $(LD)
+
+ifneq ($(shell cat $(BUILD)/version.txt 2>/dev/null),$(VERSION))
+.PHONY: $(BUILD)/version.h
+endif
+ifneq ($(shell cat $(BUILD)/hwversion.txt 2>/dev/null),$(HW_VERSION))
+.PHONY: $(BUILD)/version.h
+endif
+
+$(BUILD)/version.h:
+	echo $(VERSION) > $(BUILD)/version.txt
+	echo $(HW_VERSION) > $(BUILD)/hwversion.txt
+	echo '#define VERSION "$(VERSION)"' > $@
+	echo '#define HW_VERSION $(HW_VERSION)' >> $@
+
+src/main.c src/cmdline.c: $(BUILD)/version.h

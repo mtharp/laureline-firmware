@@ -21,8 +21,8 @@
 #include "tcpip.h"
 #include "uptime.h"
 #include "profile.h"
+#include "version.h"
 #include "util/parse.h"
-//#include "version.h"
 #include "cmdline/cmdline.h"
 #include "cmdline/settings.h"
 

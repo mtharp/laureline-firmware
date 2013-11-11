@@ -20,10 +20,6 @@
 #include <stm32f10x.h>
 #include "coos_plat.h"
 
-#ifndef VERSION
-#define VERSION "unknown"
-#endif
-
 /* stupid trick to work around cpp macro handling */
 #define _PASTE(x,y) x##y
 #define _PASTE2(x,y) _PASTE(x,y)
