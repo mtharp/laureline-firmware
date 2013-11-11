@@ -138,7 +138,9 @@ pll_thread(void *p) {
 			GPIO_ON(LED4);
 		}
 
-		if (~status_flags & STATUS_SETTLED) {
+		if (!(status_flags & STATUS_PPS_OK)) {
+			/* bottom: off */
+		} else if (!(status_flags & STATUS_PLL_OK)) {
 			/* bottom: flash red */
 			GPIO_ON(LED1);
 		} else {
