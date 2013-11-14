@@ -19,22 +19,30 @@ typedef struct tcpapi_msg {
 	api_func func;
 	err_t ret;
 	union {
-		/* api_write */
+		/* api_tcp_write */
 		struct {
 			struct tcp_pcb *pcb;
-			void *data;
+			const void *data;
 			uint16_t len;
 			uint8_t flags;
 		} wr;
+		/* api_udp_send */
+		struct {
+			struct udp_pcb *pcb;
+			const void *data;
+			uint16_t len;
+		} usend;
 	} msg;
 } tcpapi_msg_t;
 
 
 void api_start(void);
+void api_set_main_thread(OS_TID thread);
 void api_accept(void);
 
-err_t api_tcp_write(struct tcp_pcb *pcb, void *data, uint16_t len, uint8_t flags);
+err_t api_tcp_write(struct tcp_pcb *pcb, const void *data, uint16_t len, uint8_t flags);
 err_t api_tcp_output(struct tcp_pcb *pcb);
+err_t api_udp_send(struct udp_pcb *pcb, const void *data, uint16_t len);
 
 extern OS_FlagID api_flag;
 

@@ -10,6 +10,7 @@
 #define _ETH_MAC_H
 
 #define MAC_BUF_SIZE 1522
+#define SMI_DESCRIBE_SIZE 17
 
 typedef struct mac_desc {
 	volatile uint32_t des0;
@@ -26,6 +27,7 @@ extern OS_FlagID mac_rx_flag, mac_tx_flag;
 void smi_write(uint32_t reg, uint32_t value);
 uint32_t smi_read(uint32_t reg);
 uint8_t smi_poll_link_status(void);
+void smi_describe_link(char *buf);
 
 void mac_start(void);
 void mac_set_hwaddr(const uint8_t *hwaddr);

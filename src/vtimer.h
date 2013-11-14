@@ -13,6 +13,7 @@
 #define NTP_MASK_FRAC		((1ULL<<32)-1)
 #define NTP_MASK_SECONDS	(((1ULL<<32)-1)<<32)
 #define NTP_TO_FLOAT		4294967296.0 /* 2^32 */
+#define NTP_TO_US			4295 /* 2^32 / 1e6 */
 
 #define STEP_THRESH			20e-3
 #define SETTLED_THRESH		5e-6

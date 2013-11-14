@@ -13,6 +13,7 @@
 #include "gps/ublox.h"
 #include "info_table.h"
 #include "init.h"
+#include "logging.h"
 #include "ppscapture.h"
 #include "tcpip.h"
 #include "version.h"
@@ -27,6 +28,7 @@
 OS_STK main_stack[MAIN_STACK];
 OS_TID main_tid;
 serial_t *const gps_serial = &Serial4;
+static int did_startup, did_watchdog;
 
 const info_entry_t info_table[] = {
 	{INFO_APPVER, VERSION},
@@ -51,8 +53,22 @@ test_reset(void) {
 	uint32_t sr = RCC->CSR;
 	RCC->CSR = RCC_CSR_RMVF;
 	if (sr & (RCC_CSR_WWDGRSTF | RCC_CSR_IWDGRSTF)) {
-		cli_puts("ERROR: Device was reset by watchdog timer!\r\n");
+		cli_puts("\r\n\r\nERROR: Device was reset by watchdog timer!\r\n");
+		did_watchdog = 1;
 	}
+}
+
+
+void
+log_startup(void) {
+	if (did_startup) {
+		return;
+	}
+	log_write(LOG_NOTICE, "kernel", "GPS NTP Server version " VERSION " started");
+	if (did_watchdog) {
+		log_write(LOG_CRIT, "kernel", "Device was previously reset by watchdog timer!");
+	}
+	did_startup = 1;
 }
 
 
@@ -96,6 +112,8 @@ main(void) {
 	CoInitOS();
 	serial_start(&Serial1, 115200);
 	serial_start(gps_serial, 57600);
+	log_start(&Serial1);
+	log_sethostname("gps-ntp");
 	cli_set_output(&Serial1);
 	cl_enabled = 1;
 	ppscapture_start();

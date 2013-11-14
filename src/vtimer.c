@@ -7,9 +7,9 @@
  */
 
 #include "common.h"
-#include "cmdline.h"
 #include "epoch.h"
 #include "init.h"
+#include "logging.h"
 #include "ntpns.h"
 #include "pll.h"
 #include "ppscapture.h"
@@ -62,7 +62,7 @@ pll_thread(void *p) {
 	static uint64_t last_pps;
 	static uint64_t tmp, last;
 	static int64_t tmps;
-	static double delta;
+	static double delta, ppb;
 	static uint8_t desync;
 	desync = 0;
 	while (1) {
@@ -70,36 +70,47 @@ pll_thread(void *p) {
 		if (tmp) {
 			delta = vtimer_get_frac_delta(tmp);
 			if (delta < -SETTLED_THRESH || delta > SETTLED_THRESH) {
-				clear_status(STATUS_PLL_OK);
+				if (status_flags & STATUS_PLL_OK) {
+					log_write(LOG_WARNING, "vtimer", "PLL is not locked!");
+					clear_status(STATUS_PLL_OK);
+				}
 			} else {
-				set_status(STATUS_PLL_OK);
+				if (!(status_flags & STATUS_PLL_OK)) {
+					log_write(LOG_NOTICE, "vtimer", "PLL has become locked");
+					set_status(STATUS_PLL_OK);
+				}
 			}
 			if (delta < -STEP_THRESH || delta > STEP_THRESH) {
 				if (++desync >= 5) {
-					idle_printf("step(PPS) %d us\r\n", (int32_t)(-delta * 1e6));
 					vtimer_step(-delta);
 					init_pllmath();
 					pll_reset();
 					desync = 0;
+					log_write(LOG_NOTICE, "vtimer",
+							"step(PPS) %d us\r\n", (int32_t)(-delta * 1e6));
 				}
 			} else {
 				desync = 0;
 			}
-			if ((CoGetOSTime() - last_pps) < MS2ST(1100)) {
+			if (((CoGetOSTime() - last_pps) < MS2ST(1100)) && !(status_flags & STATUS_PPS_OK)) {
+				log_write(LOG_NOTICE, "vtimer", "PPS detected");
 				set_status(STATUS_PPS_OK);
 			}
 			last_pps = CoGetOSTime();
-			idle_printf("pps %d ns  ", (int32_t)(delta*1e9));
-			delta = pll_math(delta);
+			ppb = pll_math(delta);
+
+			log_write(LOG_INFO, "vtimer", "pps %d ns  freq %d ppb",
+					(int32_t)(delta*1e9), (int32_t)(ppb*1e9));
 		} else {
-			if ((CoGetOSTime() - last_pps) >= S2ST(5)) {
+			if (((CoGetOSTime() - last_pps) >= S2ST(5)) && (status_flags & STATUS_PPS_OK)) {
+				log_write(LOG_WARNING, "vtimer", "PPS is not valid!");
 				clear_status(STATUS_PPS_OK);
 			}
-			idle_printf("NO PPS!  ");
-			delta = pll_poll();
+			log_write(LOG_INFO, "vtimer", "NO PPS!  freq %d ppb",
+					(int32_t)(ppb*1e9));
+			ppb = pll_poll();
 		}
-		idle_printf("freq %d ppb\r\n", (int32_t)(delta*1e9));
-		kern_freq(delta);
+		kern_freq(ppb);
 
 		/* Update vtimer */
 		DISABLE_IRQ();
@@ -113,8 +124,9 @@ pll_thread(void *p) {
 		ENABLE_IRQ();
 
 		if (tmps != 0) {
-			idle_printf("step(UTC) %d us\r\n", (int32_t)(tmps * 1e6));
 			vtimer_step(tmps);
+			log_write(LOG_NOTICE, "vtimer",
+					"step(UTC) %d usec", (int)(tmps * 1e6));
 		}
 
 		/* Wait until top of second, blink LED, then run the PLL again 100ms
@@ -151,7 +163,7 @@ pll_thread(void *p) {
 		GPIO_OFF(LED1);
 		GPIO_OFF(LED2);
 		CoTickDelay((PLL_SUB_TIME - PPS_BLINK_TIME) * NTP_SECOND * vt_rate_inv_sys);
-		iwdg_clear();
+		iwdg_clear(); /* TODO: check on other threads */
 	}
 }
 
@@ -243,11 +255,14 @@ void
 vtimer_set_utc(uint16_t year, uint8_t month, uint8_t day,
 		uint8_t hour, uint8_t minute, uint8_t second, uint8_t leap) {
 	uint32_t ntp_seconds;
-	ntp_seconds = datetime_to_ntp(year, month, day, hour, minute, second);
+	ntp_seconds = datetime_to_epoch(year, month, day, hour, minute, second);
 	DISABLE_IRQ();
 	utc_next = ntp_seconds;
-	status_flags |= STATUS_TOD_OK;
 	ENABLE_IRQ();
+	if (!(status_flags & STATUS_TOD_OK)) {
+		log_write(LOG_NOTICE, "vtimer", "Time of day is correct");
+	}
+	set_status(STATUS_TOD_OK);
 }
 
 

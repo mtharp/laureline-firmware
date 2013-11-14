@@ -63,6 +63,7 @@ const clivalue_t value_table[] = {
 	{ "ip_addr", VAR_IP4, &cfg.ip_addr, 0 },
 	{ "ip_gateway", VAR_IP4, &cfg.ip_gateway, 0 },
 	{ "ip_netmask", VAR_IP4, &cfg.ip_netmask, 0 },
+	{ "syslog_ip", VAR_IP4, &cfg.syslog_ip, 0 },
 	{ NULL },
 };
 
@@ -193,45 +194,9 @@ cli_print_netif(void) {
 
 void
 cli_print_link(void) {
-	uint32_t bmcr, bmsr, lpa;
-	bmsr = smi_read(MII_BMSR);
-	bmcr = smi_read(MII_BMCR);
-	lpa = smi_read(MII_LPA);
-	cli_puts("Link status:    ");
-	if (bmcr & BMCR_ANENABLE) {
-		if ((bmsr & (BMSR_LSTATUS | BMSR_RFAULT | BMSR_ANEGCOMPLETE))
-				!= (BMSR_LSTATUS | BMSR_ANEGCOMPLETE)) {
-			cli_puts("Down\r\n");
-		} else {
-			cli_puts("Auto ");
-			if (lpa & (LPA_100HALF | LPA_100FULL | LPA_100BASE4)) {
-				cli_puts("100M ");
-			} else {
-				cli_puts("10M ");
-			}
-			if (lpa & (LPA_10FULL | LPA_100FULL)) {
-				cli_puts("Full\r\n");
-			} else {
-				cli_puts("Half\r\n");
-			}
-		}
-	} else {
-		if (!(bmsr & BMSR_LSTATUS)) {
-			cli_puts("Down\r\n");
-		} else {
-			cli_puts("Manual ");
-			if (bmcr & BMCR_SPEED100) {
-				cli_puts("100M ");
-			} else {
-				cli_puts("10M ");
-			}
-			if (bmcr & BMCR_FULLDPLX) {
-				cli_puts("Full\r\n");
-			} else {
-				cli_puts("Half\r\n");
-			}
-		}
-	}
+	char buf[SMI_DESCRIBE_SIZE];
+	smi_describe_link(buf);
+	cli_printf("Link status:    %s\r\n", buf);
 }
 
 

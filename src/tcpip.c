@@ -9,6 +9,8 @@
 #include "common.h"
 #include "cmdline.h"
 #include "eeprom.h"
+#include "logging.h"
+#include "main.h"
 #include "stm32/eth_mac.h"
 #include "ntpserver.h"
 #include "relay.h"
@@ -31,6 +33,8 @@ OS_FlagID timer_flag;
 struct netif thisif;
 
 static void tcpip_thread(void *p);
+static void link_changed(void);
+static void interface_changed(struct netif *netif);
 static void configure_interface(void);
 static err_t ethernetif_init(struct netif *netif);
 static err_t low_level_output(struct netif *netif, struct pbuf *p);
@@ -46,6 +50,9 @@ tcpip_start(void) {
 	ntp_server_start();
 	if (cfg.gps_listen_port) {
 		relay_server_start(cfg.gps_listen_port);
+	}
+	if (cfg.syslog_ip) {
+		syslog_start(cfg.syslog_ip);
 	}
 
 	ASSERT((timer_flag = CoCreateFlag(1, 0)) != E_CREATE_FAIL);
@@ -69,6 +76,7 @@ static void
 tcpip_thread(void *p) {
 	uint32_t flags;
 	StatusType rc;
+	api_set_main_thread(CoGetCurTaskID());
 	while (1) {
 		flags = CoWaitForMultipleFlags(0
 				| (1 << timer_flag)
@@ -79,17 +87,13 @@ tcpip_thread(void *p) {
 		if (flags & (1 << timer_flag)) {
 			if (smi_poll_link_status()) {
 				if (!netif_is_link_up(&thisif)) {
-					if (!cl_enabled) {
-						cli_print_link();
-					}
+					link_changed();
 					netif_set_link_up(&thisif);
 				}
 				GPIO_OFF(ETH_LED);
 			} else {
 				if (netif_is_link_up(&thisif)) {
-					if (!cl_enabled) {
-						cli_print_link();
-					}
+					link_changed();
 					netif_set_link_down(&thisif);
 				}
 				GPIO_ON(ETH_LED);
@@ -107,6 +111,29 @@ tcpip_thread(void *p) {
 
 
 static void
+link_changed(void) {
+	char buf[SMI_DESCRIBE_SIZE];
+	smi_describe_link(buf);
+	log_write(LOG_NOTICE, "net", "Link changed status: %s", buf);
+}
+
+
+static void
+interface_changed(struct netif *netif) {
+	if (netif != &thisif || !(thisif.flags & NETIF_FLAG_UP)) {
+		return;
+	}
+	log_startup();
+	if (thisif.dhcp) {
+		log_write(LOG_NOTICE, "net",
+				"IP address acquired from DHCP: %d.%d.%d.%d",
+				IP_DIGITS(thisif.ip_addr.addr));
+	}
+}
+
+
+
+static void
 configure_interface(void) {
 	struct ip_addr ip, gateway, netmask;
 	ASSERT(eeprom_read(0xFA, thisif.hwaddr, 6) == E_OK);
@@ -119,9 +146,11 @@ configure_interface(void) {
 	netif_add(&thisif, &ip, &netmask, &gateway, NULL, ethernetif_init, ethernet_input);
 
 	netif_set_default(&thisif);
-	netif_set_up(&thisif);
+	netif_set_status_callback(&thisif, interface_changed);
 	if (ip.addr == 0 || netmask.addr == 0) {
 		dhcp_start(&thisif);
+	} else {
+		netif_set_up(&thisif);
 	}
 }
 

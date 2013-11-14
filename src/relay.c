@@ -7,6 +7,7 @@
  */
 
 #include "common.h"
+#include "main.h"
 #include "relay.h"
 #include "tcpapi.h"
 #include "lwip/tcp.h"
@@ -15,8 +16,6 @@
 static uint8_t rbuf[16];
 static struct tcp_pcb *relay_pcb, *relay_client;
 static unsigned client_sigil, rbuf_len, needs_flush;
-
-extern serial_t *const gps_serial;
 
 
 static void

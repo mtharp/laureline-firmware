@@ -101,6 +101,49 @@ smi_poll_link_status(void) {
 
 
 void
+smi_describe_link(char *buf) {
+	uint32_t bmcr, bmsr, lpa;
+	bmsr = smi_read(MII_BMSR);
+	bmcr = smi_read(MII_BMCR);
+	lpa = smi_read(MII_LPA);
+	if (bmcr & BMCR_ANENABLE) {
+		if ((bmsr & (BMSR_LSTATUS | BMSR_RFAULT | BMSR_ANEGCOMPLETE))
+				!= (BMSR_LSTATUS | BMSR_ANEGCOMPLETE)) {
+			strcpy(buf, "Down");
+		} else {
+			strcpy(buf, "Auto "); if (lpa & (LPA_100HALF | LPA_100FULL | LPA_100BASE4)) {
+				strcat(buf, "100M ");
+			} else {
+				strcat(buf, "10M ");
+			}
+			if (lpa & (LPA_10FULL | LPA_100FULL)) {
+				strcat(buf, "Full");
+			} else {
+				strcat(buf, "Half");
+			}
+		}
+	} else {
+		if (!(bmsr & BMSR_LSTATUS)) {
+			strcpy(buf, "Down");
+		} else {
+			strcpy(buf, "Manual ");
+			if (bmcr & BMCR_SPEED100) {
+				strcat(buf, "100M ");
+			} else {
+				strcat(buf, "10M ");
+			}
+			if (bmcr & BMCR_FULLDPLX) {
+				strcat(buf, "Full");
+			} else {
+				strcat(buf, "Half");
+			}
+		}
+	}
+	ASSERT(strlen(buf) < SMI_DESCRIBE_SIZE);
+}
+
+
+void
 mac_set_hwaddr(const uint8_t *hwaddr) {
 	ETH->MACA0HR = ((uint32_t)hwaddr[5] <<  8)
 				|  ((uint32_t)hwaddr[4] <<  0);

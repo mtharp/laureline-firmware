@@ -11,6 +11,8 @@
 
 #include "lwip/netif.h"
 
+#define IP_DIGITS(addr) (addr) & 0xff, (addr >> 8) & 0xff, (addr >> 16) & 0xff, (addr >> 24) & 0xff
+
 extern struct netif thisif;
 
 void tcpip_start(void);

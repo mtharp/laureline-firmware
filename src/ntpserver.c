@@ -23,8 +23,9 @@
 #define MODE_CLIENT				0x3
 #define MODE_SERVER				0x4
 
-#define TICKS_TO_NTP			263524915339ULL
 
+/* Seconds elapsed from 1900-1-1 to 1970-1-1 */
+#define NTP_TO_UNIX				2208988800UL
 
 
 static void
@@ -62,7 +63,7 @@ ntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, u16_t 
 	memcpy(&buf[24], &buf[40], 8);					/* copy transmit to origin */
 
 	/* Write current time into reference and transmit fields */
-	now = vtimer_now();
+	now = vtimer_now() - NTP_TO_UNIX;
 	buf[16] = now >> 56;
 	buf[17] = now >> 48;
 	buf[18] = now >> 40;
