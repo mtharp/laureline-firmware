@@ -12,9 +12,6 @@
 #include "common.h"
 #include "epoch.h"
 
-/* Days from 1-1-1 to 1970-1-1 */
-#define EPOCH_ORDINAL 719163
-
 /* For each month ordinal in 1..12, the number of days in that month,
  * and the number of days before that month in the same year.  These
  * are correct for non-leap years only.
@@ -164,7 +161,7 @@ uint64_t
 datetime_to_epoch(uint16_t year, uint8_t month, uint8_t day,
 		uint8_t hour, uint8_t minute, uint8_t second)
 {
-	int ordinal = days_before_year(year) + days_before_month(year, month) + day - EPOCH_ORDINAL;
+	int ordinal = days_before_year(year) + days_before_month(year, month) + day - NTP_EPOCH_ORDINAL;
 	return (uint64_t)ordinal * 86400 + (hour * 3600 + minute * 60 + second);
 }
 
@@ -173,7 +170,7 @@ void
 epoch_to_datetime(uint64_t time, struct tm *tm) {
 	uint32_t tod, ordinal;
 	tod = time % 86400;
-	ordinal = time / 86400 + EPOCH_ORDINAL;
+	ordinal = time / 86400 + NTP_EPOCH_ORDINAL;
 	tm->tm_sec = tod % 60;
 	tod /= 60;
 	tm->tm_min = tod % 60;
