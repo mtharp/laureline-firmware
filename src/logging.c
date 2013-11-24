@@ -25,6 +25,16 @@ static OS_MutexID log_mutex;
 static serial_t *log_serial;
 static struct udp_pcb *syslog_pcb;
 
+static const char *const level_names[] = {
+	"EMERG",
+	"ALERT",
+	"CRIT",
+	"ERROR",
+	"WARN",
+	"NOTE",
+	"INFO",
+	"DEBUG"};
+
 static void syslog_send(const char *data, uint16_t len);
 
 
@@ -53,41 +63,49 @@ log_write(int priority, const char *appname, const char *format, ...) {
 	int microseconds;
 	struct tm tm;
 	char *ptr;
-	va_start(ap, format);
 	ASSERT(log_serial != NULL);
 	tstamp = vtimer_now();
-	priority |= log_facility;
 	CoEnterMutexSection(log_mutex);
 
 	microseconds = (tstamp & NTP_MASK_FRAC) / NTP_TO_US;
 	epoch_to_datetime(tstamp >> 32, &tm);
 
-	/* Format syslog header */
+	/* Format syslog */
 	ptr = log_fmtbuf;
 	size = sizeof(log_fmtbuf);
-	used = snprintf(ptr, size,
+	used = snprintf(ptr, size - 1,
 			"<%d>1 %04d-%02d-%02dT%02d:%02d:%02d.%06dZ %s %s - - - ",
-			priority,
+			priority | log_facility,
 			tm.tm_year, tm.tm_mon, tm.tm_mday,
 			tm.tm_hour, tm.tm_min, tm.tm_sec,
 			microseconds, log_hostname, appname);
-	ASSERT(used < size);
 	ptr += used;
 	size -= used;
-
-	/* Format user message */
-	used = vsnprintf(ptr, size - 3, format, ap);
+	va_start(ap, format);
+	used = vsnprintf(ptr, size - 1, format, ap);
 	va_end(ap);
 	ptr += used;
 	*ptr = 0;
 	syslog_send(log_fmtbuf, ptr - log_fmtbuf);
 
 	/* Format for serial terminal */
-	*ptr++ = '\r';
-	*ptr++ = '\n';
-	*ptr = 0;
-
 	if (!cl_enabled) {
+		ptr = log_fmtbuf;
+		size = sizeof(log_fmtbuf);
+		used = snprintf(ptr, size - 3,
+				"%04d-%02d-%02dT%02d:%02d:%02d.%06dZ %s %s ",
+				tm.tm_year, tm.tm_mon, tm.tm_mday,
+				tm.tm_hour, tm.tm_min, tm.tm_sec,
+				microseconds, appname, level_names[priority]);
+		ptr += used;
+		size -= used;
+		va_start(ap, format);
+		used = vsnprintf(ptr, size - 3, format, ap);
+		va_end(ap);
+		ptr += used;
+		*ptr++ = '\r';
+		*ptr++ = '\n';
+		*ptr = 0;
 		serial_puts(log_serial, log_fmtbuf);
 	}
 	CoLeaveMutexSection(log_mutex);
