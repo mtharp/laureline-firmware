@@ -42,6 +42,10 @@ const uint8_t ublox_cfg[] = {
 };
 
 
+const uint8_t ublox_sleep_bytes[] = {
+};
+
+
 
 static void
 set_quant_ubx(uint8_t *qf) {
@@ -132,4 +136,9 @@ ublox_feed(uint8_t val) {
 void
 ublox_configure(serial_t *ch) {
 	serial_write(ch, (const char*)ublox_cfg, sizeof(ublox_cfg));
+}
+
+void
+ublox_stop(serial_t *ch) {
+	serial_write(ch, (const char*)ublox_sleep_bytes, sizeof(ublox_sleep_bytes));
 }

@@ -44,10 +44,12 @@
 #define PPS_PIN				(1<<PPS_PNUM)
 #define SDIO_CS_PAD			GPIOB
 #define SDIO_CS_PNUM		2
-#define SDIO_PWR_PAD		GPIOA
-#define SDIO_PWR_PIN		(1<<6)
+#define SDIO_PDOWN_PAD		GPIOA
+#define SDIO_PDOWN_PIN		(1<<6)
 
 #define DEFAULT_BAUD		57600
 #define I2C_FREQ			100000
+
+void unstick_i2c(void);
 
 #endif /* _BOARD_H_ */

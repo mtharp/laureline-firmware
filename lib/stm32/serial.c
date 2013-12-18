@@ -132,6 +132,17 @@ serial_get(serial_t *serial, int timeout) {
 }
 
 
+void
+serial_drain(serial_t *serial) {
+	CoEnterMutexSection(serial->mutex_id);
+	outqueue_drain(&serial->tx_q);
+	while (!(serial->usart->SR & USART_SR_TC)) {
+		__NOP();
+	}
+	CoLeaveMutexSection(serial->mutex_id);
+}
+
+
 static void
 serial_outq_cb(void *arg) {
 	serial_t *serial = (serial_t*)arg;

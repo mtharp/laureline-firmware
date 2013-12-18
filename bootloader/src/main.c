@@ -66,7 +66,7 @@ try_flash(void) {
 	SPI3_Dev.cs_pin = SDIO_CS_PNUM;
 	spi_start(&SPI3_Dev, 0);
 	mmc_start();
-	GPIO_OFF(SDIO_PWR);
+	GPIO_OFF(SDIO_PDOWN);
 	CoTickDelay(MS2ST(100));
 
 	serial_puts(&Serial1, "Bootloader version: " VERSION "\r\n");

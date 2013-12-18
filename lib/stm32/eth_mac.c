@@ -15,6 +15,10 @@
 #define TX_BUFS 2
 #define BUF_WORDS ((((MAC_BUF_SIZE - 1) | 3) + 1) / 4)
 
+#define MFL_INIT	1
+#define MFL_RUN		2
+#define MFL_LINK	4
+
 OS_FlagID mac_rx_flag, mac_tx_flag;
 
 static mac_desc_t rx_descs[RX_BUFS];
@@ -22,7 +26,7 @@ static mac_desc_t tx_descs[RX_BUFS];
 static mac_desc_t *rx_ptr, *tx_ptr;
 static uint32_t rx_bufs[RX_BUFS][BUF_WORDS];
 static uint32_t tx_bufs[TX_BUFS][BUF_WORDS];
-static uint8_t link_up;
+static uint8_t mac_flags;
 
 
 void
@@ -57,6 +61,10 @@ smi_poll_link_status(void) {
 	uint32_t maccr, bmsr, bmcr, lpa;
 	maccr = ETH->MACCR;
 
+	if (!(mac_flags & MFL_RUN)) {
+		return 0;
+	}
+
 	(void)smi_read(MII_BMSR);
 	bmsr = smi_read(MII_BMSR);
 	bmcr = smi_read(MII_BMCR);
@@ -65,7 +73,7 @@ smi_poll_link_status(void) {
 	if (bmcr & BMCR_ANENABLE) {
 		if ((bmsr & (BMSR_LSTATUS | BMSR_RFAULT | BMSR_ANEGCOMPLETE))
 				!= (BMSR_LSTATUS | BMSR_ANEGCOMPLETE)) {
-			link_up = 0;
+			mac_flags &= ~MFL_LINK;
 			return 0;
 		}
 		if (lpa & (LPA_100HALF | LPA_100FULL | LPA_100BASE4)) {
@@ -80,7 +88,7 @@ smi_poll_link_status(void) {
 		}
 	} else {
 		if (!(bmsr & BMSR_LSTATUS)) {
-			link_up = 0;
+			mac_flags &= ~MFL_LINK;
 			return 0;
 		}
 		if (bmcr & BMCR_SPEED100) {
@@ -95,7 +103,7 @@ smi_poll_link_status(void) {
 		}
 	}
 	ETH->MACCR = maccr;
-	link_up = 1;
+	mac_flags |= MFL_LINK;
 	return 1;
 }
 
@@ -103,6 +111,10 @@ smi_poll_link_status(void) {
 void
 smi_describe_link(char *buf) {
 	uint32_t bmcr, bmsr, lpa;
+	if (!(mac_flags & MFL_RUN)) {
+		strcpy(buf, "Down");
+		return;
+	}
 	bmsr = smi_read(MII_BMSR);
 	bmcr = smi_read(MII_BMCR);
 	lpa = smi_read(MII_LPA);
@@ -145,6 +157,9 @@ smi_describe_link(char *buf) {
 
 void
 mac_set_hwaddr(const uint8_t *hwaddr) {
+	if (!(mac_flags & MFL_RUN)) {
+		return;
+	}
 	ETH->MACA0HR = ((uint32_t)hwaddr[5] <<  8)
 				|  ((uint32_t)hwaddr[4] <<  0);
 	ETH->MACA0LR = ((uint32_t)hwaddr[3] << 24)
@@ -157,6 +172,14 @@ mac_set_hwaddr(const uint8_t *hwaddr) {
 void
 mac_start(void) {
 	int i;
+	if (!(mac_flags & MFL_INIT)) {
+		ASSERT((mac_rx_flag = CoCreateFlag(1, 0)) != E_CREATE_FAIL);
+		ASSERT((mac_tx_flag = CoCreateFlag(1, 0)) != E_CREATE_FAIL);
+		mac_flags |= MFL_INIT;
+	}
+	if (mac_flags & MFL_RUN) {
+		mac_stop();
+	}
 	RCC->AHBRSTR |=  RCC_AHBRSTR_ETHMACRST;
 	RCC->AHBRSTR &= ~RCC_AHBRSTR_ETHMACRST;
 	RCC->AHBENR |= RCC_AHBENR_ETHMACEN
@@ -235,11 +258,25 @@ mac_start(void) {
 		| ETH_DMAOMR_SR
 		;
 
-	ASSERT((mac_rx_flag = CoCreateFlag(1, 0)) != E_CREATE_FAIL);
-	ASSERT((mac_tx_flag = CoCreateFlag(1, 0)) != E_CREATE_FAIL);
-
+	mac_flags |= MFL_RUN;
 	NVIC_SetPriority(ETH_IRQn, IRQ_PRIO_ETH);
 	NVIC_EnableIRQ(ETH_IRQn);
+}
+
+
+void
+mac_stop(void) {
+	if (!(mac_flags & MFL_RUN)) {
+		return;
+	}
+	DISABLE_IRQ();
+	NVIC_DisableIRQ(ETH_IRQn);
+	smi_write(MII_BMCR, smi_read(MII_BMCR) | BMCR_PDOWN);
+	RCC->AHBENR &= ~RCC_AHBENR_ETHMACEN
+		& ~RCC_AHBENR_ETHMACTXEN
+		& ~RCC_AHBENR_ETHMACRXEN;
+	mac_flags &= ~(MFL_RUN | MFL_LINK);
+	ENABLE_IRQ();
 }
 
 
@@ -285,7 +322,7 @@ mac_get_tx_descriptor(uint32_t timeout) {
 		timeout += CoGetOSTime();
 	}
 	while (1) {
-		if (!link_up || (timeout && CoGetOSTime() > timeout)) {
+		if (!(mac_flags & MFL_LINK) || (timeout && CoGetOSTime() > timeout)) {
 			return NULL;
 		}
 		if ((tdes = mac_get_tx_descriptor_once()) != NULL) {
@@ -333,6 +370,9 @@ mac_release_tx_descriptor(mac_desc_t *tdes) {
 mac_desc_t *
 mac_get_rx_descriptor(void) {
 	mac_desc_t *rdes;
+	if (!(mac_flags & MFL_RUN)) {
+		return NULL;
+	}
 	DISABLE_IRQ();
 	rdes = rx_ptr;
 	while (1) {

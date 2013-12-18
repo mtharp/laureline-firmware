@@ -18,6 +18,7 @@
 #include "tcpip.h"
 #include "version.h"
 #include "vtimer.h"
+#include "stm32/eth_mac.h"
 #include "stm32/iwdg.h"
 #include "stm32/serial.h"
 #include "util/queue.h"
@@ -29,6 +30,9 @@ OS_STK main_stack[MAIN_STACK];
 OS_TID main_tid;
 serial_t *const gps_serial = &Serial4;
 static int did_startup, did_watchdog;
+
+uint32_t __attribute__((section(".uninit"))) entering_standby;
+#define ENTERING_STANDBY 0x5d6347c2
 
 const info_entry_t info_table[] = {
 	{INFO_APPVER, VERSION},
@@ -72,6 +76,34 @@ log_startup(void) {
 }
 
 
+void
+enter_standby(void) {
+	/* Shutdown onboard peripherals */
+	mac_stop();
+	ublox_stop(gps_serial);
+	serial_drain(&Serial1);
+	serial_drain(&Serial4);
+	GPIO_ON(SDIO_PDOWN);
+	/* Trigger a reset in order to disable the watchdog timer, otherwise it
+	 * will just wake us up after a few seconds.
+	 */
+	entering_standby = ENTERING_STANDBY;
+	NVIC_SystemReset();
+	while (1) {}
+}
+
+
+static void
+finish_standby(void) {
+	entering_standby = 0;
+	RCC->CSR = RCC_CSR_RMVF;
+	PWR->CR |= PWR_CR_PDDS | PWR_CR_LPDS;
+	PWR->CSR = PWR_CSR_WUF | PWR_CSR_SBF;
+	SCB->SCR |= SCB_SCR_SLEEPDEEP;
+	__WFE();
+}
+
+
 static void
 main_thread(void *pdata) {
 	uint8_t err;
@@ -88,8 +120,7 @@ main_thread(void *pdata) {
 				| 1 << Serial1.rx_q.flag
 				| 1 << gps_serial->rx_q.flag
 				, OPT_WAIT_ANY, S2ST(1), &err);
-		if (err != E_OK && err != E_TIMEOUT) {
-			HALT();
+		if (err != E_OK && err != E_TIMEOUT) { HALT();
 		}
 		if (flags & (1 << Serial1.rx_q.flag)) {
 			while ((val = serial_get(&Serial1, TIMEOUT_NOBLOCK)) >= 0) {
@@ -107,6 +138,12 @@ main_thread(void *pdata) {
 
 void
 main(void) {
+	if (entering_standby == ENTERING_STANDBY) {
+		finish_standby();
+	}
+	GPIO_OFF(E_NRST);
+	unstick_i2c();
+	GPIO_ON(E_NRST);
 	setup_clocks(ONBOARD_CLOCK);
 	iwdg_start(4, 0xFFF);
 	CoInitOS();

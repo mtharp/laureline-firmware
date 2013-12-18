@@ -14,5 +14,6 @@
 extern serial_t *const gps_serial;
 
 void log_startup(void);
+void enter_standby(void);
 
 #endif

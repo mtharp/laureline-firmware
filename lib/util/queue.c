@@ -75,6 +75,21 @@ outqueue_put(queue_t *q, const uint8_t *value, uint16_t size, int timeout) {
 }
 
 
+void
+outqueue_drain(queue_t *q) {
+	DISABLE_IRQ();
+	while (1) {
+		if (q->count == 0) {
+			break;
+		}
+		ENABLE_IRQ();
+		__ISB();
+		DISABLE_IRQ();
+	}
+	ENABLE_IRQ();
+}
+
+
 int16_t
 outqueue_getI(queue_t *q) {
 	uint16_t ret;

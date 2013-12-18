@@ -30,6 +30,7 @@ uint8_t smi_poll_link_status(void);
 void smi_describe_link(char *buf);
 
 void mac_start(void);
+void mac_stop(void);
 void mac_set_hwaddr(const uint8_t *hwaddr);
 mac_desc_t *mac_get_tx_descriptor(uint32_t timeout);
 uint16_t mac_write_tx_descriptor(mac_desc_t *tdes, const uint8_t *buf, uint16_t size);

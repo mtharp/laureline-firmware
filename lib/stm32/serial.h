@@ -37,6 +37,7 @@ void serial_set_speed(serial_t *serial);
 void serial_puts(serial_t *serial, const char *value);
 void serial_write(serial_t *serial, const char *value, uint16_t size);
 void serial_printf(serial_t *serial, const char *fmt, ...);
+void serial_drain(serial_t *serial);
 int16_t serial_get(serial_t *serial, int timeout);
 
 #endif

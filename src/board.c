@@ -42,7 +42,7 @@ static const gpio_cfg_t gpio_cfg[4][16] = {
 		{GPIO_MODE_50MHZ	| GPIO_AFIO_PP,		1}, /* PB11 - ETH_RMII_TX_EN */
 		{GPIO_MODE_50MHZ	| GPIO_AFIO_PP,		1}, /* PB12 - ETH_RMII_TXD0 */
 		{GPIO_MODE_50MHZ	| GPIO_AFIO_PP,		1}, /* PB13 - ETH_RMII_TXD1 */
-		{GPIO_MODE_2MHZ		| GPIO_OUTPUT_PP,	0}, /* PB14 - ETH_LED */
+		{GPIO_MODE_2MHZ		| GPIO_OUTPUT_PP,	1}, /* PB14 - ETH_LED */
 		{GPIO_MODE_INPUT	| GPIO_INPUT_PUPD,	1}  /* PB15 - */
 	}, {
 		{GPIO_MODE_2MHZ		| GPIO_OUTPUT_PP,	0}, /* PC0  - LED1 */
@@ -81,7 +81,6 @@ static const gpio_cfg_t gpio_cfg[4][16] = {
 	}};
 
 
-#ifndef BOOTLOADER
 static void
 delay10us(void) {
 	int i;
@@ -92,7 +91,7 @@ delay10us(void) {
 }
 
 
-static void
+void
 unstick_i2c(void) {
 	int i;
 	setup_gpio(GPIOB, 6, GPIO_MODE_2MHZ | GPIO_OUTPUT_OD, 1);
@@ -115,7 +114,6 @@ unstick_i2c(void) {
 	setup_gpio(GPIOB, 6, GPIO_MODE_2MHZ | GPIO_AFIO_OD, 1);
 	setup_gpio(GPIOB, 7, GPIO_MODE_2MHZ | GPIO_AFIO_OD, 1);
 }
-#endif
 
 
 void
@@ -150,13 +148,6 @@ SystemInit(void) {
 	setup_bank(GPIOB, gpio_cfg[1]);
 	setup_bank(GPIOC, gpio_cfg[2]);
 	setup_bank(GPIOD, gpio_cfg[3]);
-
-	/* Reset onboard PHY and I2C devices */
-#ifndef BOOTLOADER
-	GPIO_OFF(E_NRST);
-	unstick_i2c();
-	GPIO_ON(E_NRST);
-#endif
 
 	/* Configure clocking */
 	RCC->CR |= RCC_CR_HSEBYP | RCC_CR_HSEON;
