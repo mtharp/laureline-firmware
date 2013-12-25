@@ -171,7 +171,7 @@ pll_thread(void *p) {
 static uint64_t
 vtimer_getI(uint64_t mono_next) {
 	/* Returns the current vtimer time given the current monotonic time */
-	return vt_last + (int64_t)((float)(mono_next - mono_last) * vt_rate);
+	return vt_last + (int64_t)((double)(mono_next - mono_last) * vt_rate);
 }
 
 static void
@@ -276,7 +276,7 @@ void
 vtimer_sleep_until(uint64_t vt_when) {
 	uint64_t mono_when;
 	DISABLE_IRQ();
-	mono_when = mono_last + (uint64_t)((double)(vt_when - vt_last) / vt_rate);
+	mono_when = mono_last + (uint64_t)((float)(vt_when - vt_last) / vt_rate);
 	ENABLE_IRQ();
 	monotonic_sleep_until(mono_when);
 }
