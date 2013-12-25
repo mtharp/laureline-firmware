@@ -178,7 +178,7 @@ mac_start(void) {
 		mac_flags |= MFL_INIT;
 	}
 	if (mac_flags & MFL_RUN) {
-		mac_stop();
+		HALT();
 	}
 	RCC->AHBRSTR |=  RCC_AHBRSTR_ETHMACRST;
 	RCC->AHBRSTR &= ~RCC_AHBRSTR_ETHMACRST;

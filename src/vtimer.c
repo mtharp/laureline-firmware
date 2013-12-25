@@ -87,7 +87,7 @@ pll_thread(void *p) {
 					pll_reset();
 					desync = 0;
 					log_write(LOG_NOTICE, "vtimer",
-							"step(PPS) %d us\r\n", (int32_t)(-delta * 1e6));
+							"step(PPS) %.03f us\r\n", (float)(-delta * 1e6));
 				}
 			} else {
 				desync = 0;
@@ -99,15 +99,15 @@ pll_thread(void *p) {
 			last_pps = CoGetOSTime();
 			ppb = pll_math(delta);
 
-			log_write(LOG_INFO, "vtimer", "pps %d ns  freq %d ppb",
-					(int32_t)(delta*1e9), (int32_t)(ppb*1e9));
+			log_write(LOG_INFO, "vtimer", "pps %.03f ns  freq %.03f ppb",
+					(float)(delta*1e9), (float)(ppb*1e9));
 		} else {
 			if (((CoGetOSTime() - last_pps) >= S2ST(5)) && (status_flags & STATUS_PPS_OK)) {
 				log_write(LOG_WARNING, "vtimer", "PPS is not valid!");
 				clear_status(STATUS_PPS_OK);
 			}
-			log_write(LOG_INFO, "vtimer", "NO PPS!  freq %d ppb",
-					(int32_t)(ppb*1e9));
+			log_write(LOG_INFO, "vtimer", "NO PPS!  freq %.03f ppb",
+					(float)(ppb*1e9));
 			ppb = pll_poll();
 		}
 		kern_freq(ppb);
@@ -126,7 +126,7 @@ pll_thread(void *p) {
 		if (tmps != 0) {
 			vtimer_step(tmps);
 			log_write(LOG_NOTICE, "vtimer",
-					"step(UTC) %d usec", (int)(tmps * 1e6));
+					"step(UTC) %.03f usec", (float)(tmps * 1e6));
 		}
 
 		/* Wait until top of second, blink LED, then run the PLL again 100ms

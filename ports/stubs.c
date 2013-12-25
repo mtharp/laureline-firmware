@@ -28,7 +28,17 @@ _getpid(void) {
 }
 
 
+extern uint32_t _sheap;
+extern uint32_t _eheap;
+void *heap_top = &_sheap;
+
 void *
 _sbrk(intptr_t increment) {
-	return (void*)-1;
+	void *ret;
+	if (heap_top + increment > (void*)&_eheap) {
+		return (void*)-1;
+	}
+	ret = heap_top;
+	heap_top += increment;
+	return ret;
 }

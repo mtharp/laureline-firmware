@@ -39,7 +39,7 @@ CFLAGS += $(MCFLAGS) $(CFLAGS_OPT) $(CFLAGS_EXTRA)
 CFLAGS += -ggdb3
 CFLAGS += -MD -MP -MF $@.d
 
-LDFLAGS = $(MCFLAGS)
+LDFLAGS = $(MCFLAGS) $(LDFLAGS_EXTRA)
 LDFLAGS += -T$(LDSCRIPT) -Wl,-Map=$(OUT).map,--cref,--no-warn-mismatch
 ifeq ($(USE_LINK_GC),yes)
 CFLAGS += -ffunction-sections \
