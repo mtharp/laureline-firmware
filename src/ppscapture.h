@@ -16,6 +16,7 @@ void ppscapture_start(void);
 uint64_t monotonic_getI(void);
 uint64_t monotonic_now(void);
 uint64_t monotonic_get_capture(void);
+void monotonic_sleep_until(uint64_t mono_when);
 
 
 #endif

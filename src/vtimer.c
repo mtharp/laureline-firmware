@@ -25,11 +25,8 @@ unsigned sys_able;
 
 /* VT ticks this many NTP fractions per tick of monotonic time */
 static double vt_rate;
-/* This many systicks pass per second of NTP time */
-static float vt_rate_inv_sys;
-/* Nominal rates for the current nominal system frequency */
+/* Nominal rate for the current nominal system frequency */
 static double vt_rate_nominal;
-static float vt_rate_inv_sys_nominal;
 /* VT value at the last timer update */
 static uint64_t vt_last;
 /* Monotonic value at the last timer update */
@@ -50,7 +47,6 @@ vtimer_start(void) {
 	init_pllmath();
 	pll_reset();
 	vt_rate_nominal = NTP_TO_FLOAT / system_frequency;
-	vt_rate_inv_sys_nominal = CFG_SYSTICK_FREQ / NTP_TO_FLOAT;
 	vtimer_tid = CoCreateTask(pll_thread, NULL, THREAD_PRIO_VTIMER,
 			&vtimer_stack[VTIMER_STACK-1], VTIMER_STACK, "vtimer");
 	ASSERT(vtimer_tid != E_CREATE_FAIL);
@@ -125,16 +121,18 @@ pll_thread(void *p) {
 
 		if (tmps != 0) {
 			vtimer_step(tmps);
-			log_write(LOG_NOTICE, "vtimer",
-					"step(UTC) %.03f usec", (float)(tmps * 1e6));
+			log_write(LOG_NOTICE, "vtimer", "step(UTC) %f sec", (float)tmps);
+			DISABLE_IRQ();
+			vtimer_updateI();
+			last = vt_last;
+			ENABLE_IRQ();
 		}
 
 		/* Wait until top of second, blink LED, then run the PLL again 100ms
 		 * before the next second */
 		tmp = last & NTP_MASK_SECONDS;
 		tmp += NTP_SECOND; /* top of next second in vtimer time */
-		delta = (tmp - last) * vt_rate_inv_sys; /* in systick time */
-		CoTickDelay(delta);
+		vtimer_sleep_until(tmp);
 		if (~status_flags & STATUS_VALID) {
 			GPIO_ON(LED3);
 			if (status_flags & STATUS_PPS_OK) {
@@ -159,10 +157,12 @@ pll_thread(void *p) {
 			/* bottom: flash green */
 			GPIO_ON(LED2);
 		}
-		CoTickDelay(PPS_BLINK_TIME * NTP_SECOND * vt_rate_inv_sys);
+		tmp += PPS_BLINK_TIME * NTP_SECOND;
+		vtimer_sleep_until(tmp);
 		GPIO_OFF(LED1);
 		GPIO_OFF(LED2);
-		CoTickDelay((PLL_SUB_TIME - PPS_BLINK_TIME) * NTP_SECOND * vt_rate_inv_sys);
+		tmp += (PLL_SUB_TIME - PPS_BLINK_TIME) * NTP_SECOND;
+		vtimer_sleep_until(tmp);
 		iwdg_clear(); /* TODO: check on other threads */
 	}
 }
@@ -171,7 +171,7 @@ pll_thread(void *p) {
 static uint64_t
 vtimer_getI(uint64_t mono_next) {
 	/* Returns the current vtimer time given the current monotonic time */
-	return vt_last + (int64_t)((double)(mono_next - mono_last) * vt_rate);
+	return vt_last + (int64_t)((float)(mono_next - mono_last) * vt_rate);
 }
 
 static void
@@ -216,17 +216,14 @@ void
 kern_freq(double f) {
 	/* Change the rate at which the vtimer ticks */
 	double next_rate;
-	float next_inv;
 	if (f > 500e-6) {
 		f = 500e-6;
 	} else if (f < -500e-6) {
 		f = -500e-6;
 	}
 	next_rate = vt_rate_nominal * (1.0 + f);
-	next_inv = vt_rate_inv_sys_nominal / (1.0 + f);
 	DISABLE_IRQ();
 	vt_rate = next_rate;
-	vt_rate_inv_sys = next_inv;
 	ENABLE_IRQ();
 }
 
@@ -236,6 +233,7 @@ vtimer_step(double dd) {
 	/* Apply a step change to the vtimer */
 	DISABLE_IRQ();
 	vt_last += (int64_t)((double)dd * NTP_TO_FLOAT);
+	vtimer_updateI();
 	ENABLE_IRQ();
 }
 
@@ -266,10 +264,19 @@ vtimer_set_utc(uint16_t year, uint8_t month, uint8_t day,
 }
 
 
-
 void
 vtimer_set_correction(double corr) {
 	DISABLE_IRQ();
 	quant_corr = corr;
 	ENABLE_IRQ();
+}
+
+
+void
+vtimer_sleep_until(uint64_t vt_when) {
+	uint64_t mono_when;
+	DISABLE_IRQ();
+	mono_when = mono_last + (uint64_t)((double)(vt_when - vt_last) / vt_rate);
+	ENABLE_IRQ();
+	monotonic_sleep_until(mono_when);
 }

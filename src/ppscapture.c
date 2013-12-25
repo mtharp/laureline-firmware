@@ -14,6 +14,9 @@
 static volatile uint64_t mono_epoch;
 /* Last monotonic capture, or 0 if there are no pending captures */
 static uint64_t mono_capture;
+/* Next sleep, or 0 if none */
+static uint64_t sleep_epoch;
+static OS_FlagID sleep_flag;
 
 /* Reduce this to 1024 to make it easier to hit edge cases to test the input
  * capture code */
@@ -22,6 +25,8 @@ static uint64_t mono_capture;
 
 void
 ppscapture_start(void) {
+	ASSERT((sleep_flag = CoCreateFlag(1, 0)) != E_CREATE_FAIL);
+	mono_epoch = MONO_PERIOD;
 	RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
 	TIM3->CR1 = 0;
 	TIM3->PSC = 0;
@@ -52,6 +57,10 @@ TIM3_IRQHandler(void) {
 
 	if (sr & TIM_SR_UIF) {
 		mono_epoch += MONO_PERIOD;
+		if (sleep_epoch != 0 && mono_epoch >= sleep_epoch) {
+			sleep_epoch = 0;
+			CoSetFlag(sleep_flag);
+		}
 	}
 
 	if (sr & TIM_SR_CC1IF) {
@@ -112,4 +121,14 @@ monotonic_get_capture(void) {
 	mono_capture = 0;
 	ENABLE_IRQ();
 	return ret;
+}
+
+
+void
+monotonic_sleep_until(uint64_t mono_when) {
+	mono_when -= mono_when % MONO_PERIOD;
+	DISABLE_IRQ();
+	sleep_epoch = mono_when;
+	ENABLE_IRQ();
+	CoWaitForSingleFlag(sleep_flag, 0);
 }

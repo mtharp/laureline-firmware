@@ -29,6 +29,7 @@ uint64_t vtimer_now(void);
 void vtimer_set_utc(uint16_t year, uint8_t month, uint8_t day,
 		uint8_t hour, uint8_t minute, uint8_t second, uint8_t leap);
 void vtimer_set_correction(double corr);
+void vtimer_sleep_until(uint64_t vt_when);
 
 
 #endif
