@@ -14,10 +14,14 @@
 
 uint64_t last_tick;
 
+extern uint32_t _sheap;
+void *_sbrk(intptr_t increment);
+
 void
 cli_cmd_profile(char *cmdline) {
 	uint64_t task_counts[CFG_MAX_USER_TASKS+SYS_TASK_NUM];
 	uint64_t count, pct, total = 0;
+	void *heap;
 	int i;
 
 	DISABLE_IRQ();
@@ -38,6 +42,11 @@ cli_cmd_profile(char *cmdline) {
 				(uint32_t)(pct / 100),
 				(uint32_t)(pct % 100),
 				TCBTbl[i].name);
+	}
+
+	heap = _sbrk(0);
+	if (heap != (void*)-1) {
+		cli_printf("Heap usage: %d bytes\r\n", heap - (void*)&_sheap);
 	}
 }
 #endif
