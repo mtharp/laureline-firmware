@@ -21,6 +21,8 @@
 #define EERR_BLANK			-20
 #define EERR_UPGRADE		-21
 
+#define FLAG_PPS_OUT		(1 << 0)
+
 
 #pragma pack(push, 1)
 
@@ -41,7 +43,8 @@ typedef struct {
 	uint8_t admin_key[8];
 	uint16_t gps_listen_port;
 	uint32_t syslog_ip;
-	uint8_t _reserved[86];
+	uint32_t flags;
+	uint8_t _reserved[82];
 	uint16_t crc;
 } cfgv2_t;
 #define CFG_SIZE sizeof(cfgv2_t)

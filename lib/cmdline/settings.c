@@ -24,9 +24,6 @@ cliPrintVar(const clivalue_t *var, uint8_t full) {
 	case VAR_UINT16:
 		cli_printf("%u", *(uint16_t*)var->ptr);
 		break;
-	case VAR_BOOL:
-		cli_printf("%u", !!*(uint8_t*)var->ptr);
-		break;
 #ifdef CLI_TYPE_IP4
 	case VAR_IP4:
 		{
@@ -46,7 +43,16 @@ cliPrintVar(const clivalue_t *var, uint8_t full) {
 			break;
 		}
 #endif
-	case _:
+#ifdef CLI_TYPE_FLAG
+	case VAR_FLAG:
+		if ( (*(uint32_t*)var->ptr) & var->len ) {
+			cli_puts("true");
+		} else {
+			cli_puts("false");
+		}
+		break;
+#endif
+	case VAR_INVALID:
 		break;
 	}
 }
@@ -62,9 +68,6 @@ cliSetVar(const clivalue_t *var, const char *str) {
 		break;
 	case VAR_UINT16:
 		*(uint16_t*)var->ptr = atoi_decimal(str);
-		break;
-	case VAR_BOOL:
-		*(uint8_t*)var->ptr = !!atoi_decimal(str);
 		break;
 #if CLI_TYPE_IP4
 	case VAR_IP4:
@@ -107,7 +110,18 @@ cliSetVar(const clivalue_t *var, const char *str) {
 			}
 		}
 #endif
-	case _:
+#if CLI_TYPE_FLAG
+	case VAR_FLAG:
+		if (*str == 't' || *str == 'y'
+				|| (*str == 'o' && *(str+1) == 'n')) {
+			*(uint32_t*)var->ptr |= var->len;
+		} else if (*str == 'f' || *str == 'n'
+				|| (*str == 'o' && *(str+1) == 'f')) {
+			*(uint32_t*)var->ptr &= ~(var->len);
+		}
+		break;
+#endif
+	case VAR_INVALID:
 		break;
 	}
 }

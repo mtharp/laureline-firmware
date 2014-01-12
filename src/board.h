@@ -32,13 +32,25 @@
 #define LED4_PAD			GPIOA
 #define LED4_PIN			(1<<0)
 
+/* Rev 6 */
+#if 0
+#define HAS_CKSEL			1
+#define HAS_PPSEN			0
+#define CKSEL_PAD			GPIOC
+#define CKSEL_PNUM			13
+#define CKSEL_PIN			(1<<CKSEL_PNUM)
+#else
+/* Rev 7 */
+#define HAS_CKSEL			0
+#define HAS_PPSEN			1
+#define PPSEN_PAD			GPIOC
+#define PPSEN_PIN			(1<<9)
+#endif
+
 #define ETH_LED_PAD			GPIOB
 #define ETH_LED_PIN			(1<<14)
 #define E_NRST_PAD			GPIOA
 #define E_NRST_PIN			(1<<4)
-#define CKSEL_PAD			GPIOC
-#define CKSEL_PNUM			13
-#define CKSEL_PIN			(1<<CKSEL_PNUM)
 #define PPS_PAD				GPIOC
 #define PPS_PNUM			6
 #define PPS_PIN				(1<<PPS_PNUM)

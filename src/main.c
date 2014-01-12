@@ -114,6 +114,11 @@ main_thread(void *pdata) {
 	test_reset();
 	cli_banner();
 	ublox_configure(gps_serial);
+#if HAS_PPSEN
+	if (cfg.flags & FLAG_PPS_OUT) {
+		GPIO_OFF(PPSEN);
+	}
+#endif
 	cl_enabled = 0;
 	while (1) {
 		flags = CoWaitForMultipleFlags(0

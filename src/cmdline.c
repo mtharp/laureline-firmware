@@ -63,6 +63,9 @@ const clivalue_t value_table[] = {
 	{ "ip_addr", VAR_IP4, &cfg.ip_addr, 0 },
 	{ "ip_gateway", VAR_IP4, &cfg.ip_gateway, 0 },
 	{ "ip_netmask", VAR_IP4, &cfg.ip_netmask, 0 },
+#if HAS_PPSEN
+	{ "pps_out", VAR_FLAG, &cfg.flags, FLAG_PPS_OUT },
+#endif
 	{ "syslog_ip", VAR_IP4, &cfg.syslog_ip, 0 },
 	{ NULL },
 };

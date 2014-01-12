@@ -76,6 +76,9 @@ void setup_clocks(double hse_freq) {
 	while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL) {}
 	system_frequency = best_freq;
 
+	/* Enable MCO */
+	RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_MCO) | RCC_CFGR_MCO_SYSCLK;
+
 	SysTick->LOAD = system_frequency / CFG_SYSTICK_FREQ - 1;
 	SysTick->VAL = 0;
 }
