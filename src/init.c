@@ -11,7 +11,11 @@
 #include "init.h"
 
 
+#ifdef BOOTLOADER
+uint32_t system_frequency;
+#else
 double system_frequency;
+#endif
 
 
 void setup_clocks(double hse_freq) {
@@ -59,6 +63,9 @@ void setup_clocks(double hse_freq) {
 	/* Disable PLL */
 	RCC->CR &= ~RCC_CR_PLLON;
 	while (RCC->CR & RCC_CR_PLLRDY) {}
+	/* Configure routing */
+	SET_BITS(RCC->CFGR, RCC_CFGR_PLLSRC, RCC_CFGR_PLLSRC_PREDIV1);
+	SET_BITS(RCC->CFGR2, RCC_CFGR2_PREDIV1SRC, RCC_CFGR2_PREDIV1SRC_HSE);
 	/* Configure multiplier (RCC_CFGR) */
 	if (best_mul == 10) {
 		reg = RCC_CFGR_PLLMULL6_5;
@@ -68,6 +75,9 @@ void setup_clocks(double hse_freq) {
 	SET_BITS(RCC->CFGR, RCC_CFGR_PLLMULL, reg);
 	/* Configure divider (RCC_CFGR2) */
 	SET_BITS(RCC->CFGR2, RCC_CFGR2_PREDIV1, best_div - 1);
+	/* Enable HSE */
+	RCC->CR |= RCC_CR_HSEON;
+	while (!(RCC->CR & RCC_CR_HSERDY)) {}
 	/* Enable PLL */
 	RCC->CR |= RCC_CR_PLLON;
 	while (!(RCC->CR & RCC_CR_PLLRDY)) {}
@@ -80,6 +90,35 @@ void setup_clocks(double hse_freq) {
 	RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_MCO) | RCC_CFGR_MCO_SYSCLK;
 
 	SysTick->LOAD = system_frequency / CFG_SYSTICK_FREQ - 1;
+	SysTick->VAL = 0;
+}
+
+
+void setup_hsi(void) {
+	/* Use HSI + PLL - assume 8MHz HSI, 36MHz SYSCLK */
+
+	/* Switch to HSI */
+	if ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI) {
+		SET_BITS(RCC->CFGR, RCC_CFGR_SW, RCC_CFGR_SW_HSI);
+		while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI) {}
+	}
+	/* Disable PLL */
+	RCC->CR &= ~RCC_CR_PLLON;
+	while (RCC->CR & RCC_CR_PLLRDY) {}
+	/* Configure routing and PLL */
+	SET_BITS(RCC->CFGR, RCC_CFGR_PLLSRC, RCC_CFGR_PLLSRC_HSI_Div2);
+	SET_BITS(RCC->CFGR, RCC_CFGR_PLLMULL, (9 - 2) << 18);
+	/* Enable PLL */
+	RCC->CR |= RCC_CR_PLLON;
+	while (!(RCC->CR & RCC_CR_PLLRDY)) {}
+	/* Switch to PLL */
+	SET_BITS(RCC->CFGR, RCC_CFGR_SW, RCC_CFGR_SW_PLL);
+	while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL) {}
+	/* Enable MCO */
+	RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_MCO) | RCC_CFGR_MCO_SYSCLK;
+
+	system_frequency = 36000000;
+	SysTick->LOAD = 36000000 / CFG_SYSTICK_FREQ - 1;
 	SysTick->VAL = 0;
 }
 

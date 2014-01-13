@@ -23,7 +23,11 @@
 #define GPIO_AFIO_OD			0b1100
 
 
+#ifdef BOOTLOADER
+extern uint32_t system_frequency;
+#else
 extern double system_frequency;
+#endif
 
 typedef struct {
 	uint8_t flags;
@@ -31,6 +35,7 @@ typedef struct {
 } gpio_cfg_t;
 
 void setup_clocks(double hse_freq);
+void setup_hsi(void);
 void setup_gpio(GPIO_TypeDef *bank, int pin, int flags, int value);
 void setup_bank(GPIO_TypeDef *bank, const gpio_cfg_t *pins);
 

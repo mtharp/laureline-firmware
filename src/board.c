@@ -9,8 +9,11 @@
 #include "common.h"
 #include "info_table.h"
 #include "init.h"
+#include "version.h"
 
+#ifndef BOOTLOADER
 uint16_t hwver;
+#endif
 
 
 static const gpio_cfg_t gpio_cfg[4][16] = {
@@ -122,7 +125,9 @@ unstick_i2c(void) {
 
 void
 SystemInit(void) {
+#ifndef BOOTLOADER
 	hwver = (int)info_get(boot_table, INFO_HWVER);
+#endif
 
 	/* Enable peripheral clocks */
 	RCC->AHBENR |= 0
@@ -156,14 +161,10 @@ SystemInit(void) {
 	setup_bank(GPIOD, gpio_cfg[3]);
 
 	/* Configure clocking */
-	RCC->CR |= RCC_CR_HSEON;
-	while (!(RCC->CR & RCC_CR_HSERDY)) {}
 	RCC->CFGR = 0
-		| RCC_CFGR_PLLSRC_PREDIV1 \
 		| RCC_CFGR_HPRE_DIV1 \
 		| RCC_CFGR_PPRE1_DIV2 \
 		| RCC_CFGR_PPRE2_DIV1 \
 		| RCC_CFGR_ADCPRE_DIV8;
-	RCC->CFGR2 = RCC_CFGR2_PREDIV1SRC_HSE;
 	FLASH->ACR = FLASH_ACR_LATENCY_2 | FLASH_ACR_PRFTBE;
 }

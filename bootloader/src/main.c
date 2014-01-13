@@ -147,7 +147,7 @@ main(void) {
 		jump_token = 0;
 		jump_application();
 	}
-	setup_clocks(ONBOARD_CLOCK);
+	setup_hsi();
 	CoInitOS();
 	serial_start(&Serial1, 115200);
 	main_tid = CoCreateTask(main_thread, NULL, THREAD_PRIO_MAIN,

@@ -19,7 +19,6 @@ SRCS += $(TOP)/lib/coos_plat.c
 SRCS += $(TOP)/lib/crc7.c
 SRCS += $(TOP)/lib/fatfs/mmc_diskio.c
 SRCS += $(TOP)/lib/hardfault.c
-SRCS += $(TOP)/lib/info_table.c
 SRCS += $(TOP)/lib/ihex.c
 SRCS += $(TOP)/lib/stm32/dma.c
 SRCS += $(TOP)/lib/stm32/flash.c
