@@ -91,6 +91,7 @@ cliWriteConfig(void) {
 	int16_t result;
 	if (!HAS_FEATURE(PPSEN) && (cfg.flags & FLAG_PPSEN)) {
 		cli_puts("WARNING: PPS output not available on this hardware\r\n");
+		cfg.flags &= ~FLAG_PPSEN;
 	}
 	cli_puts("Writing EEPROM...\r\n");
 	result = eeprom_write_cfg();

@@ -86,39 +86,37 @@ void setup_clocks(double hse_freq) {
 	while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL) {}
 	system_frequency = best_freq;
 
-	/* Enable MCO */
-	RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_MCO) | RCC_CFGR_MCO_SYSCLK;
-
 	SysTick->LOAD = system_frequency / CFG_SYSTICK_FREQ - 1;
 	SysTick->VAL = 0;
 }
 
 
 void setup_hsi(void) {
-	/* Use HSI + PLL - assume 8MHz HSI, 36MHz SYSCLK */
-
 	/* Switch to HSI */
 	if ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI) {
 		SET_BITS(RCC->CFGR, RCC_CFGR_SW, RCC_CFGR_SW_HSI);
 		while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI) {}
 	}
+#if 0
 	/* Disable PLL */
 	RCC->CR &= ~RCC_CR_PLLON;
 	while (RCC->CR & RCC_CR_PLLRDY) {}
 	/* Configure routing and PLL */
 	SET_BITS(RCC->CFGR, RCC_CFGR_PLLSRC, RCC_CFGR_PLLSRC_HSI_Div2);
-	SET_BITS(RCC->CFGR, RCC_CFGR_PLLMULL, (9 - 2) << 18);
+	SET_BITS(RCC->CFGR, RCC_CFGR_PLLMULL, (9UL - 2) << 18);
 	/* Enable PLL */
 	RCC->CR |= RCC_CR_PLLON;
 	while (!(RCC->CR & RCC_CR_PLLRDY)) {}
 	/* Switch to PLL */
 	SET_BITS(RCC->CFGR, RCC_CFGR_SW, RCC_CFGR_SW_PLL);
 	while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL) {}
-	/* Enable MCO */
-	RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_MCO) | RCC_CFGR_MCO_SYSCLK;
 
 	system_frequency = 36000000;
 	SysTick->LOAD = 36000000 / CFG_SYSTICK_FREQ - 1;
+#else
+	system_frequency = 8000000;
+	SysTick->LOAD = 8000000 / CFG_SYSTICK_FREQ - 1;
+#endif
 	SysTick->VAL = 0;
 }
 
