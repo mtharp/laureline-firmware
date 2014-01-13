@@ -18,7 +18,8 @@ SECTIONS
     {
         KEEP(*(isr_vector))
         . = 512;
-        KEEP(*(*.info_table))
+        boot_table = .;
+        KEEP(*(*.boot_table))
         . = 2k;
         _user_start = .;
     } > flash1

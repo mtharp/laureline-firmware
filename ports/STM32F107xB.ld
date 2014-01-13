@@ -21,6 +21,7 @@ SECTIONS
         KEEP(*(boot_stub))
         . = 512;
         boot_table = .;
+        KEEP(*(*.boot_table))
         . = 2k;
     } > flash
 
@@ -32,7 +33,7 @@ SECTIONS
         KEEP(*(isr_vector))
         . = 512;
         app_table = .;
-        KEEP(*(*.info_table))
+        KEEP(*(*.app_table))
     } > flash
 
     .data :

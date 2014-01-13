@@ -28,7 +28,7 @@ FATFS MMC_FS;
 uint32_t __attribute__((section(".uninit"))) jump_token;
 const uint32_t *user_vtor = _user_start;
 
-const info_entry_t info_table[] = {
+const info_entry_t boot_table[] = {
 	{INFO_BOOTVER, VERSION},
 	{INFO_HWVER, (void*)HW_VERSION},
 	{INFO_END, NULL},

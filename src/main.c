@@ -34,7 +34,14 @@ static int did_startup, did_watchdog;
 uint32_t __attribute__((section(".uninit"))) entering_standby;
 #define ENTERING_STANDBY 0x5d6347c2
 
-const info_entry_t info_table[] = {
+/* info table for the boot stub */
+const info_entry_t boot_table[] = {
+	{INFO_HWVER, (void*)HW_VERSION},
+	{INFO_END, NULL},
+};
+
+/* info table for the application itself */
+const info_entry_t app_table[] = {
 	{INFO_APPVER, VERSION},
 	{INFO_END, NULL},
 };
@@ -114,11 +121,9 @@ main_thread(void *pdata) {
 	test_reset();
 	cli_banner();
 	ublox_configure(gps_serial);
-#if HAS_PPSEN
-	if (cfg.flags & FLAG_PPS_OUT) {
+	if (HAS_FEATURE(PPSEN) && (cfg.flags & FLAG_PPSEN)) {
 		GPIO_OFF(PPSEN);
 	}
-#endif
 	cl_enabled = 0;
 	while (1) {
 		flags = CoWaitForMultipleFlags(0

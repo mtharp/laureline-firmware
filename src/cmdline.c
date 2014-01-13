@@ -63,9 +63,7 @@ const clivalue_t value_table[] = {
 	{ "ip_addr", VAR_IP4, &cfg.ip_addr, 0 },
 	{ "ip_gateway", VAR_IP4, &cfg.ip_gateway, 0 },
 	{ "ip_netmask", VAR_IP4, &cfg.ip_netmask, 0 },
-#if HAS_PPSEN
-	{ "pps_out", VAR_FLAG, &cfg.flags, FLAG_PPS_OUT },
-#endif
+	{ "pps_out", VAR_FLAG, &cfg.flags, FLAG_PPSEN },
 	{ "syslog_ip", VAR_IP4, &cfg.syslog_ip, 0 },
 	{ NULL },
 };
@@ -91,10 +89,15 @@ show_eeprom_error(int16_t result) {
 static void
 cliWriteConfig(void) {
 	int16_t result;
+	if (!HAS_FEATURE(PPSEN) && (cfg.flags & FLAG_PPSEN)) {
+		cli_puts("WARNING: PPS output not available on this hardware\r\n");
+	}
 	cli_puts("Writing EEPROM...\r\n");
 	result = eeprom_write_cfg();
 	if (result == EERR_OK) {
 		cli_puts("OK\r\n");
+		serial_drain(&Serial1);
+		serial_drain(&Serial4);
 		CoTickDelay(S2ST(1));
 		NVIC_SystemReset();
 	} else {
@@ -140,7 +143,7 @@ cliUptime(char *cmdline) {
 static void
 cliVersion(char *cmdline) {
 	const char *bootver;
-	cli_printf("Hardware:       %d.%d\r\n", snum.hwver >> 8, snum.hwver & 0xff);
+	cli_printf("Hardware:       %d.%d\r\n", hwver >> 8, hwver & 0xff);
 	cli_puts(  "Software:       " VERSION "\r\n");
 	bootver = info_get(boot_table, INFO_BOOTVER);
 	if (bootver == NULL) {

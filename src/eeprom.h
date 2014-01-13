@@ -21,7 +21,7 @@
 #define EERR_BLANK			-20
 #define EERR_UPGRADE		-21
 
-#define FLAG_PPS_OUT		(1 << 0)
+#define FLAG_PPSEN			(1 << 0)
 
 
 #pragma pack(push, 1)

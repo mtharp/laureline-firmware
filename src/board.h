@@ -32,20 +32,8 @@
 #define LED4_PAD			GPIOA
 #define LED4_PIN			(1<<0)
 
-/* Rev 6 */
-#if 0
-#define HAS_CKSEL			1
-#define HAS_PPSEN			0
-#define CKSEL_PAD			GPIOC
-#define CKSEL_PNUM			13
-#define CKSEL_PIN			(1<<CKSEL_PNUM)
-#else
-/* Rev 7 */
-#define HAS_CKSEL			0
-#define HAS_PPSEN			1
 #define PPSEN_PAD			GPIOC
 #define PPSEN_PIN			(1<<9)
-#endif
 
 #define ETH_LED_PAD			GPIOB
 #define ETH_LED_PIN			(1<<14)
@@ -61,6 +49,13 @@
 
 #define DEFAULT_BAUD		57600
 #define I2C_FREQ			100000
+
+#define FEAT_MIN_PPSEN		0x0700
+#define FEAT_MAX_PPSEN		0x07FF
+#define HAS_FEATURE(x) ((hwver >= _PASTE2(FEAT_MIN_, x)) && \
+		(hwver <= _PASTE2(FEAT_MAX_, x)))
+
+extern uint16_t hwver;
 
 void unstick_i2c(void);
 

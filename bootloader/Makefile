@@ -19,6 +19,7 @@ SRCS += $(TOP)/lib/coos_plat.c
 SRCS += $(TOP)/lib/crc7.c
 SRCS += $(TOP)/lib/fatfs/mmc_diskio.c
 SRCS += $(TOP)/lib/hardfault.c
+SRCS += $(TOP)/lib/info_table.c
 SRCS += $(TOP)/lib/ihex.c
 SRCS += $(TOP)/lib/stm32/dma.c
 SRCS += $(TOP)/lib/stm32/flash.c
@@ -60,6 +61,10 @@ include $(TOP)/emk/rules.mk
 
 LD := $(PYTHON) $(TOP)/util/resize_ld.py $(FLASH_SIZE) $(LD)
 
+ifeq ($(HW_VERSION),0)
+$(error Must set HW_VERSION to e.g. 0x0701 for 7.1)
+else
+
 ifneq ($(shell cat $(BUILD)/version.txt 2>/dev/null),$(VERSION))
 .PHONY: $(BUILD)/version.h
 endif
@@ -72,5 +77,7 @@ $(BUILD)/version.h:
 	echo $(HW_VERSION) > $(BUILD)/hwversion.txt
 	echo '#define VERSION "$(VERSION)"' > $@
 	echo '#define HW_VERSION $(HW_VERSION)' >> $@
+
+endif
 
 src/main.c src/cmdline.c: $(BUILD)/version.h
