@@ -7,7 +7,9 @@
 #
 
 PROJECT = laureline
+# These are only used when not using a bootloader
 HW_VERSION = 0
+HSE_FREQ = 0
 
 TOP = .
 SRCS = $(wildcard src/*.c)
@@ -65,17 +67,16 @@ LDLIBS = -lm -Wl,-u,_printf_float
 
 include $(TOP)/emk/rules.mk
 
-ifneq ($(shell cat $(BUILD)/version.txt 2>/dev/null),$(VERSION))
-.PHONY: $(BUILD)/version.h
-endif
-ifneq ($(shell cat $(BUILD)/hwversion.txt 2>/dev/null),$(HW_VERSION))
+discrim = $(VERSION),$(HW_VERSION),$(HSE_FREQ)
+discrim_file = $(BUILD)/version.txt
+ifneq ($(shell cat $(discrim_file) 2>/dev/null),$(discrim))
 .PHONY: $(BUILD)/version.h
 endif
 
 $(BUILD)/version.h:
-	echo $(VERSION) > $(BUILD)/version.txt
-	echo $(HW_VERSION) > $(BUILD)/hwversion.txt
-	echo '#define VERSION "$(VERSION)"' > $@
+	echo '$(discrim)' > $(discrim_file)
+	echo '#define VERSION    "$(VERSION)"' > $@
 	echo '#define HW_VERSION $(HW_VERSION)' >> $@
+	echo '#define HSE_FREQ   $(HSE_FREQ)' >> $@
 
 src/main.c src/cmdline.c: $(BUILD)/version.h

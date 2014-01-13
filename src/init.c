@@ -24,6 +24,8 @@ void setup_clocks(double hse_freq) {
 	uint32_t reg;
 	double best_freq;
 	double f;
+	ASSERT(hse_freq > 1000000);
+	ASSERT(hse_freq < 50000000);
 
 	best_freq = best_div = best_mul = 0;
 	for (div = 1; div <= 16; div++) {

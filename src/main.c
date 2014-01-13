@@ -37,6 +37,7 @@ uint32_t __attribute__((section(".uninit"))) entering_standby;
 /* info table for the boot stub */
 const info_entry_t boot_table[] = {
 	{INFO_HWVER, (void*)HW_VERSION},
+	{INFO_HSE_FREQ, (void*)HSE_FREQ},
 	{INFO_END, NULL},
 };
 
@@ -154,7 +155,7 @@ main(void) {
 	GPIO_OFF(E_NRST);
 	unstick_i2c();
 	GPIO_ON(E_NRST);
-	setup_clocks(ONBOARD_CLOCK);
+	setup_clocks((int)info_get(boot_table, INFO_HSE_FREQ));
 	iwdg_start(4, 0xFFF);
 	CoInitOS();
 	serial_start(&Serial1, 115200);

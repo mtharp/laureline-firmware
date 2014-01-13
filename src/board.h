@@ -12,7 +12,6 @@
 
 #define BOARD_NAME				"Laureline NTP Server " BOARD_REV
 #define BOARD_REV				"rev. 5"
-#define ONBOARD_CLOCK			26000000
 #define STM32F10X_CL
 
 /*
