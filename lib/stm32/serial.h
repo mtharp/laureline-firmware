@@ -30,6 +30,9 @@ extern serial_t Serial1;
 #if USE_SERIAL_UART4
 extern serial_t Serial4;
 #endif
+#if USE_SERIAL_UART5
+extern serial_t Serial5;
+#endif
 
 
 void serial_start(serial_t *serial, int speed);

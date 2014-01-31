@@ -97,8 +97,7 @@ cliWriteConfig(void) {
 	result = eeprom_write_cfg();
 	if (result == EERR_OK) {
 		cli_puts("OK\r\n");
-		serial_drain(&Serial1);
-		serial_drain(&Serial4);
+		serial_drain(cl_out);
 		CoTickDelay(S2ST(1));
 		NVIC_SystemReset();
 	} else {

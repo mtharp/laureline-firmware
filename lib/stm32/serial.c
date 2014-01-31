@@ -20,6 +20,9 @@ serial_t Serial1;
 #if USE_SERIAL_UART4
 serial_t Serial4;
 #endif
+#if USE_SERIAL_UART5
+serial_t Serial5;
+#endif
 
 static void serial_outq_cb(void *arg);
 
@@ -59,11 +62,12 @@ serial_start(serial_t *serial, int speed) {
 		serial->usart = UART4;
 	} else
 #endif
-#if 0
+#if USE_SERIAL_UART5
 	if (serial == &Serial5) {
 		RCC->APB1ENR |= RCC_APB1ENR_UART5EN;
 		irqn = UART5_IRQn;
 		serial->usart = UART5;
+	} else
 #endif
 	{
 		HALT();
@@ -189,6 +193,16 @@ void
 UART4_IRQHandler(void) {
 	CoEnterISR();
 	service_interrupt(&Serial4);
+	CoExitISR();
+}
+#endif
+
+
+#if USE_SERIAL_UART5
+void
+UART5_IRQHandler(void) {
+	CoEnterISR();
+	service_interrupt(&Serial5);
 	CoExitISR();
 }
 #endif

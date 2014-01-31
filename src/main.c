@@ -28,6 +28,7 @@
 #define MAIN_STACK 512
 OS_STK main_stack[MAIN_STACK];
 OS_TID main_tid;
+serial_t *const cli_serial = &Serial1;
 serial_t *const gps_serial = &Serial4;
 static int did_startup, did_watchdog;
 
@@ -89,8 +90,8 @@ enter_standby(void) {
 	/* Shutdown onboard peripherals */
 	mac_stop();
 	ublox_stop(gps_serial);
-	serial_drain(&Serial1);
-	serial_drain(&Serial4);
+	serial_drain(cli_serial);
+	serial_drain(gps_serial);
 	GPIO_ON(SDIO_PDOWN);
 	/* Trigger a reset in order to disable the watchdog timer, otherwise it
 	 * will just wake us up after a few seconds.
@@ -128,13 +129,13 @@ main_thread(void *pdata) {
 	cl_enabled = 0;
 	while (1) {
 		flags = CoWaitForMultipleFlags(0
-				| 1 << Serial1.rx_q.flag
+				| 1 << cli_serial->rx_q.flag
 				| 1 << gps_serial->rx_q.flag
 				, OPT_WAIT_ANY, S2ST(1), &err);
 		if (err != E_OK && err != E_TIMEOUT) { HALT();
 		}
-		if (flags & (1 << Serial1.rx_q.flag)) {
-			while ((val = serial_get(&Serial1, TIMEOUT_NOBLOCK)) >= 0) {
+		if (flags & (1 << cli_serial->rx_q.flag)) {
+			while ((val = serial_get(cli_serial, TIMEOUT_NOBLOCK)) >= 0) {
 				cli_feed(val);
 			}
 		}
@@ -158,11 +159,11 @@ main(void) {
 	setup_clocks((int)info_get(boot_table, INFO_HSE_FREQ));
 	iwdg_start(4, 0xFFF);
 	CoInitOS();
-	serial_start(&Serial1, 115200);
+	serial_start(cli_serial, 115200);
 	serial_start(gps_serial, 57600);
-	log_start(&Serial1);
+	log_start(cli_serial);
 	log_sethostname("gps-ntp");
-	cli_set_output(&Serial1);
+	cli_set_output(cli_serial);
 	cl_enabled = 1;
 	ppscapture_start();
 	vtimer_start();
