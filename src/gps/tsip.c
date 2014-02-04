@@ -33,7 +33,7 @@ set_quant(uint8_t *qf) {
 	out_p[3] = qf[0];
 	/* Value is in nanoseconds */
 	out_f *= -(1 / 1e9f);
-	vtimer_set_correction(out_f);
+	vtimer_set_correction(out_f, LAGGING);
 }
 
 

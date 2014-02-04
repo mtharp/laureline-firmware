@@ -33,7 +33,7 @@ static uint64_t vt_last;
 static uint64_t mono_last;
 /* Saved corrections from GPS */
 static uint32_t utc_next;
-static double quant_corr;
+static float quant_corr, quant_corr_deferred;
 
 static void pll_thread(void *p);
 static uint64_t vtimer_getI(uint64_t mono_next);
@@ -46,6 +46,7 @@ void
 vtimer_start(void) {
 	init_pllmath();
 	pll_reset();
+	quant_corr = quant_corr_deferred = 0.0f;
 	vt_rate_nominal = NTP_TO_FLOAT / system_frequency;
 	vtimer_tid = CoCreateTask(pll_thread, NULL, THREAD_PRIO_VTIMER,
 			&vtimer_stack[VTIMER_STACK-1], VTIMER_STACK, "vtimer");
@@ -95,8 +96,12 @@ pll_thread(void *p) {
 			last_pps = CoGetOSTime();
 			ppb = pll_math(delta);
 
-			log_write(LOG_INFO, "vtimer", "pps %.03f ns  freq %.03f ppb",
-					(float)(delta*1e9), (float)(ppb*1e9));
+			log_write(LOG_INFO, "vtimer", "pps %.03f ns  freq %.03f ppb {%sPPS,%sToD,%sPLL,%sQUANT}",
+					(float)(delta*1e9), (float)(ppb*1e9),
+					(status_flags & STATUS_PPS_OK) ? "" : "!",
+					(status_flags & STATUS_TOD_OK) ? "" : "!",
+					(status_flags & STATUS_PLL_OK) ? "" : "!",
+					(status_flags & STATUS_USED_QUANT) ? "" : "!");
 		} else {
 			if (((CoGetOSTime() - last_pps) >= S2ST(5)) && (status_flags & STATUS_PPS_OK)) {
 				log_write(LOG_WARNING, "vtimer", "PPS is not valid!");
@@ -191,12 +196,14 @@ vtimer_get_frac_delta(uint64_t mono_capture) {
 	/* Convert a PPS capture in monotonic time to vtimer, but only the
 	 * fractional second part is kept. */
 	uint64_t vt_capture;
-	double frac, corr;
+	double frac;
+	float corr;
 	DISABLE_IRQ();
 	vt_capture = vtimer_getI(mono_capture);
 	corr = quant_corr;
-	quant_corr = 0.0;
-	if (corr != 0.0) {
+	quant_corr= quant_corr_deferred;
+	quant_corr_deferred = 0.0f;
+	if (corr != 0.0f) {
 		status_flags |= STATUS_USED_QUANT;
 	} else {
 		status_flags &= ~STATUS_USED_QUANT;
@@ -265,9 +272,14 @@ vtimer_set_utc(uint16_t year, uint8_t month, uint8_t day,
 
 
 void
-vtimer_set_correction(double corr) {
+vtimer_set_correction(float corr, quant_leadlag_t leadlag) {
 	DISABLE_IRQ();
-	quant_corr = corr;
+	if (leadlag == LEADING) {
+		quant_corr_deferred = corr;
+	} else {
+		quant_corr = corr;
+		quant_corr_deferred = 0.0f;
+	}
 	ENABLE_IRQ();
 }
 

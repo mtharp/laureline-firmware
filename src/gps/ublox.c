@@ -51,7 +51,7 @@ static void
 set_quant_ubx(uint8_t *qf) {
 	int32_t picoseconds = *(int32_t*)qf;
 	float corr = -picoseconds * (1 / 1e12);
-	vtimer_set_correction(corr);
+	vtimer_set_correction(corr, LEADING);
 }
 
 
