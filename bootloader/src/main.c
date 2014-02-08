@@ -148,8 +148,8 @@ main(void) {
 		jump_token = 0;
 		jump_application();
 	}
-	setup_hsi();
 	CoInitOS();
+	setup_hsi();
 	serial_start(&Serial1, 115200);
 	main_tid = CoCreateTask(main_thread, NULL, THREAD_PRIO_MAIN,
 			&main_stack[MAIN_STACK-1], MAIN_STACK, "main");
