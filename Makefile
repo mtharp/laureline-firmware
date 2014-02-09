@@ -64,6 +64,7 @@ CFLAGS = \
 	-Wno-main \
 	-Wno-address
 LDLIBS = -lm -Wl,-u,_printf_float
+DIST_OPTS = CFLAGS_EXTRA=-Werror
 
 include $(TOP)/emk/rules.mk
 
@@ -80,3 +81,11 @@ $(BUILD)/version.h:
 	echo '#define HSE_FREQ   $(HSE_FREQ)' >> $@
 
 src/main.c src/cmdline.c: $(BUILD)/version.h
+
+dist:
+	rm -rf dist
+	$(MAKE) BUILD=dist/laureline-$(VERSION) $(DIST_OPTS)
+	$(MAKE) -C bootloader BUILD=../dist/laureline-bootloader-hw7.1-osc25-$(VERSION) $(DIST_OPTS) HW_VERSION=0x0701 HSE_FREQ=25000000
+	$(MAKE) -C bootloader BUILD=../dist/laureline-bootloader-hw7.1-osc26-$(VERSION) $(DIST_OPTS) HW_VERSION=0x0701 HSE_FREQ=26000000
+
+.PHONY: dist

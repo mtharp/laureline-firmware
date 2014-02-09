@@ -52,7 +52,7 @@ ASFLAGS = $(MCFLAGS)
 CPFLAGS = -R boot_stub -R .boot_stub
 
 ifdef BMP
-GDB_INSTALL := $(GDB) --batch \
+GDB_INSTALL = $(GDB) --batch \
 	-ex "tar ext $(BMP)" \
 	-ex "mon connect_srst enable" \
 	-ex "mon swdp_scan" \
@@ -60,7 +60,7 @@ GDB_INSTALL := $(GDB) --batch \
 	-ex load \
 	-ex kill
 else
-GDB_INSTALL := $(error You must set BMP=/dev/ttyACMx)
+GDB_INSTALL = $(error You must set BMP=/dev/ttyACMx)
 endif
 
 # Targets
