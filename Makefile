@@ -14,6 +14,7 @@ HSE_FREQ = 0
 TOP = .
 SRCS = $(wildcard src/*.c)
 SRCS += $(wildcard src/gps/*.c)
+SRCS += $(wildcard src/net/*.c)
 SRCS += $(TOP)/lib/coos_plat.c
 SRCS += $(TOP)/lib/hardfault.c
 SRCS += $(TOP)/lib/info_table.c

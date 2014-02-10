@@ -7,7 +7,7 @@
  */
 
 #include "common.h"
-#include "tcpapi.h"
+#include "net/tcpapi.h"
 #include "lwip/tcp.h"
 #include "lwip/udp.h"
 #include <string.h>

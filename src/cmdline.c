@@ -18,7 +18,7 @@
 #include "init.h"
 #include "lwip/def.h"
 #include "eeprom.h"
-#include "tcpip.h"
+#include "net/tcpip.h"
 #include "uptime.h"
 #include "profile.h"
 #include "version.h"

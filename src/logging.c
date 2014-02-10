@@ -10,8 +10,8 @@
 #include "eeprom.h"
 #include "epoch.h"
 #include "logging.h"
-#include "tcpapi.h"
-#include "tcpip.h"
+#include "net/tcpapi.h"
+#include "net/tcpip.h"
 #include "vtimer.h"
 #include "lwip/udp.h"
 #include <stdarg.h>

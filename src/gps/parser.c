@@ -7,7 +7,7 @@
  */
 
 #include "common.h"
-#include "relay.h"
+#include "net/relay.h"
 #include "ppscapture.h"
 #include "gps/motorola.h"
 #include "gps/nmea.h"

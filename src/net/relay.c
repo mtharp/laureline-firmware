@@ -8,8 +8,8 @@
 
 #include "common.h"
 #include "main.h"
-#include "relay.h"
-#include "tcpapi.h"
+#include "net/relay.h"
+#include "net/tcpapi.h"
 #include "lwip/tcp.h"
 #include "stm32/serial.h"
 

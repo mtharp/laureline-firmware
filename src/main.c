@@ -15,7 +15,7 @@
 #include "init.h"
 #include "logging.h"
 #include "ppscapture.h"
-#include "tcpip.h"
+#include "net/tcpip.h"
 #include "version.h"
 #include "vtimer.h"
 #include "stm32/eth_mac.h"
