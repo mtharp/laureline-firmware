@@ -25,6 +25,7 @@
 #define THREAD_PRIO_VTIMER			10
 #define THREAD_PRIO_TCPIP			20
 #define THREAD_PRIO_MAIN			30
+#define THREAD_PRIO_NTPCLIENT		35
 /* Lowest priority (highest number) */
 
 /* Highest priority (lowest number) */

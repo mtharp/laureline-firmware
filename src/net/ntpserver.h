@@ -9,6 +9,8 @@
 #ifndef _NTPSERVER_H
 #define _NTPSERVER_H
 
+#define NTP_PORT				123
+
 #define LEAP_MASK				0xC0
 #define LEAP_NONE				0x0
 #define LEAP_INSERT				0x1

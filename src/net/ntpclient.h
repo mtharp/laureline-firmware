@@ -10,6 +10,5 @@
 #define _NTPCLIENT_H
 
 void ntp_client_start(void);
-void ntp_client_periodic(void);
 
 #endif

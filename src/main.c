@@ -30,7 +30,7 @@ OS_STK main_stack[MAIN_STACK];
 OS_TID main_tid;
 serial_t *const cli_serial = &Serial1;
 serial_t *const gps_serial = &Serial4;
-static int did_startup, did_watchdog;
+static int did_watchdog;
 
 uint32_t __attribute__((section(".uninit"))) entering_standby;
 #define ENTERING_STANDBY 0x5d6347c2
@@ -74,14 +74,10 @@ test_reset(void) {
 
 void
 log_startup(void) {
-	if (did_startup) {
-		return;
-	}
 	log_write(LOG_NOTICE, "kernel", "GPS NTP Server version " VERSION " started");
 	if (did_watchdog) {
 		log_write(LOG_CRIT, "kernel", "Device was previously reset by watchdog timer!");
 	}
-	did_startup = 1;
 }
 
 

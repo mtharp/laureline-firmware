@@ -32,6 +32,7 @@ OS_TCID timer;
 OS_FlagID timer_flag;
 
 struct netif thisif;
+static int did_startup;
 
 static void tcpip_thread(void *p);
 static void link_changed(void);
@@ -124,7 +125,11 @@ interface_changed(struct netif *netif) {
 	if (netif != &thisif || !(thisif.flags & NETIF_FLAG_UP)) {
 		return;
 	}
-	log_startup();
+	if (!did_startup) {
+		did_startup = 1;
+		log_startup();
+		ntp_client_start();
+	}
 	if (thisif.dhcp) {
 		log_write(LOG_NOTICE, "net",
 				"IP address acquired from DHCP: %d.%d.%d.%d",

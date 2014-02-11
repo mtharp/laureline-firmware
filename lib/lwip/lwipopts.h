@@ -82,6 +82,19 @@
 #define DHCP_DOES_ARP_CHECK             1
 
 /*
+   ----------------------------------
+   ---------- DNS options -----------
+   ----------------------------------
+*/
+#define LWIP_DNS                        1
+#define DNS_TABLE_SIZE                  1
+#define DNS_MAX_NAME_LENGTH             32
+#define DNS_MAX_SERVERS                 2
+#define DNS_DOES_NAME_CHECK             1
+#define DNS_MSG_SIZE                    512
+#define DNS_LOCAL_HOSTLIST              0
+
+/*
    ---------------------------------
    ---------- UDP options ----------
    ---------------------------------
@@ -208,7 +221,6 @@
 #define LWIP_AUTOIP                     0
 #define LWIP_SNMP                       0
 #define LWIP_IGMP                       0
-#define LWIP_DNS                        0
 #define LWIP_HAVE_LOOPIF                0
 #define LWIP_HAVE_SLIPIF                0
 #define LWIP_SOCKET                     0
