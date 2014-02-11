@@ -10,6 +10,7 @@
 #include "net/tcpapi.h"
 #include "lwip/dns.h"
 #include "lwip/tcp.h"
+#include "lwip/timers.h"
 #include "lwip/udp.h"
 #include <string.h>
 
@@ -90,6 +91,10 @@ api_call(tcpapi_msg_t *msg, api_func func) {
 }
 
 
+/*
+ * api_tcp_write
+ */
+
 static err_t
 do_tcp_write(tcpapi_msg_t *msg) {
 	return tcp_write(msg->msg.wr.pcb, msg->msg.wr.data, msg->msg.wr.len,
@@ -108,6 +113,10 @@ api_tcp_write(struct tcp_pcb *pcb, const void *data, uint16_t len, uint8_t flags
 }
 
 
+/*
+ * api_tcp_output
+ */
+
 static err_t
 do_tcp_output(tcpapi_msg_t *msg) {
 	return tcp_output(msg->msg.wr.pcb);
@@ -121,6 +130,10 @@ api_tcp_output(struct tcp_pcb *pcb) {
 	return api_call(&msg, do_tcp_output);
 }
 
+
+/*
+ * api_udp_connect
+ */
 
 static err_t
 do_udp_connect(tcpapi_msg_t *msg) {
@@ -137,6 +150,10 @@ api_udp_connect(struct udp_pcb *pcb, ip_addr_t *addr, uint16_t port) {
 	return api_call(&msg, do_udp_connect);
 }
 
+
+/*
+ * api_udp_send
+ */
 
 static err_t
 do_udp_send(tcpapi_msg_t *msg) {
@@ -162,10 +179,24 @@ api_udp_send(struct udp_pcb *pcb, const void *data, uint16_t len) {
 }
 
 
+/*
+ * api_udp_recv
+ */
+
+static void
+got_udp_timedout(void *arg) {
+	tcpapi_msg_t *msg = (tcpapi_msg_t*)arg;
+	udp_recv(msg->msg.urecv.pcb, NULL, NULL);
+	msg->ret = ERR_TIMEOUT;
+	CoPostSem(msg->sem);
+}
+
+
 static void
 got_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, uint16_t port) {
 	tcpapi_msg_t *msg = (tcpapi_msg_t*)arg;
 	udp_recv(pcb, NULL, NULL);
+	sys_untimeout(got_udp_timedout, msg);
 	*(msg->msg.urecv.len) = pbuf_copy_partial(p,
 			msg->msg.urecv.data, *(msg->msg.urecv.len), 0);
 	msg->ret = ERR_OK;
@@ -177,19 +208,27 @@ got_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, uint16_
 static err_t
 do_udp_recv(tcpapi_msg_t *msg) {
 	udp_recv(msg->msg.urecv.pcb, got_udp, msg);
+	if (msg->timeout) {
+		sys_timeout(msg->timeout, got_udp_timedout, msg);
+	}
 	return ERR_INPROGRESS;
 }
 
 
 err_t
-api_udp_recv(struct udp_pcb *pcb, void *data, uint16_t *len) {
+api_udp_recv(struct udp_pcb *pcb, void *data, uint16_t *len, uint16_t timeout) {
 	tcpapi_msg_t msg;
+	msg.timeout = timeout;
 	msg.msg.urecv.pcb = pcb;
 	msg.msg.urecv.data = data;
 	msg.msg.urecv.len = len;
 	return api_call(&msg, do_udp_recv);
 }
 
+
+/*
+ * api_gethostbyname
+ */
 
 static void
 gethost_callback(const char *name, ip_addr_t *addr, void *arg) {

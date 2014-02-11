@@ -51,7 +51,7 @@ ntp_query(int index) {
 	api_udp_send(ntp_cli_pcb, query_buf, 48);
 
 	len = sizeof(query_buf);
-	if (ERR_OK == api_udp_recv(ntp_cli_pcb, query_buf, &len) && len >= 48) {
+	if (ERR_OK == api_udp_recv(ntp_cli_pcb, query_buf, &len, 1000) && len >= 48) {
 		query_time = monotonic_now() - query_time; /* RTT */
 		result =  ((uint64_t)query_buf[40] << 56)
 				| ((uint64_t)query_buf[41] << 48)

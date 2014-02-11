@@ -20,6 +20,7 @@ typedef struct tcpapi_msg {
 	api_func func;
 	OS_EventID sem;
 	err_t ret;
+	uint16_t timeout;
 	union {
 		/* api_tcp_write */
 		struct {
@@ -63,7 +64,7 @@ err_t api_tcp_write(struct tcp_pcb *pcb, const void *data, uint16_t len, uint8_t
 err_t api_tcp_output(struct tcp_pcb *pcb);
 err_t api_udp_connect(struct udp_pcb *pcb, ip_addr_t *addr, uint16_t port);
 err_t api_udp_send(struct udp_pcb *pcb, const void *data, uint16_t len);
-err_t api_udp_recv(struct udp_pcb *pcb, void *data, uint16_t *len);
+err_t api_udp_recv(struct udp_pcb *pcb, void *data, uint16_t *len, uint16_t timeout);
 err_t api_gethostbyname(const char *name, ip_addr_t *addr);
 
 extern OS_FlagID api_flag;
