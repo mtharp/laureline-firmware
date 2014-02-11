@@ -64,7 +64,7 @@ relay_accept(void *arg, struct tcp_pcb *pcb, err_t err) {
 
 void
 relay_server_start(uint16_t port) {
-	relay_pcb = tcp_new();
+	ASSERT((relay_pcb = tcp_new()) != NULL);
 	tcp_bind(relay_pcb, IP_ADDR_ANY, port);
 	relay_pcb = tcp_listen(relay_pcb);
 	tcp_accept(relay_pcb, relay_accept);

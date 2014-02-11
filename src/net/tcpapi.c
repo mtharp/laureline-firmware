@@ -14,16 +14,18 @@
 #include <string.h>
 
 OS_FlagID api_flag; /* Wakes tcpip thread for a call */
-static OS_MutexID api_mutex; /* Serializes client calls */
-static OS_EventID api_sem; /* Wakes client for return value */
 static OS_TID api_thread;
-static tcpapi_msg_t msg;
+static OS_EventID task_sems[1+CFG_MAX_USER_TASKS];
+static tcpapi_msg_t *waitlist;
 
 void
 api_start(void) {
+	int i;
+	for (i = 0; i < 1+CFG_MAX_USER_TASKS; i++) {
+		task_sems[i] = E_CREATE_FAIL;
+	}
+	waitlist = NULL;
 	ASSERT((api_flag = CoCreateFlag(1, 0)) != E_CREATE_FAIL);
-	ASSERT((api_mutex = CoCreateMutex()) != E_CREATE_FAIL);
-	ASSERT((api_sem = CoCreateSem(0, 1, EVENT_SORT_TYPE_FIFO)) != E_CREATE_FAIL);
 	api_thread = E_CREATE_FAIL;
 }
 
@@ -36,31 +38,55 @@ api_set_main_thread(OS_TID thread) {
 
 void
 api_accept(void) {
-	if (msg.func == NULL) {
+	tcpapi_msg_t *msg;
+	DISABLE_IRQ();
+	if (waitlist == NULL) {
+		ENABLE_IRQ();
 		return;
 	}
-	msg.ret = msg.func(&msg);
-	if (msg.ret != ERR_INPROGRESS) {
-		msg.func = NULL;
-		CoPostSem(api_sem);
+	msg = waitlist;
+	waitlist = msg->next;
+	ENABLE_IRQ();
+	msg->ret = msg->func(msg);
+	if (msg->ret != ERR_INPROGRESS) {
+		CoPostSem(msg->sem);
 	}
 }
 
 
 static err_t
-api_call(api_func func) {
-	err_t ret;
-	msg.func = func;
-	if (CoGetCurTaskID() == api_thread) {
-		func(&msg);
-		msg.func = NULL;
-	} else {
-		CoSetFlag(api_flag);
-		CoPendSem(api_sem, 0);
+api_call(tcpapi_msg_t *msg, api_func func) {
+	tcpapi_msg_t *mptr;
+	OS_TID tid = CoGetCurTaskID();
+	if (tid == api_thread) {
+		/* Run inline */
+		err_t ret = func(msg);
+		ASSERT(ret != ERR_INPROGRESS); /* can't sleep in api thread */
+		return ret;
 	}
-	ret = msg.ret;
-	CoLeaveMutexSection(api_mutex);
-	return ret;
+	msg->func = func;
+	/* Use semaphore for the caller's thread, creating first if needed */
+	if (task_sems[tid] == E_CREATE_FAIL) {
+		ASSERT((task_sems[tid] = CoCreateSem(0, 1, EVENT_SORT_TYPE_FIFO)) != E_CREATE_FAIL);
+	}
+	msg->sem = task_sems[tid];
+	msg->next = NULL;
+	/* Add msg to tail of wait list */
+	DISABLE_IRQ();
+	if (waitlist == NULL) {
+		waitlist = msg;
+	} else {
+		mptr = waitlist;
+		while (mptr->next != NULL) {
+			mptr = mptr->next;
+		}
+		mptr->next = msg;
+	}
+	ENABLE_IRQ();
+	/* Sleep until result is ready */
+	CoSetFlag(api_flag);
+	CoPendSem(msg->sem, 0);
+	return msg->ret;
 }
 
 
@@ -73,12 +99,12 @@ do_tcp_write(tcpapi_msg_t *msg) {
 
 err_t
 api_tcp_write(struct tcp_pcb *pcb, const void *data, uint16_t len, uint8_t flags) {
-	CoEnterMutexSection(api_mutex);
+	tcpapi_msg_t msg;
 	msg.msg.wr.pcb = pcb;
 	msg.msg.wr.data = data;
 	msg.msg.wr.len = len;
 	msg.msg.wr.flags = flags;
-	return api_call(do_tcp_write);
+	return api_call(&msg, do_tcp_write);
 }
 
 
@@ -90,9 +116,9 @@ do_tcp_output(tcpapi_msg_t *msg) {
 
 err_t
 api_tcp_output(struct tcp_pcb *pcb) {
-	CoEnterMutexSection(api_mutex);
+	tcpapi_msg_t msg;
 	msg.msg.wr.pcb = pcb;
-	return api_call(do_tcp_output);
+	return api_call(&msg, do_tcp_output);
 }
 
 
@@ -104,11 +130,11 @@ do_udp_connect(tcpapi_msg_t *msg) {
 
 err_t
 api_udp_connect(struct udp_pcb *pcb, ip_addr_t *addr, uint16_t port) {
-	CoEnterMutexSection(api_mutex);
+	tcpapi_msg_t msg;
 	msg.msg.uconn.pcb = pcb;
 	msg.msg.uconn.addr = addr;
 	msg.msg.uconn.port = port;
-	return api_call(do_udp_connect);
+	return api_call(&msg, do_udp_connect);
 }
 
 
@@ -128,11 +154,11 @@ do_udp_send(tcpapi_msg_t *msg) {
 
 err_t
 api_udp_send(struct udp_pcb *pcb, const void *data, uint16_t len) {
-	CoEnterMutexSection(api_mutex);
+	tcpapi_msg_t msg;
 	msg.msg.usend.pcb = pcb;
 	msg.msg.usend.data = data;
 	msg.msg.usend.len = len;
-	return api_call(do_udp_send);
+	return api_call(&msg, do_udp_send);
 }
 
 
@@ -143,9 +169,8 @@ got_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, uint16_
 	*(msg->msg.urecv.len) = pbuf_copy_partial(p,
 			msg->msg.urecv.data, *(msg->msg.urecv.len), 0);
 	msg->ret = ERR_OK;
-	msg->func = NULL;
 	pbuf_free(p);
-	CoPostSem(api_sem);
+	CoPostSem(msg->sem);
 }
 
 
@@ -158,11 +183,11 @@ do_udp_recv(tcpapi_msg_t *msg) {
 
 err_t
 api_udp_recv(struct udp_pcb *pcb, void *data, uint16_t *len) {
-	CoEnterMutexSection(api_mutex);
+	tcpapi_msg_t msg;
 	msg.msg.urecv.pcb = pcb;
 	msg.msg.urecv.data = data;
 	msg.msg.urecv.len = len;
-	return api_call(do_udp_recv);
+	return api_call(&msg, do_udp_recv);
 }
 
 
@@ -175,8 +200,7 @@ gethost_callback(const char *name, ip_addr_t *addr, void *arg) {
 		msg->ret = ERR_OK;
 		ip_addr_set(msg->msg.gh.addr, addr);
 	}
-	msg->func = NULL;
-	CoPostSem(api_sem);
+	CoPostSem(msg->sem);
 }
 
 
@@ -190,8 +214,8 @@ do_gethostbyname(tcpapi_msg_t *msg) {
 
 err_t
 api_gethostbyname(const char *name, ip_addr_t *addr) {
-	CoEnterMutexSection(api_mutex);
+	tcpapi_msg_t msg;
 	msg.msg.gh.name = name;
 	msg.msg.gh.addr = addr;
-	return api_call(do_gethostbyname);
+	return api_call(&msg, do_gethostbyname);
 }

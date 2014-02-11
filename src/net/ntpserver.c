@@ -69,7 +69,7 @@ struct udp_pcb *ntp_pcb;
 
 void
 ntp_server_start(void) {
-	ntp_pcb = udp_new();
+	ASSERT((ntp_pcb = udp_new()) != NULL);
 	udp_bind(ntp_pcb, IP_ADDR_ANY, NTP_PORT);
 	udp_recv(ntp_pcb, ntp_recv, NULL);
 }

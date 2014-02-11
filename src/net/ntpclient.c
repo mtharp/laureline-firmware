@@ -111,9 +111,9 @@ ntpclient_thread(void *p) {
 
 void
 ntp_client_start(void) {
+	ASSERT((ntp_cli_pcb = udp_new()) != NULL);
+	udp_bind(ntp_cli_pcb, IP_ADDR_ANY, 0);
 	ntpclient_tid = CoCreateTask(ntpclient_thread, NULL, THREAD_PRIO_NTPCLIENT,
 			&ntpclient_stack[NTPCLIENT_STACK-1], NTPCLIENT_STACK, "ntpclient");
 	ASSERT(ntpclient_tid != E_CREATE_FAIL);
-	ntp_cli_pcb = udp_new();
-	udp_bind(ntp_cli_pcb, IP_ADDR_ANY, 0);
 }

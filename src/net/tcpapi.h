@@ -16,7 +16,9 @@ struct tcpapi_msg;
 typedef err_t (*api_func)(struct tcpapi_msg *msg);
 
 typedef struct tcpapi_msg {
+	struct tcpapi_msg *next;
 	api_func func;
+	OS_EventID sem;
 	err_t ret;
 	union {
 		/* api_tcp_write */
