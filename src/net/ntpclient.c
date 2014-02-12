@@ -30,13 +30,9 @@ const char *ntp_hosts = "%d.pool.ntp.org";
 struct udp_pcb *ntp_cli_pcb;
 static uint8_t query_buf[48];
 
-// XXX FIXME
-//#define QUERY_INTERVAL 12 /* 4096 seconds, 1.13 hours */
-//#define RETRY_INTERVAL 6 /* 64 seconds */
+#define QUERY_INTERVAL 12 /* 4096 seconds, 1.13 hours */
+#define RETRY_INTERVAL 6 /* 64 seconds */
 #define I2ST(x) S2ST((1<<(x)))
-
-#define QUERY_INTERVAL 2
-#define RETRY_INTERVAL 2
 
 
 static uint64_t
@@ -84,14 +80,10 @@ ntpclient_thread(void *p) {
 			}
 		}
 
-		ntp_servers[0].addr = 0x060018ac;
-		ntp_servers[1].addr = 0;
-		ntp_servers[2].addr = 0;
-		ntp_servers[3].addr = 0;
-
 		num_responses = 0;
 		for (i = 0; i < MAX_SERVERS; i++) {
-			if (ntp_servers[i].addr == 0) { continue;
+			if (ntp_servers[i].addr == 0) {
+				continue;
 			}
 			result = ntp_query(i);
 			if (result != 0) {

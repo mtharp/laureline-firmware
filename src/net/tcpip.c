@@ -128,7 +128,6 @@ interface_changed(struct netif *netif) {
 	if (!did_startup) {
 		did_startup = 1;
 		log_startup();
-		ntp_client_start();
 	}
 	if (thisif.dhcp) {
 		log_write(LOG_NOTICE, "net",
