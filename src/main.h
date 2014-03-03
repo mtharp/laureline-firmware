@@ -11,7 +11,7 @@
 
 #include "stm32/serial.h"
 
-extern serial_t *const gps_serial;
+extern serial_t *gps_serial;
 
 void log_startup(void);
 void enter_standby(void);

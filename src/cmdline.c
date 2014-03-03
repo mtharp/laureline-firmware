@@ -59,7 +59,9 @@ const clicmd_t cmd_table[] = {
 const clivalue_t value_table[] = {
 	{ "admin_key", VAR_HEX, &cfg.admin_key, 8 },
 	{ "gps_baud_rate", VAR_UINT32, &cfg.gps_baud_rate, 0 },
+	{ "gps_ext_in", VAR_FLAG, &cfg.flags, FLAG_GPSEXT },
 	{ "gps_listen_port", VAR_UINT16, &cfg.gps_listen_port, 0 },
+	{ "gps_ext_out", VAR_FLAG, &cfg.flags, FLAG_GPSOUT },
 	{ "ip_addr", VAR_IP4, &cfg.ip_addr, 0 },
 	{ "ip_gateway", VAR_IP4, &cfg.ip_gateway, 0 },
 	{ "ip_netmask", VAR_IP4, &cfg.ip_netmask, 0 },
@@ -92,6 +94,10 @@ cliWriteConfig(void) {
 	if (!HAS_FEATURE(PPSEN) && (cfg.flags & FLAG_PPSEN)) {
 		cli_puts("WARNING: PPS output not available on this hardware\r\n");
 		cfg.flags &= ~FLAG_PPSEN;
+	}
+	if ((cfg.flags & (FLAG_GPSEXT | FLAG_GPSOUT)) == (FLAG_GPSEXT | FLAG_GPSOUT)) {
+		cli_puts("WARNING: gps_ext_in and gps_ext_out are mutually exclusive.\r\n");
+		cfg.flags &= ~FLAG_GPSOUT;
 	}
 	cli_puts("Writing EEPROM...\r\n");
 	result = eeprom_write_cfg();

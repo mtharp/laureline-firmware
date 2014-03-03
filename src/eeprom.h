@@ -22,6 +22,8 @@
 #define EERR_UPGRADE		-21
 
 #define FLAG_PPSEN			(1 << 0)
+#define FLAG_GPSEXT			(1 << 1)
+#define FLAG_GPSOUT			(1 << 2)
 
 
 #pragma pack(push, 1)

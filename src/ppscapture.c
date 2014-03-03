@@ -7,6 +7,7 @@
  */
 
 #include "common.h"
+#include "eeprom.h"
 #include "ppscapture.h"
 
 
@@ -31,12 +32,12 @@ ppscapture_start(void) {
 	TIM3->CR1 = 0;
 	TIM3->PSC = 0;
 	TIM3->ARR = MONO_PERIOD - 1;
-	/* input capture 1 receives the pulse-per-second */
+	/* input capture 1 or 3 receives the pulse-per-second */
 	TIM3->CCMR1 = TIM_CCMR1_CC1S_0;
 	/* output compare 4 fires halfway through each timer period */
-	TIM3->CCMR2 = TIM_CCMR2_OC4PE | TIM_CCMR2_OC4M_0;
+	TIM3->CCMR2 = TIM_CCMR2_CC3S_0 | TIM_CCMR2_OC4PE | TIM_CCMR2_OC4M_0;
 	TIM3->CCR4 = MONO_PERIOD / 2;
-	TIM3->CCER = TIM_CCER_CC1E | TIM_CCER_CC4E;
+	TIM3->CCER = TIM_CCER_CC4E | ((cfg.flags & FLAG_GPSEXT) ? TIM_CCER_CC3E : TIM_CCER_CC1E);
 	/* interrupt on update and output compare. this means two interrupts per
 	 * period, evenly spaced, during which the input capture can be sampled.
 	 */
@@ -64,26 +65,30 @@ TIM3_IRQHandler(void) {
 	}
 
 	if (sr & TIM_SR_CC1IF) {
-		/* Twice per period, sample the input capture. This way it's
-		 * unambiguous whether each capture is from the current epoch or the
-		 * previous one, based on its value alone. */
 		ccr = TIM3->CCR1;
-		mono_capture = mono_epoch + ccr;
-		if (sr & TIM_SR_UIF) {
-			/* Start of the period */
-			if (ccr > MONO_PERIOD / 4) {
-				/* From the previous epoch */
-				mono_capture -= MONO_PERIOD;
-			}
-			/* Else from the same epoch */
-		} else if (sr & TIM_SR_CC4IF) {
-			/* Halfway through the period */
-			if (ccr > MONO_PERIOD * 3 / 4) {
-				/* From the previous epoch */
-				mono_capture -= MONO_PERIOD;
-			}
-			/* Else from the same epoch */
+	} else if (sr & TIM_SR_CC3IF) {
+		ccr = TIM3->CCR3;
+	} else {
+		return;
+	}
+	/* Twice per period, sample the input capture. This way it's
+	 * unambiguous whether each capture is from the current epoch or the
+	 * previous one, based on its value alone. */
+	mono_capture = mono_epoch + ccr;
+	if (sr & TIM_SR_UIF) {
+		/* Start of the period */
+		if (ccr > MONO_PERIOD / 4) {
+			/* From the previous epoch */
+			mono_capture -= MONO_PERIOD;
 		}
+		/* Else from the same epoch */
+	} else if (sr & TIM_SR_CC4IF) {
+		/* Halfway through the period */
+		if (ccr > MONO_PERIOD * 3 / 4) {
+			/* From the previous epoch */
+			mono_capture -= MONO_PERIOD;
+		}
+		/* Else from the same epoch */
 	}
 }
 

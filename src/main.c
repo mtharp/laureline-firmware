@@ -29,7 +29,7 @@
 OS_STK main_stack[MAIN_STACK];
 OS_TID main_tid;
 serial_t *const cli_serial = &Serial1;
-serial_t *const gps_serial = &Serial4;
+serial_t *gps_serial;
 static int did_watchdog;
 
 uint32_t __attribute__((section(".uninit"))) entering_standby;
@@ -85,7 +85,9 @@ void
 enter_standby(void) {
 	/* Shutdown onboard peripherals */
 	mac_stop();
-	ublox_stop(gps_serial);
+	if (!(cfg.flags & FLAG_GPSEXT)) {
+		ublox_stop(gps_serial);
+	}
 	serial_drain(cli_serial);
 	serial_drain(gps_serial);
 	GPIO_ON(SDIO_PDOWN);
@@ -115,12 +117,28 @@ main_thread(void *pdata) {
 	int16_t val;
 	uint32_t flags;
 	load_eeprom();
+	if (cfg.flags & FLAG_GPSEXT) {
+		gps_serial = &Serial5;
+	} else {
+		gps_serial = &Serial4;
+	}
+	serial_start(cli_serial, 115200);
+	serial_start(&Serial4, cfg.gps_baud_rate ? cfg.gps_baud_rate : 57600);
+	serial_start(&Serial5, cfg.gps_baud_rate ? cfg.gps_baud_rate : 57600);
+	log_start(cli_serial);
+	log_sethostname("gps-ntp");
+	cli_set_output(cli_serial);
+	cl_enabled = 1;
+	ppscapture_start();
+	vtimer_start();
 	tcpip_start();
 	test_reset();
 	cli_banner();
-	ublox_configure(gps_serial);
-	if (HAS_FEATURE(PPSEN) && (cfg.flags & FLAG_PPSEN)) {
-		GPIO_OFF(PPSEN);
+	if (!(cfg.flags & FLAG_GPSEXT)) {
+		ublox_configure(gps_serial);
+		if (HAS_FEATURE(PPSEN) && (cfg.flags & FLAG_PPSEN)) {
+			GPIO_OFF(PPSEN);
+		}
 	}
 	cl_enabled = 0;
 	while (1) {
@@ -138,6 +156,10 @@ main_thread(void *pdata) {
 		if (flags & (1 << gps_serial->rx_q.flag)) {
 			while ((val = serial_get(gps_serial, TIMEOUT_NOBLOCK)) >= 0) {
 				gps_byte_received(val);
+				if (cfg.flags & FLAG_GPSOUT) {
+					char tmp = val;
+					serial_write(&Serial5, &tmp, 1);
+				}
 			}
 		}
 	}
@@ -155,14 +177,6 @@ main(void) {
 	setup_clocks((int)info_get(boot_table, INFO_HSE_FREQ));
 	iwdg_start(4, 0xFFF);
 	CoInitOS();
-	serial_start(cli_serial, 115200);
-	serial_start(gps_serial, 57600);
-	log_start(cli_serial);
-	log_sethostname("gps-ntp");
-	cli_set_output(cli_serial);
-	cl_enabled = 1;
-	ppscapture_start();
-	vtimer_start();
 	main_tid = CoCreateTask(main_thread, NULL, THREAD_PRIO_MAIN,
 			&main_stack[MAIN_STACK-1], MAIN_STACK, "main");
 	ASSERT(main_tid != E_CREATE_FAIL);
