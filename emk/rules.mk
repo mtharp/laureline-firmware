@@ -51,7 +51,6 @@ endif
 ASFLAGS = $(MCFLAGS)
 CPFLAGS = -R boot_stub -R .boot_stub
 
-ifdef BMP
 GDB_INSTALL = $(GDB) --batch \
 	-ex "tar ext $(BMP)" \
 	-ex "mon connect_srst enable" \
@@ -59,9 +58,6 @@ GDB_INSTALL = $(GDB) --batch \
 	-ex "att 1" \
 	-ex load \
 	-ex kill
-else
-GDB_INSTALL = $(error You must set BMP=/dev/ttyACMx)
-endif
 
 # Targets
 all: $(OUT).elf $(OUT).hex $(OUT).bin $(OUT).lst
@@ -70,9 +66,15 @@ clean:
 	rm -rf $(BUILD)
 
 install: all
+ifndef BMP
+	$(error You must set BMP=/dev/ttyACMx)
+endif
 	$(GDB_INSTALL) $(OUT).elf
 
 install-nostub: all
+ifndef BMP
+	$(error You must set BMP=/dev/ttyACMx)
+endif
 	$(CP) $(CPFLAGS) $(OUT).elf $(OUT).elf.nostub
 	$(GDB_INSTALL) $(OUT).elf.nostub
 

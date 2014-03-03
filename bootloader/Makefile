@@ -61,13 +61,6 @@ include $(TOP)/emk/rules.mk
 
 LD := $(PYTHON) $(TOP)/util/resize_ld.py $(FLASH_SIZE) $(LD)
 
-ifeq ($(HW_VERSION),0)
-$(error Must set HW_VERSION to e.g. 0x0701 for 7.1)
-endif
-ifeq ($(HSE_FREQ),0)
-$(error Must set HSE_FREQ)
-endif
-
 discrim = $(VERSION),$(HW_VERSION),$(HSE_FREQ)
 discrim_file = $(BUILD)/version.txt
 ifneq ($(shell cat $(discrim_file) 2>/dev/null),$(discrim))
@@ -75,6 +68,12 @@ ifneq ($(shell cat $(discrim_file) 2>/dev/null),$(discrim))
 endif
 
 $(BUILD)/version.h:
+ifeq ($(HW_VERSION),0)
+	$(error Must set HW_VERSION to e.g. 0x0701 for 7.1)
+endif
+ifeq ($(HSE_FREQ),0)
+	$(error Must set HSE_FREQ)
+endif
 	echo '$(discrim)' > $(discrim_file)
 	echo '#define VERSION    "$(VERSION)"' > $@
 	echo '#define HW_VERSION $(HW_VERSION)' >> $@
