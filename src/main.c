@@ -116,19 +116,20 @@ main_thread(void *pdata) {
 	uint8_t err;
 	int16_t val;
 	uint32_t flags;
+	serial_start(cli_serial, 115200);
+	serial_start(&Serial4, cfg.gps_baud_rate ? cfg.gps_baud_rate : 57600);
+	serial_start(&Serial5, cfg.gps_baud_rate ? cfg.gps_baud_rate : 57600);
+	cli_set_output(cli_serial);
+	log_start(cli_serial);
+	log_sethostname("gps-ntp");
+	cl_enabled = 1;
+
 	load_eeprom();
 	if (cfg.flags & FLAG_GPSEXT) {
 		gps_serial = &Serial5;
 	} else {
 		gps_serial = &Serial4;
 	}
-	serial_start(cli_serial, 115200);
-	serial_start(&Serial4, cfg.gps_baud_rate ? cfg.gps_baud_rate : 57600);
-	serial_start(&Serial5, cfg.gps_baud_rate ? cfg.gps_baud_rate : 57600);
-	log_start(cli_serial);
-	log_sethostname("gps-ntp");
-	cli_set_output(cli_serial);
-	cl_enabled = 1;
 	ppscapture_start();
 	vtimer_start();
 	tcpip_start();
