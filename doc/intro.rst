@@ -1,6 +1,8 @@
 Introduction
 ************
 
+.. image:: images/isometric.*
+
 The Laureline GPS NTP Server is a small, high-performance, and low-power device that serves time to network clients from a built-in GPS receiver.
 Given only a GPS antenna, a power source, and a clear view of the sky it can track UTC to within 200 nanoseconds and make precise time available to your entire LAN, WAN, or to the Internet.
 Laureline interoperates seamlessly with any NTP or SNTP client and can sustain thousands of queries per second.
