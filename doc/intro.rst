@@ -1,17 +1,14 @@
 Introduction
 ************
 
-The Laureline GPS NTP Server is a small, performant, and low-power device that
-serves time to network clients from a built-in GPS receiver. Given only a GPS
-antenna, a power source, and a clear view of the sky it can track UTC to within
-200 nanoseconds and make precise time available to your entire LAN, WAN, or to
-the Internet. Laureline interoperates seamlessly with any NTP or SNTP client
-and can sustain thousands of queries per second. Even under high throughput
-timekeeping operations are never disrupted or perturbed.
+The Laureline GPS NTP Server is a small, high-performance, and low-power device that serves time to network clients from a built-in GPS receiver.
+Given only a GPS antenna, a power source, and a clear view of the sky it can track UTC to within 200 nanoseconds and make precise time available to your entire LAN, WAN, or to the Internet.
+Laureline interoperates seamlessly with any NTP or SNTP client and can sustain thousands of queries per second.
+Even under high throughput timekeeping operations are never disrupted or perturbed.
 
-Laureline is Open Source Hardware and Software. Hardware design files and user
-documentation are provided under the Creative Commons Attribution 3.0 License.
-Software source code is provided under the MIT license.
+Laureline is `Open Source Hardware`_ and `Open Source Software`_.
+Hardware design files and user documentation are provided under the `Creative Commons Attribution 3.0 License`_.
+Software source code is provided under the `MIT license`_.
 
 Specifications
 ==============
@@ -55,3 +52,8 @@ Specifications
   * External GPS data and PPS input, 3.3V and 5V compatible
   * External GPS data and PPS output, 3.3V
   * Field upgrade of software via MicroSD card
+
+.. _Open Source Hardware: http://www.oshwa.org/definition/
+.. _Open Source Software: http://opensource.org/osd
+.. _Creative Commons Attribution 3.0 License: https://creativecommons.org/licenses/by/3.0/
+.. _MIT License: http://opensource.org/licenses/MIT
