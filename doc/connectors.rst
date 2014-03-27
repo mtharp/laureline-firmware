@@ -53,6 +53,13 @@ Pinout:
 5. +5V power in/out
 6. Pulse-per-second in/out - 3.3V-5V in, or 3.3V out
 
+When the PPS pin is configured as an output, it outputs a buffered,
+unregistered 3.3V pulse from the GPS module.
+There is a small series resistor to protect the driver but it is not impedance
+matched nor can it withstand an indefinite short-circuit.
+Check compatibility with the equipment you plan to connect.
+The pulse has a width of 100 ms.
+
 
 MicroSD
 -------

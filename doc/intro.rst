@@ -43,7 +43,7 @@ Specifications
 
   * Supports normal queries from NTP and SNTP clients
   * Input capture resolution of 15ns
-  * Onboard TCXO
+  * On-board TCXO
   * Software PLL keeps time in native NTP units
 
 * Other features
@@ -52,6 +52,8 @@ Specifications
   * External GPS data and PPS input, 3.3V and 5V compatible
   * External GPS data and PPS output, 3.3V
   * Field upgrade of software via MicroSD card
+  * Lead-free and RoHS-compatible parts and materials
+  * Open source hardware and software
 
 .. _Open Source Hardware: http://www.oshwa.org/definition/
 .. _Open Source Software: http://opensource.org/osd

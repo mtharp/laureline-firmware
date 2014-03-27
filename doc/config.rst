@@ -65,6 +65,8 @@ help
 ----
 Lists available command names with a short description.
 
+.. _info:
+
 info
 ----
 Lists system information including hardware and software version, serial
@@ -178,6 +180,7 @@ ip_gateway
 If :ref:`ip_addr` is set, this should be set to the IP address of the network gateway router.
 This is not mandatory, but if not set then computers outside of the local network will not receive responses to NTP queries.
 If you are not sure what your network gateway is, use the ``ipconfig`` command on your PC.
+If using DHCP this must be set to zero.
 
 .. _ip_netmask:
 
@@ -189,6 +192,7 @@ ip_netmask
 If :ref:`ip_addr` is set, this must be set to the associated network mask (subnet mask).
 The network mask is used to determine whether a given remote IP address is on the same LAN or not.
 If you are not sure what your network mask is, use the ``ipconfig`` command on your PC.
+If using DHCP this must be set to zero.
 
 .. _pps_out:
 
@@ -198,6 +202,7 @@ pps_out
 | **Default**: false
 
 If true, the PPS pin on the :ref:`Data In/Out connector <dataio>` will output a pulse-per-second signal.
+See the pinout description under Connectors for more electrical info.
 If false (the default), the PPS pin does not output a signal.
 Do not set this to true unless you are sure only compatible equipment is connected to the Data In/Out port.
 This setting is not compatible with the :ref:`gps_ext_in` setting.
@@ -213,6 +218,32 @@ If non-zero, Laureline will forward logging data in the `syslog`_ format to the 
 Log lines will be sent in plain UDP format to port 514.
 
 
+Hardware Jumpers
+================
+
+If you wish to use Laureline with a 3.3V GPS antenna and are comfortable using
+a soldering iron, there is a hardware jumper on the PCB that can be changed to
+adjust the antenna voltage.
+Performing this modification as described will not void your warranty.
+
+#. Open the enclosure by removing both screws on one end of the chassis.
+   Remove the end panel and slide out the PCB.
+#. Look at the bottom of the PCB near the antenna connector.
+   Look for the "J2" designator with the label "ANT PWR".
+#. Using a scalpel or hobby knife, carefully slice the copper track between the
+   center pad and the pad labeled "+5.0v".
+#. Inspect with a jeweler's loupe or microscope to ensure there is no copper
+   connecting the pads.
+   Optionally, apply power to the board and use a multimeter to confirm that no
+   voltage is present on the center pad.
+#. Using a soldering iron, apply a blob of solder between the center pad and
+   the pad labeled "+3.3v".
+#. Before reassembling the enclosure, apply power to the USB connector and use
+   a multimeter to check the voltage present on the SMA antenna connector.
+#. Reassemble the enclosure by checking that the board is the right way up and
+   sliding it into the bottom-most channel, adding the end panel, and screwing
+   it into place. Do not over-tighten.
+
 .. _FTDI: http://www.ftdichip.com/Drivers/VCP.htm
 .. _PuTTY: http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html
-.. _syslog: https://en.wikipedia.org/wiki/Syslog#Protocol
+.. _syslog: http://tools.ietf.org/html/rfc5424

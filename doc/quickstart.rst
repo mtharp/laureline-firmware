@@ -12,14 +12,16 @@ To get started with Laureline you will need:
 Steps
 =====
 
+For an illustration of where the following items are located see :doc:`connectors`.
+
 #. Connect the GPS antenna to Laureline's antenna port. The connection should be firm but not more than finger-tight. Position the antenna so that it has a clear view of the sky.
-#. Connect the LAN port to a switch, hub, router, or PC where you want to serve time. Connecting to a DHCP-enabled network will get things up and running more quickly as no manual configuration is required. If you need to configure Laureline with a static IP, see :doc:`config`
+#. Connect the LAN port to a switch, hub, router, or PC where you want to serve time. Connecting to a DHCP-enabled network will get things up and running more quickly as no manual configuration is required. If you need to configure Laureline with a static IP, see :ref:`the ip_addr setting <ip_addr>` under Configuration.
 #. Finally, connect the Power/USB port to a PC or USB charger with the USB cable.
 #. The status indicators will illuminate steady red at first. The LEDs on the LAN port will also illuminate.
 #. After about two minutes, the bottom indicator (PPS) will start flashing red once per second. After another two minutes it will start flashing green. If it does not start flashing after several minutes check the antenna connection and ensure that the antenna has a clear view of the sky.
 #. The top indicator (Health) will change to orange when the PPS indicator starts flashing. At this point, the GPS receiver is slowly receiving almanac data from the GPS satellites. After a period of up to 30 minutes this process will complete and the top indicator will change to green.
 #. When both indicators are green (steady green on top, flashing green on bottom), Laureline is operating normally and is ready to serve NTP responses.
-#. If you are not using a static IP, you will need to discover the IP of the Laureline server. This can be retrieved from the logs of your DHCP server. If your DHCP server is a typical home router, the web interface usually has a list of devices on your network. You can also learn the IP using Laureline's command-line interface, see :doc:`config` for more information.
+#. If you are not using a static IP, you will need to discover the IP of the Laureline server. This can be retrieved from the logs of your DHCP server. If your DHCP server is a typical home router, the web interface usually has a list of devices on your network. You can also learn the IP using Laureline's command-line interface, see :ref:`the info command <info>` under Configuration.
 #. Once both indicators are green, perform a test query using a NTP client of your choice. For example, from a Linux command-line::
 
     $ ntpdate -d 192.168.1.200

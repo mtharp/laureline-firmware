@@ -10,9 +10,10 @@ Contents:
    quickstart.rst
    config.rst
    connectors.rst
-   tshoot.rst
    theory.rst
-   devel.rst
+   updates.rst
+   tshoot.rst
+   resources.rst
 
 
 
