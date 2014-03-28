@@ -157,6 +157,9 @@ doctest:
 	@echo "Testing of doctests in the sources finished, look at the " \
 	      "results in $(BUILDDIR)/doctest/output.txt."
 
+publish: clean html latexpdf
+	rsync -lErtv --delete _build/html/ _build/latex/Laureline.pdf noriko:static/pub/laureline-docs/
+
 .PHONY: images images-clean
 
 
