@@ -1,8 +1,6 @@
 Laureline User Guide
 ====================================================
 
-Contents:
-
 .. toctree::
    :maxdepth: 2
 
@@ -15,12 +13,3 @@ Contents:
    updates.rst
    tshoot.rst
    resources.rst
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`search`
-
