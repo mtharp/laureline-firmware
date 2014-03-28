@@ -35,8 +35,10 @@ Laureline includes and links against the following third-party software:
 * `CooCox CoOS`_ real-time operating system (BSD License)
 * `lwIP`_ - TCP/IP stack (BSD License)
 * `ChaN's FatFs`_ - FAT filesystem (permissively licensed)
+* `NTPns`_ by Poul-Henning Kamp - PLL math (Beer-ware License)
 
 .. _Tindie: https://www.tindie.com/products/gxti/laureline-gps-ntp-server/
 .. _CooCox CoOS: http://www.coocox.org/CoOS.htm
 .. _lwIP: https://savannah.nongnu.org/projects/lwip/
 .. _ChaN's FatFs: http://elm-chan.org/fsw/ff/00index_e.html
+.. _NTPns: http://phk.freebsd.dk/phkrel/

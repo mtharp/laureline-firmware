@@ -9,6 +9,8 @@
 #}
 {%- extends "basic/layout.html" %}
 
+{%- block doctype -%}<!DOCTYPE html>{%- endblock %}
+
 {# put the sidebar before the body #}
 {% block sidebar1 %}{{ sidebar() }}{% endblock %}
 {% block sidebar2 %}{% endblock %}
@@ -22,6 +24,7 @@
       table.right { float: right; margin-left: 20px; }
       table.right td { border: 1px solid #ccc; }
     </style>
+{#
     <script type="text/javascript">
       // intelligent scrolling of the sidebar content
       $(window).scroll(function() {
@@ -50,5 +53,11 @@
         }
       });
     </script>
+#}
 {%- endif %}
+{% endblock %}
+
+{% block rootrellink %}
+        <li><a href="/">Partially Stapled home</a>&nbsp;|</li>
+{{ super() }}
 {% endblock %}
