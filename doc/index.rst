@@ -10,6 +10,7 @@ Contents:
    quickstart.rst
    config.rst
    connectors.rst
+   deploy.rst
    theory.rst
    updates.rst
    tshoot.rst

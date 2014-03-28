@@ -15,7 +15,7 @@ Steps
 For an illustration of where the following items are located see :doc:`connectors`.
 
 #. Connect the GPS antenna to Laureline's antenna port. The connection should be firm but not more than finger-tight. Position the antenna so that it has a clear view of the sky.
-#. Connect the LAN port to a switch, hub, router, or PC where you want to serve time. Connecting to a DHCP-enabled network will get things up and running more quickly as no manual configuration is required. If you need to configure Laureline with a static IP, see :ref:`the ip_addr setting <ip_addr>` under Configuration.
+#. Connect the LAN port to a switch, hub, router, or PC where you want to serve time. Connecting to a DHCP-enabled network will get things up and running more quickly as no manual configuration is required. If you need to configure Laureline with a static IP, see the :ref:`ip_addr<ip_addr>` setting under Configuration.
 #. Finally, connect the Power/USB port to a PC or USB charger with the USB cable.
 #. The status indicators will illuminate steady red at first. The LEDs on the LAN port will also illuminate.
 #. After about two minutes, the bottom indicator (PPS) will start flashing red once per second. After another two minutes it will start flashing green. If it does not start flashing after several minutes check the antenna connection and ensure that the antenna has a clear view of the sky.

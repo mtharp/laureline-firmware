@@ -5,7 +5,7 @@ Laureline can be configured via its USB port.
 When connected to a PC it will enumerate as a serial port.
 If required, drivers can be downloaded from `FTDI`_.
 You will need a terminal emulator to connect to the serial port.
-On Windows, `PuTTY`_ is recommended.
+On Windows, PuTTY is recommended.
 On Linux and BSD "screen" works well.
 
 How to connect

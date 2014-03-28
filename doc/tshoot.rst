@@ -28,3 +28,29 @@ Status LEDs and Ethernet LEDs do not illuminate or are dim
 
     If you have recently flashed a firmware upgrade, the firmware may be
     corrupt. Try re-downloading the firmware.
+
+
+Known Issues
+============
+
+Leap seconds
+------------
+Laureline does not currently set the leap second bit in NTP replies.
+This is because the Laureline software itself does not support leap seconds.
+However, the GPS receiver does.
+When a leap second occurs Laureline will immediately step its own internal
+clock in response to the time-of-day data from the GPS and continue serving the
+correct time.
+But because the leap bit was not set in any NTP replies, clients that do not
+receive NTP from any other time source will not step in unison and will be
+"left behind".
+Manual intervention will be required e.g. by running ntpdate to step the clock,
+because ntpd will reject any time source that has a large offset.
+
+If any other NTP servers are in use that set the leap bit, or if leap second
+data is manually loaded into the client, then the client will step in unison
+and continue operating correctly.
+SNTP clients such as routers and switches are typically not affected as they
+simply periodically set their local clock to whatever the server replies.
+Their clock will be off by one second until the next check, then will be
+correct.
