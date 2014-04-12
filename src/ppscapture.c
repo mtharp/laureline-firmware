@@ -34,14 +34,10 @@ ppscapture_start(void) {
 	TIM3->ARR = MONO_PERIOD - 1;
 	/* input capture 1 or 3 receives the pulse-per-second */
 	TIM3->CCMR1 = TIM_CCMR1_CC1S_0;
-	/* output compare 4 fires halfway through each timer period */
-	TIM3->CCMR2 = TIM_CCMR2_CC3S_0 | TIM_CCMR2_OC4PE | TIM_CCMR2_OC4M_0;
-	TIM3->CCR4 = MONO_PERIOD / 2;
-	TIM3->CCER = TIM_CCER_CC4E | ((cfg.flags & FLAG_GPSEXT) ? TIM_CCER_CC3E : TIM_CCER_CC1E);
-	/* interrupt on update and output compare. this means two interrupts per
-	 * period, evenly spaced, during which the input capture can be sampled.
-	 */
-	TIM3->DIER = TIM_DIER_UIE | TIM_DIER_CC4IE;
+	TIM3->CCMR2 = TIM_CCMR2_CC3S_0;
+	TIM3->CCER = (cfg.flags & FLAG_GPSEXT) ? TIM_CCER_CC3E : TIM_CCER_CC1E;
+	/* interrupt on update and input capture */
+	TIM3->DIER = TIM_DIER_UIE | TIM_DIER_CC1IE | TIM_DIER_CC3IE;
 	TIM3->SR = 0;
 
 	NVIC_SetPriority(TIM3_IRQn, IRQ_PRIO_PPSCAPTURE);
@@ -53,6 +49,7 @@ ppscapture_start(void) {
 void
 TIM3_IRQHandler(void) {
 	uint16_t sr, ccr;
+	CoEnterISR();
 	sr = TIM3->SR;
 	TIM3->SR = 0;
 
@@ -69,27 +66,18 @@ TIM3_IRQHandler(void) {
 	} else if (sr & TIM_SR_CC3IF) {
 		ccr = TIM3->CCR3;
 	} else {
+		CoExitISR();
 		return;
 	}
-	/* Twice per period, sample the input capture. This way it's
-	 * unambiguous whether each capture is from the current epoch or the
-	 * previous one, based on its value alone. */
+
 	mono_capture = mono_epoch + ccr;
-	if (sr & TIM_SR_UIF) {
-		/* Start of the period */
-		if (ccr > MONO_PERIOD / 4) {
-			/* From the previous epoch */
-			mono_capture -= MONO_PERIOD;
-		}
-		/* Else from the same epoch */
-	} else if (sr & TIM_SR_CC4IF) {
-		/* Halfway through the period */
-		if (ccr > MONO_PERIOD * 3 / 4) {
-			/* From the previous epoch */
-			mono_capture -= MONO_PERIOD;
-		}
-		/* Else from the same epoch */
+	if ((sr & TIM_SR_UIF) && ccr > (MONO_PERIOD / 2)) {
+		/* This capture is from the previous period, but the update has already
+		 * been processed above so undo its effect.
+		 */
+		mono_capture -= MONO_PERIOD;
 	}
+	CoExitISR();
 }
 
 
