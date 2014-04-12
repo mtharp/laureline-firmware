@@ -96,9 +96,7 @@ monotonic_now(void) {
 		}
 		/* Timer rolled over while we were sampling. Process the update event
 		 * now */
-		while (mono_epoch == ret) {
-			TIM3_IRQHandler();
-		}
+		TIM3_IRQHandler();
 	}
 	ENABLE_IRQ();
 	return ret + tmr2;
