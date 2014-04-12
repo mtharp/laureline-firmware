@@ -19,7 +19,7 @@ static uint64_t mono_capture;
 static uint64_t sleep_epoch;
 static OS_FlagID sleep_flag;
 
-/* Reduce this to 1024 to make it easier to hit edge cases to test the input
+/* Reduce this to 1500 to make it easier to hit edge cases to test the input
  * capture code */
 #define MONO_PERIOD 65536
 
@@ -51,7 +51,7 @@ TIM3_IRQHandler(void) {
 	uint16_t sr, ccr;
 	CoEnterISR();
 	sr = TIM3->SR;
-	TIM3->SR = 0;
+	TIM3->SR = ~sr;
 
 	if (sr & TIM_SR_UIF) {
 		mono_epoch += MONO_PERIOD;
