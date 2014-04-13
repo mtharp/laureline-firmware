@@ -216,21 +216,28 @@ static void
 cli_print_serial(void) {
 	uint64_t serial = 0;
 	char formatted[16], *ptr;
-	int i;
+	int i, unset = 1;
 	for (i = 0; i < 6; i++) {
+		if (snum.serial[i] != 0xFF) {
+			unset = 0;
+		}
 		serial <<= 8;
 		serial |= snum.serial[i];
 	}
 	ptr = formatted;
-	for (i = 14; i >= 0; i--) {
-		formatted[i] = '0' + (serial % 10);
-		serial /= 10;
-		if (serial == 0) {
-			ptr = &formatted[i];
-			break;
+	if (unset) {
+		strcpy(ptr, "not set!");
+	} else {
+		for (i = 14; i >= 0; i--) {
+			formatted[i] = '0' + (serial % 10);
+			serial /= 10;
+			if (serial == 0) {
+				ptr = &formatted[i];
+				break;
+			}
 		}
+		formatted[15] = 0;
 	}
-	formatted[15] = 0;
 	cli_printf("Serial number:  %s\r\n", ptr);
 }
 
