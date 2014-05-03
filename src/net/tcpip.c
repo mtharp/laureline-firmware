@@ -19,6 +19,7 @@
 #include "net/tcpip.h"
 
 #include "lwip/dhcp.h"
+#include "lwip/igmp.h"
 #include "lwip/init.h"
 #include "lwip/stats.h"
 #include "lwip/timers.h"
@@ -122,7 +123,16 @@ link_changed(void) {
 
 static void
 interface_changed(struct netif *netif) {
-	if (netif != &thisif || !(thisif.flags & NETIF_FLAG_UP)) {
+	if (cfg.ip_manycast) {
+		ip_addr_t ip;
+		ip.addr = cfg.ip_manycast;
+		if (thisif.flags & NETIF_FLAG_UP) {
+			igmp_joingroup(IP_ADDR_ANY, &ip);
+		} else {
+			igmp_leavegroup(IP_ADDR_ANY, &ip);
+		}
+	}
+	if (!(thisif.flags & NETIF_FLAG_UP)) {
 		return;
 	}
 	if (!did_startup) {
@@ -154,6 +164,7 @@ configure_interface(void) {
 
 	netif_set_default(&thisif);
 	netif_set_status_callback(&thisif, interface_changed);
+	/* TODO: IGMP filter. Allowing all multicast for now.  */
 	if (ip.addr == 0 || netmask.addr == 0) {
 		dhcp_start(&thisif);
 	} else {
@@ -171,7 +182,7 @@ ethernetif_init(struct netif *netif) {
 	netif->linkoutput = low_level_output;
 	netif->hwaddr_len = ETHARP_HWADDR_LEN;
 	netif->mtu = 1500;
-	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP;
+	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_IGMP;
 	return ERR_OK;
 }
 

@@ -207,7 +207,7 @@ mac_start(void) {
 	ETH->DMATDLAR = (uint32_t)tx_ptr;
 
 	/* MAC configuration */
-	ETH->MACFFR = 0;
+	ETH->MACFFR = ETH_MACFFR_PAM;
 	ETH->MACFCR = 0;
 	ETH->MACVLANTR = 0;
 

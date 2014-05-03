@@ -46,7 +46,8 @@ typedef struct {
 	uint16_t gps_listen_port;
 	uint32_t syslog_ip;
 	uint32_t flags;
-	uint8_t _reserved[82];
+	uint32_t ip_manycast;
+	uint8_t _reserved[78];
 	uint16_t crc;
 } cfgv2_t;
 #define CFG_SIZE sizeof(cfgv2_t)

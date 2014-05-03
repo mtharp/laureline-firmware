@@ -64,6 +64,7 @@ const clivalue_t value_table[] = {
 	{ "gps_ext_out", VAR_FLAG, &cfg.flags, FLAG_GPSOUT },
 	{ "ip_addr", VAR_IP4, &cfg.ip_addr, 0 },
 	{ "ip_gateway", VAR_IP4, &cfg.ip_gateway, 0 },
+	{ "ip_manycast", VAR_IP4, &cfg.ip_manycast, 0 },
 	{ "ip_netmask", VAR_IP4, &cfg.ip_netmask, 0 },
 	{ "pps_out", VAR_FLAG, &cfg.flags, FLAG_PPSEN },
 	{ "syslog_ip", VAR_IP4, &cfg.syslog_ip, 0 },

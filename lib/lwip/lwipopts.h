@@ -75,6 +75,13 @@
 
 /*
    ----------------------------------
+   ---------- IGMP options ----------
+   ----------------------------------
+*/
+#define LWIP_IGMP                       1
+
+/*
+   ----------------------------------
    ---------- DHCP options ----------
    ----------------------------------
 */
@@ -242,7 +249,6 @@
 #define LWIP_RAW                        0
 #define LWIP_AUTOIP                     0
 #define LWIP_SNMP                       0
-#define LWIP_IGMP                       0
 #define LWIP_HAVE_LOOPIF                0
 #define LWIP_HAVE_SLIPIF                0
 #define LWIP_SOCKET                     0
