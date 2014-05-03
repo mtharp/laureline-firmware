@@ -11,6 +11,7 @@
 
 #include "common.h"
 #include "cmdline.h"
+#include <stdlib.h>
 
 typedef uint8_t			u8_t;
 typedef int8_t			s8_t;
@@ -25,6 +26,8 @@ typedef uint32_t		mem_ptr_t;
 
 #define LWIP_PLATFORM_DIAG(x)
 #define LWIP_PLATFORM_ASSERT(x) { HALT(); }
+#define LWIP_RAND() rand()
+#define SRAND(x) srand(x)
 
 #define BYTE_ORDER LITTLE_ENDIAN
 #define LWIP_PROVIDE_ERRNO

@@ -39,6 +39,7 @@ SRCS += $(TOP)/CoOS/portable/arch.c
 SRCS += $(TOP)/CoOS/portable/GCC/port.c
 SRCS += $(wildcard $(TOP)/lwip/src/core/*.c)
 SRCS += $(wildcard $(TOP)/lwip/src/core/ipv4/*.c)
+#SRCS += $(wildcard $(TOP)/lwip/src/core/ipv6/*.c)
 SRCS += $(wildcard $(TOP)/lwip/src/core/api/*.c)
 SRCS += $(wildcard $(TOP)/lwip/src/api/*.c)
 SRCS += $(TOP)/lwip/src/netif/etharp.c
@@ -76,6 +77,7 @@ ifneq ($(shell cat $(discrim_file) 2>/dev/null),$(discrim))
 endif
 
 $(BUILD)/version.h:
+	@mkdir -p $(BUILD)
 	echo '$(discrim)' > $(discrim_file)
 	echo '#define VERSION    "$(VERSION)"' > $@
 	echo '#define HW_VERSION $(HW_VERSION)' >> $@

@@ -74,6 +74,7 @@ endif
 ifeq ($(HSE_FREQ),0)
 	$(error Must set HSE_FREQ)
 endif
+	@mkdir -p $(BUILD)
 	echo '$(discrim)' > $(discrim_file)
 	echo '#define VERSION    "$(VERSION)"' > $@
 	echo '#define HW_VERSION $(HW_VERSION)' >> $@

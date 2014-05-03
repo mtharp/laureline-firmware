@@ -121,7 +121,7 @@
    ----------------------------------
 */
 #define PBUF_LINK_HLEN                  (14 + ETH_PAD_SIZE)
-#define PBUF_POOL_BUFSIZE               LWIP_MEM_ALIGN_SIZE(TCP_MSS+40+PBUF_LINK_HLEN)
+#define PBUF_POOL_BUFSIZE               LWIP_MEM_ALIGN_SIZE(TCP_MSS+60+PBUF_LINK_HLEN)
 
 /*
    ------------------------------------------------
@@ -149,8 +149,8 @@
    ---------- Statistics options ----------
    ----------------------------------------
 */
-#define LWIP_STATS                      1
-#define LWIP_STATS_DISPLAY              1
+#define LWIP_STATS                      0
+#define LWIP_STATS_DISPLAY              0
 
 /*
    ---------------------------------
@@ -172,6 +172,28 @@
 #define CHECKSUM_CHECK_UDP              0
 #define CHECKSUM_CHECK_TCP              0
 #define LWIP_CHECKSUM_ON_COPY           0
+
+/*
+   ---------------------------------------
+   ---------- IPv6 options ---------------
+   ---------------------------------------
+*/
+#define LWIP_IPV6                       0
+#if LWIP_IPV6
+#define LWIP_IPV6_NUM_ADDRESSES         3
+#define LWIP_IPV6_FORWARD               0
+#define MEMP_NUM_MLD6_GROUP             4
+#define LWIP_IPV6_FRAG                  0
+#define LWIP_IPV6_REASS                 0
+#define LWIP_ND6_QUEUEING               0
+#define LWIP_ND6_NUM_NEIGHBORS          4
+#define LWIP_ND6_NUM_DESTINATIONS       4
+#define LWIP_ND6_ALLOW_RA_UPDATES       1
+#define LWIP_IPV6_SEND_ROUTER_SOLICIT   1
+#define LWIP_ND6_TCP_REACHABILITY_HINTS 1
+#define LWIP_IPV6_AUTOCONFIG            1
+#define LWIP_IPV6_DHCP6                 0
+#endif
 
 /*
    ---------------------------------------
@@ -224,7 +246,6 @@
 #define LWIP_HAVE_LOOPIF                0
 #define LWIP_HAVE_SLIPIF                0
 #define LWIP_SOCKET                     0
-#define LWIP_IPV6                       0
 
 
 #endif /* __LWIPOPT_H__ */

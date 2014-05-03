@@ -141,9 +141,11 @@ interface_changed(struct netif *netif) {
 static void
 configure_interface(void) {
 	struct ip_addr ip, gateway, netmask;
+	long *seed = (long*)&thisif.hwaddr[2];
 	ASSERT(eeprom_read(0xFA, thisif.hwaddr, 6) == E_OK);
 	mac_start();
 	mac_set_hwaddr(thisif.hwaddr);
+	SRAND(*seed);
 
 	ip.addr = cfg.ip_addr;
 	gateway.addr = cfg.ip_gateway;
