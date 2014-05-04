@@ -144,6 +144,7 @@ cli_cmd_set(char *cmdline) {
 	} else if ((eqptr = strstr(cmdline, "="))) {
 		/* Null-terminate the setting name */
 		ptr2 = eqptr;
+		*ptr2 = 0;
 		while (*--ptr2 == ' ') {
 			*ptr2 = 0;
 		}
