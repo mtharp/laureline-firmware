@@ -105,7 +105,7 @@ Saving causes the system to reboot, which will cause a 2 minute period where NTP
 admin_key
 ---------
 | **Format**: 16 hexadecimal digits
-| **Default**: 0000000000000000
+| **Default**: 0
 
 Currently unimplemented, this feature may be added at a later date.
 Used to authenticate remote configuration access.
@@ -182,6 +182,18 @@ This is not mandatory, but if not set then computers outside of the local networ
 If you are not sure what your network gateway is, use the ``ipconfig`` command on your PC.
 If using DHCP this must be set to zero.
 
+.. _ip_manycast:
+
+ip_manycast
+----------
+| **Format**: IP address
+| **Default**: 0.0.0.0
+
+If set to a non-zero value, the NTP server will listen on the specified
+multicast group for queries. Use this with the ``manycastclient`` option to
+ntpd. Note that ntpd requires authentication be working in order to receive
+manycast replies, see :ref:`ntp_key`.
+
 .. _ip_netmask:
 
 ip_netmask
@@ -193,6 +205,45 @@ If :ref:`ip_addr` is set, this must be set to the associated network mask (subne
 The network mask is used to determine whether a given remote IP address is on the same LAN or not.
 If you are not sure what your network mask is, use the ``ipconfig`` command on your PC.
 If using DHCP this must be set to zero.
+
+.. _ntp_key:
+
+ntp_key
+-------
+| **Format**: 40 hexadecimal digits
+| **Default**: 0
+
+This key is used to validate incoming client queries and to sign outgoing
+responses.
+One of :ref:`ntp_key_is_md5` or :ref:`ntp_key_is_sha1` must be set in order to
+select the key type.
+The key must be the raw, 40 hexadecimal digits.
+MD5 keys must be converted to hex.
+Key IDs do not need to be specified because the server will reply with the same
+ID that the client specified if query authentication succeeds.
+If the query is not authenticated then the response will also be
+unauthenticated.
+
+.. _ntp_key_is_md5:
+
+ntp_key_is_md5
+-------
+| **Format**: boolean (true or false)
+| **Default**: false
+
+If true, then :ref:`ntp_key` is a 40 digit hexadecimal key for use with the MD5
+authentication scheme. Note that usually ntpd's keys file specifies MD5 keys as
+20 plaintext bytes; this must be converted to 40 hexadecimal digits here.
+
+.. _ntp_key_is_sha1:
+
+ntp_key_is_sha1
+-------
+| **Format**: boolean (true or false)
+| **Default**: false
+
+If true, then :ref:`ntp_key` is a 40 digit hexadecimal key for use with the
+SHA1 authentication scheme.
 
 .. _pps_out:
 

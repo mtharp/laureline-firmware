@@ -66,3 +66,28 @@ MicroSD
 Optional MicroSD card.
 Must be formatted with a FAT12, FAT16, or FAT32 filesystem.
 Currently only used for firmware updates but may be used for logging, configuration, and/or diagnostics in the future.
+
+
+Internal Connectors
+-------------------
+
+P2, P3 - Debug
+=============
+Serial Wire Debug connection for flashing and debugging the main
+microcontroller. P2 is a "ST-Link" header without the SWV pin. P3 is a Tag
+Connect pad for use with the TC2030-CTX-NL cable.
+
+P5 - 5V IN
+==========
+Alternate power input. Connect 5V DC here as an alternative to powering
+from USB. This is wired directly to the USB power so connecting both at once
+could damage your PC and/or your power supply. Mind the polarity, too.
+
+P9 - Battery
+============
+Optional RTC backup battery. Use a 3V lithium coin cell or similar, not
+exceeding 3.3V. If present then the GPS receiver will be able to "warm start"
+within a few seconds after power is restored. The NTP server will not keep time
+nor answer queries while unpowered even if the backup battery is connected, and
+1-2 minutes of settling time is still required after power-up before NTP is
+available.
