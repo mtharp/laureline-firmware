@@ -24,6 +24,8 @@
 #define FLAG_PPSEN			(1 << 0)
 #define FLAG_GPSEXT			(1 << 1)
 #define FLAG_GPSOUT			(1 << 2)
+#define FLAG_NTPKEY_MD5		(1 << 3)
+#define FLAG_NTPKEY_SHA1	(1 << 4)
 
 
 #pragma pack(push, 1)
@@ -47,7 +49,8 @@ typedef struct {
 	uint32_t syslog_ip;
 	uint32_t flags;
 	uint32_t ip_manycast;
-	uint8_t _reserved[78];
+	uint8_t ntp_key[20];
+	uint8_t _reserved[58];
 	uint16_t crc;
 } cfgv2_t;
 #define CFG_SIZE sizeof(cfgv2_t)

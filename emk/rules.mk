@@ -94,7 +94,7 @@ $(1): $(2)
 	@mkdir -p $(dir $(1))
 	$$(AS) $$(ASFLAGS) $$< -c -o $$@
 endef
-$(foreach src,$(S_SRCS),$(eval $(call s_template,$(BUILD)/%(subst ../,__/,$(src:.s=.o)),$(src))))
+$(foreach src,$(S_SRCS),$(eval $(call s_template,$(BUILD)/$(subst ../,__/,$(src:.s=.o)),$(src))))
 
 $(OUT).elf: $(OBJS) $(LDSCRIPT)
 	$(LD) $(LDFLAGS) $(OBJS) -o $@ $(LDLIBS)

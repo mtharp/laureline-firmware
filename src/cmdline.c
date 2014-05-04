@@ -66,6 +66,9 @@ const clivalue_t value_table[] = {
 	{ "ip_gateway", VAR_IP4, &cfg.ip_gateway, 0 },
 	{ "ip_manycast", VAR_IP4, &cfg.ip_manycast, 0 },
 	{ "ip_netmask", VAR_IP4, &cfg.ip_netmask, 0 },
+	{ "ntp_key", VAR_HEX, &cfg.ntp_key, 20 },
+	{ "ntp_key_is_md5", VAR_FLAG, &cfg.flags, FLAG_NTPKEY_MD5 },
+	{ "ntp_key_is_sha1", VAR_FLAG, &cfg.flags, FLAG_NTPKEY_SHA1 },
 	{ "pps_out", VAR_FLAG, &cfg.flags, FLAG_PPSEN },
 	{ "syslog_ip", VAR_IP4, &cfg.syslog_ip, 0 },
 	{ NULL },
@@ -99,6 +102,18 @@ cliWriteConfig(void) {
 	if ((cfg.flags & (FLAG_GPSEXT | FLAG_GPSOUT)) == (FLAG_GPSEXT | FLAG_GPSOUT)) {
 		cli_puts("WARNING: gps_ext_in and gps_ext_out are mutually exclusive.\r\n");
 		cfg.flags &= ~FLAG_GPSOUT;
+	}
+	/* Check for more than one ntpkey type */
+	result = 0;
+	if (cfg.flags & FLAG_NTPKEY_MD5) {
+		result++;
+	}
+	if (cfg.flags & FLAG_NTPKEY_SHA1) {
+		result++;
+	}
+	if (result > 1) {
+		cli_puts("WARNING: More than one ntpkey type specified\r\n");
+		cfg.flags &= ~(FLAG_NTPKEY_MD5 | FLAG_NTPKEY_SHA1);
 	}
 	cli_puts("Writing EEPROM...\r\n");
 	result = eeprom_write_cfg();

@@ -129,32 +129,34 @@ cliSetVar(const clivalue_t *var, const char *str) {
 
 void
 cli_cmd_set(char *cmdline) {
-	uint32_t i, len;
+	uint32_t len;
 	const clivalue_t *val;
-	char *eqptr = NULL;
+	char *eqptr, *ptr2;
 
 	len = strlen(cmdline);
 	if (len == 0 || (len == 1 && cmdline[0] == '*')) {
 		cli_puts("Current settings:\r\n");
-		for (i = 0; value_table[i].name != NULL; i++) {
-			val = &value_table[i];
-			cli_printf("%s = ", value_table[i].name);
+		for (val = &value_table[0]; val->name != NULL; val++) {
+			cli_printf("%s = ", val->name);
 			cliPrintVar(val, len);
 			cli_puts("\r\n");
 		}
 	} else if ((eqptr = strstr(cmdline, "="))) {
+		/* Null-terminate the setting name */
+		ptr2 = eqptr;
+		while (*--ptr2 == ' ') {
+			*ptr2 = 0;
+		}
 		eqptr++;
 		len--;
 		while (*eqptr == ' ') {
 			eqptr++;
 			len--;
 		}
-		for (i = 0; value_table[i].name != NULL; i++) {
-			val = &value_table[i];
-			if (strncasecmp(cmdline, value_table[i].name,
-						strlen(value_table[i].name)) == 0) {
+		for (val = &value_table[0]; val->name != NULL; val++) {
+			if (!strcmp(cmdline, val->name)) {
 				cliSetVar(val, eqptr);
-				cli_printf("%s set to ", value_table[i].name);
+				cli_printf("%s set to ", val->name);
 				cliPrintVar(val, 0);
 				return;
 			}
