@@ -125,6 +125,7 @@ main_thread(void *pdata) {
 	cl_enabled = 1;
 
 	load_eeprom();
+	cfg.flags &= ~FLAG_HOLDOVER_TEST;
 	if (cfg.flags & FLAG_GPSEXT) {
 		gps_serial = &Serial5;
 	} else {
