@@ -7,6 +7,7 @@
  */
 
 #include "common.h"
+#include "eeprom.h"
 #include "epoch.h"
 #include "init.h"
 #include "logging.h"
@@ -64,7 +65,7 @@ pll_thread(void *p) {
 	desync = 0;
 	while (1) {
 		tmp = monotonic_get_capture();
-		if (tmp) {
+		if (tmp && !(cfg.flags & FLAG_HOLDOVER_TEST)) {
 			delta = vtimer_get_frac_delta(tmp);
 			if (delta < -SETTLED_THRESH || delta > SETTLED_THRESH) {
 				if (status_flags & STATUS_PLL_OK) {
@@ -107,8 +108,19 @@ pll_thread(void *p) {
 				log_write(LOG_WARNING, "vtimer", "PPS is not valid!");
 				clear_status(STATUS_PPS_OK);
 			}
-			log_write(LOG_INFO, "vtimer", "NO PPS!  freq %.03f ppb",
-					(float)(ppb*1e9));
+			if (((CoGetOSTime() - last_pps) >= (S2ST(1) * cfg.holdover)) && (status_flags & STATUS_PLL_OK)) {
+				log_write(LOG_ERR, "vtimer", "PLL lock timed out due to lack of PPS");
+				clear_status(STATUS_PLL_OK);
+			}
+			if (tmp) {
+				/* Holdover test mode */
+				delta = vtimer_get_frac_delta(tmp);
+				log_write(LOG_INFO, "vtimer", "HOLDOVER TEST!  %.03f ns  freq %.03f ppb",
+						(float)(delta*1e9), (float)(ppb*1e9));
+			} else {
+				log_write(LOG_INFO, "vtimer", "NO PPS!  freq %.03f ppb",
+						(float)(ppb*1e9));
+			}
 			ppb = pll_poll();
 		}
 		kern_freq(ppb);
@@ -153,14 +165,14 @@ pll_thread(void *p) {
 			GPIO_ON(LED4);
 		}
 
-		if (!(status_flags & STATUS_PPS_OK)) {
-			/* bottom: off */
-		} else if (!(status_flags & STATUS_PLL_OK)) {
-			/* bottom: flash red */
-			GPIO_ON(LED1);
-		} else {
+		if ((status_flags & STATUS_SETTLED) == STATUS_SETTLED) {
 			/* bottom: flash green */
 			GPIO_ON(LED2);
+		} else if (status_flags & STATUS_SETTLED) {
+			/* bottom: flash red (PPS but no lock, or holdover but no PPS) */
+			GPIO_ON(LED1);
+		} else {
+			/* bottom: off (no PPS or holdover) */
 		}
 		tmp += PPS_BLINK_TIME * NTP_SECOND;
 		vtimer_sleep_until(tmp);

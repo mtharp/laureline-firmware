@@ -130,6 +130,9 @@ main_thread(void *pdata) {
 	} else {
 		gps_serial = &Serial4;
 	}
+	if (!cfg.holdover) {
+		cfg.holdover = 60;
+	}
 	ppscapture_start();
 	vtimer_start();
 	tcpip_start();

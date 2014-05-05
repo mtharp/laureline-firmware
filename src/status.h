@@ -17,10 +17,10 @@
 
 /* pll is settled */
 #define STATUS_SETTLED (STATUS_PPS_OK | STATUS_PLL_OK)
-/* time of day is correct */
+/* all data from GPS is ok */
 #define STATUS_VALID (STATUS_PPS_OK | STATUS_TOD_OK)
 /* ready to serve ntp */
-#define STATUS_READY (STATUS_PPS_OK | STATUS_PLL_OK | STATUS_TOD_OK)
+#define STATUS_READY (STATUS_PLL_OK | STATUS_TOD_OK)
 
 extern uint16_t status_flags;
 

@@ -26,6 +26,7 @@
 #define FLAG_GPSOUT			(1 << 2)
 #define FLAG_NTPKEY_MD5		(1 << 3)
 #define FLAG_NTPKEY_SHA1	(1 << 4)
+#define FLAG_HOLDOVER_TEST	(1 << 5)
 
 
 #pragma pack(push, 1)
@@ -50,7 +51,8 @@ typedef struct {
 	uint32_t flags;
 	uint32_t ip_manycast;
 	uint8_t ntp_key[20];
-	uint8_t _reserved[58];
+	uint32_t holdover;
+	uint8_t _reserved[54];
 	uint16_t crc;
 } cfgv2_t;
 #define CFG_SIZE sizeof(cfgv2_t)
