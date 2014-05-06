@@ -159,6 +159,29 @@ This feature is experimental and may cause instability or lock-ups.
 Even when working correctly it is a security risk if exposed to an untrusted network (i.e. the internet).
 Use at your own risk.
 
+holdover_time
+-------------
+| **Format**: integer
+| **Default**: 60
+
+In case of loss of GPS reception or GPS receiver failure, Laureline will
+continue serving time normally for this many seconds after cessation of
+pulse-per-second (PPS) input. After this time has elapsed, all NTP responses
+will be marked with a Stratum value of 16, indicating loss of synchronization.
+During holdover the status LED will flash red, and after holdover expires the
+pulse LED will extinguish. It takes up to 5 seconds after loss of PPS to
+transition from regular operation to holdover mode.
+
+holdover_test
+-------------
+| **Format**: boolean (true or false)
+| **Default**: false
+
+If set, then Laureline will measure and log the pulse-per-second signal but
+will not feed it into the main timing loop. This is useful for testing holdover
+performance. Set it after the PLL has locked and observe the phase drift over
+time. This setting will revert to false on powerup.
+
 .. _ip_addr:
 
 ip_addr
@@ -185,7 +208,7 @@ If using DHCP this must be set to zero.
 .. _ip_manycast:
 
 ip_manycast
-----------
+-----------
 | **Format**: IP address
 | **Default**: 0.0.0.0
 
@@ -227,7 +250,7 @@ unauthenticated.
 .. _ntp_key_is_md5:
 
 ntp_key_is_md5
--------
+--------------
 | **Format**: boolean (true or false)
 | **Default**: false
 
@@ -238,7 +261,7 @@ authentication scheme. Note that usually ntpd's keys file specifies MD5 keys as
 .. _ntp_key_is_sha1:
 
 ntp_key_is_sha1
--------
+---------------
 | **Format**: boolean (true or false)
 | **Default**: false
 
