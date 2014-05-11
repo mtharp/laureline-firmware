@@ -159,6 +159,8 @@ This feature is experimental and may cause instability or lock-ups.
 Even when working correctly it is a security risk if exposed to an untrusted network (i.e. the internet).
 Use at your own risk.
 
+.. _holdover_time:
+
 holdover_time
 -------------
 | **Format**: integer
