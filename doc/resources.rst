@@ -7,11 +7,9 @@ You can buy the Laureline GPS NTP server at `Tindie`_
 
 Firmware download
 =================
-Download the latest firmware here: http://partiallystapled.com/pub/laureline/
+Download the latest firmware here: https://github.com/mtharp/laureline-firmware/releases
 
-For hardware revisions 6 and 7, use software version 3.
-Look for files starting with ``laureline_v3_`` and ending in ``.hex``. Don't
-forget to rename to ``ll.hex`` when writing to the MicroSD card (two lowercase 'L's).
+See the :doc:`updates` chapter for instructions on uploading new firmware.
 
 Source code and Design files
 ============================
