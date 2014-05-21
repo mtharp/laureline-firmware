@@ -175,6 +175,7 @@
 #define CHECKSUM_GEN_UDP                0
 #define CHECKSUM_GEN_TCP                0
 #define CHECKSUM_GEN_ICMP               0
+#define CHECKSUM_GEN_ICMP6              0
 #define CHECKSUM_CHECK_IP               0
 #define CHECKSUM_CHECK_UDP              0
 #define CHECKSUM_CHECK_TCP              0
@@ -189,6 +190,7 @@
 #if LWIP_IPV6
 #define LWIP_IPV6_NUM_ADDRESSES         3
 #define LWIP_IPV6_FORWARD               0
+#define LWIP_IPV6_MLD                   1
 #define MEMP_NUM_MLD6_GROUP             4
 #define LWIP_IPV6_FRAG                  0
 #define LWIP_IPV6_REASS                 0
@@ -197,8 +199,9 @@
 #define LWIP_ND6_NUM_DESTINATIONS       4
 #define LWIP_ND6_ALLOW_RA_UPDATES       1
 #define LWIP_IPV6_SEND_ROUTER_SOLICIT   1
-#define LWIP_ND6_TCP_REACHABILITY_HINTS 1
+#define LWIP_ND6_TCP_REACHABILITY_HINTS 0
 #define LWIP_IPV6_AUTOCONFIG            1
+#define LWIP_IPV6_DUP_DETECT_ATTEMPTS   1
 #define LWIP_IPV6_DHCP6                 0
 #endif
 

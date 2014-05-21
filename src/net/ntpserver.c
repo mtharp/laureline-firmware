@@ -110,10 +110,18 @@ ntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, u16_t 
 }
 
 struct udp_pcb *ntp_pcb;
+#if LWIP_IPV6
+struct udp_pcb *ntp6_pcb;
+#endif
 
 void
 ntp_server_start(void) {
 	ASSERT((ntp_pcb = udp_new()) != NULL);
 	udp_bind(ntp_pcb, IP_ADDR_ANY, NTP_PORT);
 	udp_recv(ntp_pcb, ntp_recv, NULL);
+#if LWIP_IPV6
+	ASSERT((ntp6_pcb = udp_new_ip6()) != NULL);
+	udp_bind_ip6(ntp6_pcb, IP6_ADDR_ANY, NTP_PORT);
+	udp_recv(ntp6_pcb, ntp_recv, NULL);
+#endif
 }

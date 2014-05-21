@@ -68,6 +68,7 @@ const clivalue_t value_table[] = {
 	{ "ip_gateway", VAR_IP4, &cfg.ip_gateway, 0 },
 	{ "ip_manycast", VAR_IP4, &cfg.ip_manycast, 0 },
 	{ "ip_netmask", VAR_IP4, &cfg.ip_netmask, 0 },
+	{ "ip6_manycast", VAR_IP6, &cfg.ip6_manycast, 0 },
 	{ "ntp_key", VAR_HEX, &cfg.ntp_key, 20 },
 	{ "ntp_key_is_md5", VAR_FLAG, &cfg.flags, FLAG_NTPKEY_MD5 },
 	{ "ntp_key_is_sha1", VAR_FLAG, &cfg.flags, FLAG_NTPKEY_SHA1 },
@@ -210,6 +211,22 @@ print_ipaddr(uint32_t addr) {
 }
 
 
+#if LWIP_IPV6
+static void
+print_ip6addr(ip6_addr_t *addr) {
+	cli_printf("%x:%x:%x:%x:%x:%x:%x:%x",
+			IP6_ADDR_BLOCK1(addr),
+			IP6_ADDR_BLOCK2(addr),
+			IP6_ADDR_BLOCK3(addr),
+			IP6_ADDR_BLOCK4(addr),
+			IP6_ADDR_BLOCK5(addr),
+			IP6_ADDR_BLOCK6(addr),
+			IP6_ADDR_BLOCK7(addr),
+			IP6_ADDR_BLOCK8(addr));
+}
+#endif
+
+
 static void
 cli_print_netif(void) {
 	cli_puts(    "IP:             ");
@@ -218,6 +235,20 @@ cli_print_netif(void) {
 	print_ipaddr(thisif.netmask.addr);
 	cli_puts("\r\nGateway:        ");
 	print_ipaddr(thisif.gw.addr);
+#if LWIP_IPV6
+	{
+		int i;
+		for (i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
+			if (!ip6_addr_isvalid(netif_ip6_addr_state(&thisif, i))
+					|| ip6_addr_islinklocal(netif_ip6_addr(&thisif, i))
+					) {
+				continue;
+			}
+			cli_puts("\r\nIPv6:           ");
+			print_ip6addr(netif_ip6_addr_state(&thisif, i));
+		}
+	}
+#endif
 	cli_puts("\r\n");
 }
 

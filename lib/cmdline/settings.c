@@ -10,7 +10,7 @@
 #include "util/parse.h"
 #include <string.h>
 
-#ifdef CLI_TYPE_IP4
+#if CLI_TYPE_IP4 || CLI_TYPE_IP6
 # include "lwip/def.h"
 #endif
 
@@ -24,7 +24,7 @@ cliPrintVar(const clivalue_t *var, uint8_t full) {
 	case VAR_UINT16:
 		cli_printf("%u", *(uint16_t*)var->ptr);
 		break;
-#ifdef CLI_TYPE_IP4
+#if CLI_TYPE_IP4
 	case VAR_IP4:
 		{
 			uint8_t *addr = (uint8_t*)var->ptr;
@@ -32,7 +32,23 @@ cliPrintVar(const clivalue_t *var, uint8_t full) {
 			break;
 		}
 #endif
-#ifdef CLI_TYPE_HEX
+#if CLI_TYPE_IP6
+	case VAR_IP6:
+		{
+			uint32_t *ptr = (uint32_t*)var->ptr;
+			cli_printf("%x:%x:%x:%x:%x:%x:%x:%x",
+					(uint16_t)(htonl(ptr[0]) >> 16) & 0xffff,
+					(uint16_t)(htonl(ptr[0])      ) & 0xffff,
+					(uint16_t)(htonl(ptr[1]) >> 16) & 0xffff,
+					(uint16_t)(htonl(ptr[1])      ) & 0xffff,
+					(uint16_t)(htonl(ptr[2]) >> 16) & 0xffff,
+					(uint16_t)(htonl(ptr[2])      ) & 0xffff,
+					(uint16_t)(htonl(ptr[3]) >> 16) & 0xffff,
+					(uint16_t)(htonl(ptr[3])      ) & 0xffff);
+			break;
+		}
+#endif
+#if CLI_TYPE_HEX
 	case VAR_HEX:
 		{
 			uint8_t *ptr = (uint8_t*)var->ptr;
@@ -43,7 +59,7 @@ cliPrintVar(const clivalue_t *var, uint8_t full) {
 			break;
 		}
 #endif
-#ifdef CLI_TYPE_FLAG
+#if CLI_TYPE_FLAG
 	case VAR_FLAG:
 		if ( (*(uint32_t*)var->ptr) & var->len ) {
 			cli_puts("true");
@@ -84,6 +100,33 @@ cliSetVar(const clivalue_t *var, const char *str) {
 		*(uint32_t*)var->ptr = lwip_htonl(val);
 		break;
 #endif
+#if CLI_TYPE_IP6
+	case VAR_IP6:
+		{
+			uint32_t *packed = (uint32_t*)var->ptr;
+			uint8_t i;
+			uint16_t words[8];
+			for (i = 0; i < 8; i++) {
+				words[i] = 0;
+			}
+			i = 0;
+			while (*str) {
+				if (*str == ':') {
+					if (++i == 8) {
+						break;
+					}
+				} else {
+					words[i] = (words[i] << 4) | parse_hex(*str);
+				}
+				str++;
+			}
+			packed[0] = htonl(words[1] | ((uint32_t)words[0] << 16));
+			packed[1] = htonl(words[3] | ((uint32_t)words[2] << 16));
+			packed[2] = htonl(words[5] | ((uint32_t)words[4] << 16));
+			packed[3] = htonl(words[7] | ((uint32_t)words[6] << 16));
+			break;
+		}
+#endif
 #if CLI_TYPE_HEX
 	case VAR_HEX:
 		{
@@ -108,6 +151,7 @@ cliSetVar(const clivalue_t *var, const char *str) {
 			for (; i < var->len; i++) {
 				*ptr++ = 0;
 			}
+			break;
 		}
 #endif
 #if CLI_TYPE_FLAG

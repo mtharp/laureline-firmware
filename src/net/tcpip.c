@@ -19,8 +19,10 @@
 #include "net/tcpip.h"
 
 #include "lwip/dhcp.h"
+#include "lwip/ethip6.h"
 #include "lwip/igmp.h"
 #include "lwip/init.h"
+#include "lwip/mld6.h"
 #include "lwip/stats.h"
 #include "lwip/timers.h"
 #include "netif/etharp.h"
@@ -78,6 +80,9 @@ tcpip_timer(void) {
 static void
 tcpip_thread(void *p) {
 	uint32_t flags;
+#if LWIP_IPV6
+	int i, valid_ip6 = 0;
+#endif
 	StatusType rc;
 	api_set_main_thread(CoGetCurTaskID());
 	while (1) {
@@ -101,6 +106,37 @@ tcpip_thread(void *p) {
 				}
 				GPIO_ON(ETH_LED);
 			}
+#if LWIP_IPV6
+			for (i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
+				if (ip6_addr_isvalid(netif_ip6_addr_state(&thisif, i))) {
+					if (!((valid_ip6 >> i) & 1)) {
+						valid_ip6 |= (1 << i);
+						log_write(LOG_NOTICE, "net",
+								"IPv6 address assigned: %x:%x:%x:%x:%x:%x:%x:%x",
+								IP6_ADDR_BLOCK1(netif_ip6_addr(&thisif, i)),
+								IP6_ADDR_BLOCK2(netif_ip6_addr(&thisif, i)),
+								IP6_ADDR_BLOCK3(netif_ip6_addr(&thisif, i)),
+								IP6_ADDR_BLOCK4(netif_ip6_addr(&thisif, i)),
+								IP6_ADDR_BLOCK5(netif_ip6_addr(&thisif, i)),
+								IP6_ADDR_BLOCK6(netif_ip6_addr(&thisif, i)),
+								IP6_ADDR_BLOCK7(netif_ip6_addr(&thisif, i)),
+								IP6_ADDR_BLOCK8(netif_ip6_addr(&thisif, i)));
+						if (i == 0 && cfg.ip6_manycast[0] != 0) {
+							/* Link-local address added, now we can join multicast groups */
+							ip6_addr_t group;
+							group.addr[0] = cfg.ip6_manycast[0];
+							group.addr[1] = cfg.ip6_manycast[1];
+							group.addr[2] = cfg.ip6_manycast[2];
+							group.addr[3] = cfg.ip6_manycast[3];
+							mld6_joingroup(netif_ip6_addr(&thisif, 0), &group);
+						}
+					}
+				} else if ((valid_ip6 >> i) & 1) {
+					/* address removed */
+					valid_ip6 &= ~(1 << i);
+				}
+			}
+#endif
 			sys_check_timeouts();
 		}
 		if (flags & (1 << mac_rx_flag)) {
@@ -183,6 +219,11 @@ ethernetif_init(struct netif *netif) {
 	netif->hwaddr_len = ETHARP_HWADDR_LEN;
 	netif->mtu = 1500;
 	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_IGMP;
+#if LWIP_IPV6
+	netif->output_ip6 = ethip6_output;
+	netif->ip6_autoconfig_enabled = 1;
+	netif_create_ip6_linklocal_address(netif, 1);
+#endif
 	return ERR_OK;
 }
 

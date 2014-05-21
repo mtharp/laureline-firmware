@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 #define CLI_TYPE_IP4 1
+#define CLI_TYPE_IP6 1
 #define CLI_TYPE_HEX 1
 #define CLI_TYPE_FLAG 1
 
@@ -21,6 +22,9 @@ typedef enum {
 	VAR_UINT16,
 #if CLI_TYPE_IP4
 	VAR_IP4,
+#endif
+#if CLI_TYPE_IP6
+	VAR_IP6,
 #endif
 #if CLI_TYPE_HEX
 	VAR_HEX,
