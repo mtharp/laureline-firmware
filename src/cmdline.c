@@ -214,7 +214,7 @@ print_ipaddr(uint32_t addr) {
 #if LWIP_IPV6
 static void
 print_ip6addr(ip6_addr_t *addr) {
-	cli_printf("%x:%x:%x:%x:%x:%x:%x:%x",
+	cli_printf("%x:%x:%x:%x:%x:%x:%x:%x%s",
 			IP6_ADDR_BLOCK1(addr),
 			IP6_ADDR_BLOCK2(addr),
 			IP6_ADDR_BLOCK3(addr),
@@ -222,7 +222,9 @@ print_ip6addr(ip6_addr_t *addr) {
 			IP6_ADDR_BLOCK5(addr),
 			IP6_ADDR_BLOCK6(addr),
 			IP6_ADDR_BLOCK7(addr),
-			IP6_ADDR_BLOCK8(addr));
+			IP6_ADDR_BLOCK8(addr),
+			ip6_addr_islinklocal(addr) ? " (link-local)" : ""
+			);
 }
 #endif
 
@@ -239,13 +241,11 @@ cli_print_netif(void) {
 	{
 		int i;
 		for (i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
-			if (!ip6_addr_isvalid(netif_ip6_addr_state(&thisif, i))
-					|| ip6_addr_islinklocal(netif_ip6_addr(&thisif, i))
-					) {
+			if (!ip6_addr_isvalid(netif_ip6_addr_state(&thisif, i))) {
 				continue;
 			}
 			cli_puts("\r\nIPv6:           ");
-			print_ip6addr(netif_ip6_addr_state(&thisif, i));
+			print_ip6addr(netif_ip6_addr(&thisif, i));
 		}
 	}
 #endif

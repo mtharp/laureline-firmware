@@ -186,7 +186,7 @@
    ---------- IPv6 options ---------------
    ---------------------------------------
 */
-#define LWIP_IPV6                       0
+#define LWIP_IPV6                       1
 #if LWIP_IPV6
 #define LWIP_IPV6_NUM_ADDRESSES         3
 #define LWIP_IPV6_FORWARD               0
