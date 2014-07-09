@@ -92,8 +92,9 @@ dist:
 	rm -rf dist
 	$(MAKE) BUILD=dist/laureline-$(VERSION) $(DIST_OPTS)
 
-distbl: dist
-	$(MAKE) -C bootloader BUILD=../dist/laureline-bootloader-hw7.1-osc25-$(VERSION) $(DIST_OPTS) HW_VERSION=0x0701 HSE_FREQ=25000000
-	$(MAKE) -C bootloader BUILD=../dist/laureline-bootloader-hw7.1-osc26-$(VERSION) $(DIST_OPTS) HW_VERSION=0x0701 HSE_FREQ=26000000
+distbl:
+	$(MAKE) -C bootloader BUILD=../dist/laureline-bootloader-hw7.0-osc25-$(VERSION) $(DIST_OPTS) HW_VERSION=0x0700 HSE_FREQ=25000000
+	$(MAKE) -C bootloader BUILD=../dist/laureline-bootloader-hw7.0-osc26-$(VERSION) $(DIST_OPTS) HW_VERSION=0x0700 HSE_FREQ=26000000
+	$(MAKE) -C bootloader BUILD=../dist/laureline-bootloader-hw6.0-osc26-$(VERSION) $(DIST_OPTS) HW_VERSION=0x0600 HSE_FREQ=26000000
 
 .PHONY: dist distbl
