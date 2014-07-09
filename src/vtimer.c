@@ -61,7 +61,7 @@ pll_thread(void *p) {
 	static uint64_t tmp, last;
 	static int64_t tmps;
 	static double delta, ppb;
-	static uint8_t desync;
+	static uint8_t desync, first_tod;
 	desync = 0;
 	while (1) {
 		tmp = monotonic_get_capture();
@@ -129,10 +129,15 @@ pll_thread(void *p) {
 		DISABLE_IRQ();
 		vtimer_updateI();
 		tmps = 0;
+		first_tod = 0;
 		last = vt_last;
 		if (utc_next != 0) {
 			tmps = (int64_t)utc_next - (int64_t)(last >> 32);
 			utc_next = 0;
+			if (!(status_flags & STATUS_TOD_OK)) {
+				first_tod = 1;
+			}
+			status_flags |= STATUS_TOD_OK;
 		}
 		ENABLE_IRQ();
 
@@ -143,6 +148,9 @@ pll_thread(void *p) {
 			vtimer_updateI();
 			last = vt_last;
 			ENABLE_IRQ();
+		}
+		if (first_tod) {
+			log_write(LOG_NOTICE, "vtimer", "Time of day is correct");
 		}
 
 		/* Wait until top of second, blink LED, then run the PLL again 100ms
@@ -276,10 +284,6 @@ vtimer_set_utc(uint16_t year, uint8_t month, uint8_t day,
 	DISABLE_IRQ();
 	utc_next = ntp_seconds;
 	ENABLE_IRQ();
-	if (!(status_flags & STATUS_TOD_OK)) {
-		log_write(LOG_NOTICE, "vtimer", "Time of day is correct");
-	}
-	set_status(STATUS_TOD_OK);
 }
 
 
