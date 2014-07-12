@@ -117,7 +117,7 @@ main_thread(void *pdata) {
 	int16_t val;
 	uint32_t flags;
 	serial_start(cli_serial, 115200);
-	serial_start(&Serial4, cfg.gps_baud_rate ? cfg.gps_baud_rate : 57600);
+	serial_start(&Serial4, 57600);
 	serial_start(&Serial5, cfg.gps_baud_rate ? cfg.gps_baud_rate : 57600);
 	cli_set_output(cli_serial);
 	log_start(cli_serial);
