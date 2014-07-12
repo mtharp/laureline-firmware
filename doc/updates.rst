@@ -16,6 +16,21 @@ To perform a firmware upgrade:
 Firmware Changelog
 ==================
 
+Version 3.1
+-----------
+* Added IPv6 support. Only stateless autoconfiguration is supported; static IPs
+  will be added later. The :ref:`ip6_manycast` option can be used to join an
+  IPv6 multicast group.
+* Added detailed loopstats logging with additional jitter and time constant
+  data. Reports are emitted periodically, by default every 60 seconds but
+  adjustable using the :ref:`loopstats_interval` option. See :ref:`logging` for
+  details.
+* Fixed log messages being sent that had the "time-of-day OK" status flag set
+  before the time-of-day was actually applied (`#2`_).
+* The :ref:`gps_baud_rate` option can now be used in combination with
+  :ref:`gps_ext_out` to output data at a faster rate than the internal 57600
+  baud. However, it may not be set to less than 57600 when used as an output.
+
 Version 3.0
 -----------
 * Added configurable holdover time. This allows NTP to keep running for a
@@ -32,3 +47,4 @@ Version 2.4
   performs identically but is easier to understand.
 
 .. _Laureline releases page: https://github.com/mtharp/laureline-firmware/releases
+.. _#2: https://github.com/mtharp/laureline-firmware/issues/2

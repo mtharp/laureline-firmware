@@ -119,9 +119,8 @@ gps_baud_rate
 | **Format**: integer
 | **Default**: 0
 
-Baud rate of the GPS serial port.
-If using the internal GPS, leave this at the default of 0.
-Set it to a non-zero value only in combination with :ref:`gps_ext_in`.
+Baud rate of the GPS serial port, when :ref:`gps_ext_in` or :ref:`gps_ext_out` is true.
+When :ref:`gps_ext_out` is true, this must be 57600 or greater.
 
 .. _gps_ext_in:
 
@@ -144,8 +143,8 @@ gps_ext_out
 | **Format**: boolean (true or false)
 | **Default**: false
 
-If true, Laureline will copy raw GPS data from the internal module to the external :ref:`Data In/Out port <dataio>` at 57600 baud.
-Do not change :ref:`gps_baud_rate` as it affects the internal serial port as well and will prevent the GPS from functioning correctly.
+If true, Laureline will copy raw GPS data from the internal module to the external :ref:`Data In/Out port <dataio>` at the baud rate configured by :ref:`gps_baud_rate`.
+Setting :ref:`gps_baud_rate` to less than 57600 baud will cause the output to become corrupted.
 May be used in combination with :ref:`pps_out`. Not compatible with :ref:`gps_ext_in`.
 
 gps_listen_port
@@ -231,6 +230,28 @@ The network mask is used to determine whether a given remote IP address is on th
 If you are not sure what your network mask is, use the ``ipconfig`` command on your PC.
 If using DHCP this must be set to zero.
 
+.. _ip6_manycast:
+
+ip6_manycast
+------------
+| **Format**: IPv6 address (long form)
+| **Default**: 0:0:0:0:0:0:0:0
+
+If set to a non-zero value, the NTP server will listen on the specified
+IPv6 multicast group for queries. Use this with the ``manycastclient`` option to
+ntpd. Note that ntpd requires authentication be working in order to receive
+manycast replies, see :ref:`ntp_key`.
+Shortened IPv6 addresses -- those with a "::" in them -- are not parsed correctly, and must be expanded to the full 8 segments.
+
+.. _loopstats_interval:
+
+loopstats_interval
+------------------
+| **Format**: integer
+| **Default**: 60
+
+Sets the interval, in seconds, at which loop statistics will be logged to the console.
+
 .. _ntp_key:
 
 ntp_key
@@ -257,8 +278,8 @@ ntp_key_is_md5
 | **Default**: false
 
 If true, then :ref:`ntp_key` is a 40 digit hexadecimal key for use with the MD5
-authentication scheme. Note that usually ntpd's keys file specifies MD5 keys as
-20 plaintext bytes; this must be converted to 40 hexadecimal digits here.
+authentication scheme. Note that ntpd's keys file specifies MD5 keys as 20
+plaintext bytes; this must be converted to 40 hexadecimal digits here.
 
 .. _ntp_key_is_sha1:
 
@@ -319,6 +340,61 @@ Performing this modification as described will not void your warranty.
 #. Reassemble the enclosure by checking that the board is the right way up and
    sliding it into the bottom-most channel, adding the end panel, and screwing
    it into place. Do not over-tighten.
+
+.. _logging:
+
+Logging
+=======
+
+When not in command-line mode, log messages are printed to the serial console.
+These messages show changes in status as well as periodic statistical reports about the performance of the NTP server.
+For example, shortly after startup and when networking is online, a line like this will appear:
+
+    2014-07-12T02:17:16.789433Z kernel NOTE GPS NTP Server version v3.0-0-ge9f578d started
+
+Logging can also be forwarded to a remote server using the standard `syslog`_
+UDP protocol, see :ref:`syslog_ip`.
+
+In addition to state change messages, there is also a periodic "loopstats"
+report that indicates the state of the internal clock, similar to this:
+
+    2014-07-12T03:48:00.899535Z loopstats INFO off:-1ns freq:1433ppb jit:19ns fjit:559ppt looptc:117s state:4 flags:PPS,ToD,PLL,QUANT
+
+The meaning of these fields is as follows:
+
+off
+    Time offset between the internal clock and GPS time in nanoseconds (averaged)
+freq
+    Frequency offset between the oscillator and its nominal frequency in parts-per-billion
+jit
+    Root-mean-square (RMS) jitter of the time offset in nanoseconds
+fjit
+    RMS jitter of the frequency offset in parts-per-trillion
+looptc
+    Loop time constant of the internal clock in seconds
+state
+    Operating mode of the internal clock PLL.
+    1 and 2 are starting up.
+    3 is stable enough to count as "locked".
+    4 and 5 are very stable and are the normal operating modes.
+flags
+    A comma-seperated list of status flags.
+    Each flag is prefixed with an exclamation point "!" when it is in an error or non-asserted state.
+    The ToD and PLL flags must all be asserted before the server will respond to NTP queries.
+flags - PPS
+    Indicates that the pulse-per-second signal is currently valid.
+    It is cleared about 5 seconds after the signal ceases.
+flags - ToD
+    Indicates that valid time-of-day data was received from the GPS.
+    This flag is only set when the UTC offset portion of the GPS almanac has been received, which can take up to 30 minutes after a cold start.
+    Once it is set, it will remain set even if GPS signal is lost.
+flags - PLL
+    Indicates that the internal clock (phase-locked-loop) is settled and tracking UTC time closely.
+flags - QUANT
+    Indicates that quantization error correction was applied during the last second.
+    This flag should be asserted when using the onboard GPS receiver.
+    When using an external GPS, it may not be asserted depending on the receiver and how it is configured.
+
 
 .. _FTDI: http://www.ftdichip.com/Drivers/VCP.htm
 .. _PuTTY: http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html
