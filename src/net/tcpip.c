@@ -110,17 +110,19 @@ tcpip_thread(void *p) {
 			for (i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
 				if (ip6_addr_isvalid(netif_ip6_addr_state(&thisif, i))) {
 					if (!((valid_ip6 >> i) & 1)) {
+						ip6_addr_t *addr = netif_ip6_addr(&thisif, i);
 						valid_ip6 |= (1 << i);
 						log_write(LOG_NOTICE, "net",
-								"IPv6 address assigned: %x:%x:%x:%x:%x:%x:%x:%x",
-								IP6_ADDR_BLOCK1(netif_ip6_addr(&thisif, i)),
-								IP6_ADDR_BLOCK2(netif_ip6_addr(&thisif, i)),
-								IP6_ADDR_BLOCK3(netif_ip6_addr(&thisif, i)),
-								IP6_ADDR_BLOCK4(netif_ip6_addr(&thisif, i)),
-								IP6_ADDR_BLOCK5(netif_ip6_addr(&thisif, i)),
-								IP6_ADDR_BLOCK6(netif_ip6_addr(&thisif, i)),
-								IP6_ADDR_BLOCK7(netif_ip6_addr(&thisif, i)),
-								IP6_ADDR_BLOCK8(netif_ip6_addr(&thisif, i)));
+								"IPv6 address assigned: %x:%x:%x:%x:%x:%x:%x:%x%s",
+								IP6_ADDR_BLOCK1(addr),
+								IP6_ADDR_BLOCK2(addr),
+								IP6_ADDR_BLOCK3(addr),
+								IP6_ADDR_BLOCK4(addr),
+								IP6_ADDR_BLOCK5(addr),
+								IP6_ADDR_BLOCK6(addr),
+								IP6_ADDR_BLOCK7(addr),
+								IP6_ADDR_BLOCK8(addr),
+								ip6_addr_islinklocal(addr) ? " (link-local)" : "");
 						if (i == 0 && cfg.ip6_manycast[0] != 0) {
 							/* Link-local address added, now we can join multicast groups */
 							ip6_addr_t group;
