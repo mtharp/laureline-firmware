@@ -17,6 +17,7 @@
 #include "status.h"
 #include "vtimer.h"
 #include "stm32/iwdg.h"
+#include <math.h>
 
 #define VTIMER_STACK 512
 OS_STK vtimer_stack[VTIMER_STACK];
@@ -61,19 +62,24 @@ pll_thread(void *p) {
 	static uint64_t tmp, last;
 	static int64_t tmps;
 	static double delta, ppb;
-	static uint8_t desync, first_tod;
-	desync = 0;
+	static uint8_t desync = 0;
+	static uint16_t old_status;
+	static uint16_t next_report = 0;
+	static float ojit = 0, fjit = 0, ppb_last = 0, ppb_delta;
 	while (1) {
 		tmp = monotonic_get_capture();
+		old_status = status_flags;
 		if (tmp && !(cfg.flags & FLAG_HOLDOVER_TEST)) {
 			delta = vtimer_get_frac_delta(tmp);
-			if (delta < -SETTLED_THRESH || delta > SETTLED_THRESH) {
-				if (status_flags & STATUS_PLL_OK) {
+			if (status_flags & STATUS_PLL_OK) {
+				if (pll_state.st < 3) {
 					log_write(LOG_WARNING, "vtimer", "PLL is not locked!");
 					clear_status(STATUS_PLL_OK);
 				}
 			} else {
-				if (!(status_flags & STATUS_PLL_OK)) {
+				if (pll_state.st >= 3
+						&& delta > -SETTLED_THRESH
+						&& delta < SETTLED_THRESH) {
 					log_write(LOG_NOTICE, "vtimer", "PLL has become locked");
 					set_status(STATUS_PLL_OK);
 				}
@@ -85,7 +91,7 @@ pll_thread(void *p) {
 					pll_reset();
 					desync = 0;
 					log_write(LOG_NOTICE, "vtimer",
-							"step(PPS) %.03f us\r\n", (float)(-delta * 1e6));
+							"step(PPS) %d us\r\n", (int)(-delta * 1e6));
 				}
 			} else {
 				desync = 0;
@@ -96,13 +102,6 @@ pll_thread(void *p) {
 			}
 			last_pps = CoGetOSTime();
 			ppb = pll_math(delta);
-
-			log_write(LOG_INFO, "vtimer", "pps %.03f ns  freq %.03f ppb {%sPPS,%sToD,%sPLL,%sQUANT}",
-					(float)(delta*1e9), (float)(ppb*1e9),
-					(status_flags & STATUS_PPS_OK) ? "" : "!",
-					(status_flags & STATUS_TOD_OK) ? "" : "!",
-					(status_flags & STATUS_PLL_OK) ? "" : "!",
-					(status_flags & STATUS_USED_QUANT) ? "" : "!");
 		} else {
 			if (((CoGetOSTime() - last_pps) >= S2ST(5)) && (status_flags & STATUS_PPS_OK)) {
 				log_write(LOG_WARNING, "vtimer", "PPS is not valid!");
@@ -112,14 +111,10 @@ pll_thread(void *p) {
 				log_write(LOG_ERR, "vtimer", "PLL lock timed out due to lack of PPS");
 				clear_status(STATUS_PLL_OK);
 			}
-			if (tmp) {
+			if (tmp && next_report == 0) {
 				/* Holdover test mode */
 				delta = vtimer_get_frac_delta(tmp);
-				log_write(LOG_INFO, "vtimer", "HOLDOVER TEST!  %.03f ns  freq %.03f ppb",
-						(float)(delta*1e9), (float)(ppb*1e9));
-			} else {
-				log_write(LOG_INFO, "vtimer", "NO PPS!  freq %.03f ppb",
-						(float)(ppb*1e9));
+				log_write(LOG_WARNING, "vtimer", "HOLDOVER TEST!  current offset: %d ns", (int)(delta*1e9));
 			}
 			ppb = pll_poll();
 		}
@@ -129,28 +124,58 @@ pll_thread(void *p) {
 		DISABLE_IRQ();
 		vtimer_updateI();
 		tmps = 0;
-		first_tod = 0;
 		last = vt_last;
 		if (utc_next != 0) {
 			tmps = (int64_t)utc_next - (int64_t)(last >> 32);
 			utc_next = 0;
-			if (!(status_flags & STATUS_TOD_OK)) {
-				first_tod = 1;
-			}
 			status_flags |= STATUS_TOD_OK;
 		}
 		ENABLE_IRQ();
 
 		if (tmps != 0) {
 			vtimer_step(tmps);
-			log_write(LOG_NOTICE, "vtimer", "step(UTC) %f sec", (float)tmps);
+			if (tmps >> 31) {
+				/* Too big for signed int32 */
+				log_write(LOG_NOTICE, "vtimer", "step(UTC) %d sec", (uint32_t)tmps);
+			} else {
+				log_write(LOG_NOTICE, "vtimer", "step(UTC) %d sec", (int32_t)tmps);
+			}
 			DISABLE_IRQ();
 			vtimer_updateI();
 			last = vt_last;
 			ENABLE_IRQ();
 		}
-		if (first_tod) {
+		if (!(old_status & STATUS_TOD_OK) && (status_flags & STATUS_TOD_OK)) {
 			log_write(LOG_NOTICE, "vtimer", "Time of day is correct");
+		}
+
+		/* Update loopstats */
+		ppb_delta = ppb - ppb_last;
+		ppb_last = ppb;
+		if (pll_state.j) {
+			ojit += (pll_state.dy*pll_state.dy - ojit) / pll_state.j;
+			fjit += (ppb_delta*ppb_delta - fjit) / pll_state.j;
+		}
+		if (next_report == 0) {
+			float fjitter = 1e12*sqrtf(fjit);
+			if (fjitter < INT32_MIN || fjitter > INT32_MAX) {
+				fjitter = 0.0f;
+			}
+			next_report = cfg.loopstats_interval - 1;
+			log_write(LOG_INFO, "loopstats", "off:%dns freq:%dppb jit:%dns fjit:%dppt looptc:%ds state:%d flags:%sPPS,%sToD,%sPLL,%sQUANT",
+					(int)(1e9*pll_state.my),    /* off */
+					(int)(1e9*ppb),             /* freq */
+					(int)(1e9*sqrtf(ojit)),     /* jit */
+					(int)fjitter,               /* fjit */
+					(int)pll_state.j,           /* looptc */
+					pll_state.st,               /* state */
+					(status_flags & STATUS_PPS_OK) ? "" : "!",
+					(status_flags & STATUS_TOD_OK) ? "" : "!",
+					(status_flags & STATUS_PLL_OK) ? "" : "!",
+					(status_flags & STATUS_USED_QUANT) ? "" : "!");
+
+		} else {
+			next_report--;
 		}
 
 		/* Wait until top of second, blink LED, then run the PLL again 100ms

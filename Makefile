@@ -68,7 +68,7 @@ CFLAGS = \
 	-Wno-unused-parameter \
 	-Wno-main \
 	-Wno-address
-LDLIBS = -lm -Wl,-u,_printf_float
+LDLIBS = -lm
 DIST_OPTS = CFLAGS_EXTRA=-Werror
 
 include $(TOP)/emk/rules.mk

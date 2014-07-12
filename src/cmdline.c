@@ -69,6 +69,7 @@ const clivalue_t value_table[] = {
 	{ "ip_manycast", VAR_IP4, &cfg.ip_manycast, 0 },
 	{ "ip_netmask", VAR_IP4, &cfg.ip_netmask, 0 },
 	{ "ip6_manycast", VAR_IP6, &cfg.ip6_manycast, 0 },
+	{ "loopstats_interval", VAR_UINT16, &cfg.loopstats_interval, 0},
 	{ "ntp_key", VAR_HEX, &cfg.ntp_key, 20 },
 	{ "ntp_key_is_md5", VAR_FLAG, &cfg.flags, FLAG_NTPKEY_MD5 },
 	{ "ntp_key_is_sha1", VAR_FLAG, &cfg.flags, FLAG_NTPKEY_SHA1 },

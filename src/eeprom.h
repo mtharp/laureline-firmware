@@ -53,7 +53,8 @@ typedef struct {
 	uint8_t ntp_key[20];
 	uint32_t holdover;
 	uint32_t ip6_manycast[4];
-	uint8_t _reserved[38];
+	uint16_t loopstats_interval;
+	uint8_t _reserved[36];
 	uint16_t crc;
 } cfgv2_t;
 #define CFG_SIZE sizeof(cfgv2_t)

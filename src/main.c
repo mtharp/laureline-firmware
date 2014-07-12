@@ -134,6 +134,9 @@ main_thread(void *pdata) {
 	if (!cfg.holdover) {
 		cfg.holdover = 60;
 	}
+	if (!cfg.loopstats_interval) {
+		cfg.loopstats_interval = 60;
+	}
 	ppscapture_start();
 	vtimer_start();
 	tcpip_start();
