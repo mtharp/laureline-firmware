@@ -30,6 +30,10 @@ typedef enum {
 } quant_leadlag_t;
 
 
+#define LOOPSTATS_VALUES 6
+extern int32_t loopstats_values[LOOPSTATS_VALUES];
+
+
 void vtimer_start(void);
 uint64_t vtimer_now(void);
 void vtimer_set_utc(uint16_t year, uint8_t month, uint8_t day,

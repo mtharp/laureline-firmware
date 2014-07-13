@@ -36,6 +36,8 @@ static uint64_t mono_last;
 /* Saved corrections from GPS */
 static uint32_t utc_next;
 static float quant_corr, quant_corr_deferred;
+/* Saved loopstats report for SNMP */
+int32_t loopstats_values[LOOPSTATS_VALUES];
 
 static void pll_thread(void *p);
 static uint64_t vtimer_getI(uint64_t mono_next);
@@ -156,19 +158,24 @@ pll_thread(void *p) {
 			ojit += (pll_state.dy*pll_state.dy - ojit) / pll_state.j;
 			fjit += (ppb_delta*ppb_delta - fjit) / pll_state.j;
 		}
-		if (next_report == 0) {
+		{
 			float fjitter = 1e12*sqrtf(fjit);
 			if (fjitter < INT32_MIN || fjitter > INT32_MAX) {
 				fjitter = 0.0f;
 			}
+			loopstats_values[0] = (int)(1e9*pll_state.my);  /* timeOffset */
+			loopstats_values[1] = (int)(1e9*ppb);           /* frequencyOffset */
+			loopstats_values[2] = (int)(1e9*sqrtf(ojit));   /* timeJitter */
+			loopstats_values[3] = (int)fjitter;             /* frequencyJitter */
+			loopstats_values[4] = (int)pll_state.j;         /* loopTimeConstant */
+			loopstats_values[5] = pll_state.st;             /* pllState */
+		}
+		if (next_report == 0) {
 			next_report = cfg.loopstats_interval - 1;
 			log_write(LOG_INFO, "loopstats", "off:%dns freq:%dppb jit:%dns fjit:%dppt looptc:%ds state:%d flags:%sPPS,%sToD,%sPLL,%sQUANT",
-					(int)(1e9*pll_state.my),    /* off */
-					(int)(1e9*ppb),             /* freq */
-					(int)(1e9*sqrtf(ojit)),     /* jit */
-					(int)fjitter,               /* fjit */
-					(int)pll_state.j,           /* looptc */
-					pll_state.st,               /* state */
+					loopstats_values[0], loopstats_values[1],
+					loopstats_values[2], loopstats_values[3],
+					loopstats_values[4], loopstats_values[5],
 					(status_flags & STATUS_PPS_OK) ? "" : "!",
 					(status_flags & STATUS_TOD_OK) ? "" : "!",
 					(status_flags & STATUS_PLL_OK) ? "" : "!",
