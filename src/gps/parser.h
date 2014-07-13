@@ -10,7 +10,7 @@
 #define _GPS_PARSER_H
 
 #define PACKET_TIMEOUT		MS2ST(10)
-#define PARSER_TIMEOUT		MS2ST(300)
+#define PARSER_TIMEOUT		S2ST(5)
 
 /* Protocols that might be detected */
 #define PROTO_NONE		0
@@ -27,6 +27,8 @@
 
 #define PBUF_SIZE			128
 extern uint8_t pbuf[PBUF_SIZE];
+
+extern int gps_fix_svs;
 
 void gps_byte_received(uint8_t data);
 

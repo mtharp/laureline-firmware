@@ -7,6 +7,7 @@
  */
 
 #include "common.h"
+#include "logging.h"
 #include "vtimer.h"
 #include "gps/parser.h"
 #include "stm32/serial.h"
@@ -32,6 +33,10 @@ static uint16_t rx_pktlen;
 #define TIMEUTC_VALIDUTC		0x04
 
 const uint8_t ublox_cfg[] = {
+	/* Enable NAV-SOL 0x01 0x06 (5 second intervals) */
+	0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x06,
+	0x05, 0x05, 0x05, 0x05, 0x05, 0x00, 0x2F, 0x39,
+
 	/* Enable NAV-TIMEUTC 0x01 0x21 */
 	0xB5, 0x62, 0x06, 0x01, 0x08, 0x00, 0x01, 0x21,
 	0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x36, 0xA6,
@@ -108,7 +113,10 @@ ublox_feed(uint8_t val) {
 			break;
 		}
 		ustate = WAITING;
-		if (pbuf[0] == 0x01 && pbuf[1] == 0x21 && rx_count >= 20) {
+		if (pbuf[0] == 0x01 && pbuf[1] == 0x06 && rx_count >= 4+52) {
+			/* NAV-SOL */
+			gps_fix_svs = pbuf[4+47];
+		} else if (pbuf[0] == 0x01 && pbuf[1] == 0x21 && rx_count >= 4+20) {
 			/* NAV-TIMEUTC */
 			if (!(pbuf[4+19] & TIMEUTC_VALIDUTC)) {
 				return FEED_COMPLETE;
@@ -122,7 +130,7 @@ ublox_feed(uint8_t val) {
 					pbuf[4+17],							/* minute */
 					pbuf[4+18],							/* second */
 					0);									/* leap */
-		} else if (pbuf[0] == 0x0D && pbuf[1] == 0x01 && rx_count >= 16) {
+		} else if (pbuf[0] == 0x0D && pbuf[1] == 0x01 && rx_count >= 4+16) {
 			/* TIM-TP */
 			set_quant_ubx(&pbuf[4+8]);
 		}

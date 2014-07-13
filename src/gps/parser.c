@@ -16,6 +16,7 @@
 #include "gps/ublox.h"
 
 uint8_t pbuf[PBUF_SIZE];
+int gps_fix_svs;
 
 static uint8_t current_proto, last_proto;
 static uint64_t time_last_byte, time_last_packet;
@@ -50,6 +51,7 @@ gps_byte_received(uint8_t data) {
 		 */
 		current_proto = PROTO_NONE;
 		last_proto = PROTO_NONE;
+		gps_fix_svs = 0;
 	}
 	for (parser = &parsers[0]; parser->func; parser++) {
 		if (current_proto != PROTO_NONE && current_proto != parser->proto) {
