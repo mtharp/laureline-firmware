@@ -74,7 +74,7 @@ test_reset(void) {
 
 void
 log_startup(void) {
-	log_write(LOG_NOTICE, "kernel", "GPS NTP Server version " VERSION " started");
+	log_write(LOG_NOTICE, "kernel", BOARD_NAME " version " VERSION " started");
 	if (did_watchdog) {
 		log_write(LOG_CRIT, "kernel", "Device was previously reset by watchdog timer!");
 	}

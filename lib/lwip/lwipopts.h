@@ -90,6 +90,14 @@
 
 /*
    ----------------------------------
+   ---------- SNMP options ----------
+   ----------------------------------
+*/
+#define LWIP_SNMP                       1
+#define SNMP_WRITE                      0
+
+/*
+   ----------------------------------
    ---------- DNS options -----------
    ----------------------------------
 */
@@ -251,7 +259,6 @@
 /* disabled stuff */
 #define LWIP_RAW                        0
 #define LWIP_AUTOIP                     0
-#define LWIP_SNMP                       0
 #define LWIP_HAVE_LOOPIF                0
 #define LWIP_HAVE_SLIPIF                0
 #define LWIP_SOCKET                     0

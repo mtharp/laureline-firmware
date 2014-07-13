@@ -294,7 +294,7 @@ cli_print_serial(void) {
 
 void
 cli_banner(void) {
-	cli_puts("\r\n\r\nLaureline GPS NTP Server\r\n");
+	cli_puts("\r\n\r\n" BOARD_NAME "\r\n");
 	cliVersion(NULL);
 	cli_print_serial();
 	cli_print_hwaddr();

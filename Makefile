@@ -41,14 +41,14 @@ SRCS += $(wildcard $(TOP)/CoOS/kernel/*.c)
 SRCS += $(TOP)/CoOS/portable/arch.c
 SRCS += $(TOP)/CoOS/portable/GCC/port.c
 SRCS += $(wildcard $(TOP)/lwip/src/core/*.c)
+SRCS += $(wildcard $(TOP)/lwip/src/core/api/*.c)
 SRCS += $(wildcard $(TOP)/lwip/src/core/ipv4/*.c)
 SRCS += $(wildcard $(TOP)/lwip/src/core/ipv6/*.c)
-SRCS += $(wildcard $(TOP)/lwip/src/core/api/*.c)
+SRCS += $(wildcard $(TOP)/lwip/src/core/snmp/*.c)
 SRCS += $(wildcard $(TOP)/lwip/src/api/*.c)
 SRCS += $(TOP)/lwip/src/netif/etharp.c
 LDSCRIPT = ports/STM32F107xB.ld
 
-PATH := /opt/tnt-20130915/bin:$(PATH)
 VERSION ?= $(shell $(TOP)/util/git_version.sh)
 INCLUDES = \
 	-I$(BUILD) \

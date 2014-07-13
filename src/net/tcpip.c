@@ -23,6 +23,7 @@
 #include "lwip/igmp.h"
 #include "lwip/init.h"
 #include "lwip/mld6.h"
+#include "lwip/snmp.h"
 #include "lwip/stats.h"
 #include "lwip/timers.h"
 #include "netif/etharp.h"
@@ -46,10 +47,13 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p);
 static int ethernetif_input(struct netif *netif);
 static void tcpip_timer(void);
 
+static const uint8_t sysdescr_len = sizeof(BOARD_NAME) - 1;
+
 
 void
 tcpip_start(void) {
 	lwip_init();
+	snmp_set_sysdescr((const u8_t*)BOARD_NAME, &sysdescr_len);
 	api_start();
 	configure_interface();
 	ntp_server_start();
@@ -236,6 +240,9 @@ low_level_output(struct netif *netif, struct pbuf *p) {
 	mac_desc_t *tdes;
 	tdes = mac_get_tx_descriptor(MS2ST(50));
 	if (tdes == NULL) {
+		LINK_STATS_INC(link.err);
+		LINK_STATS_INC(link.drop);
+		snmp_inc_ifoutdiscards(netif);
 		return ERR_TIMEOUT;
 	}
 	pbuf_header(p, -ETH_PAD_SIZE);
@@ -245,6 +252,8 @@ low_level_output(struct netif *netif, struct pbuf *p) {
 	mac_release_tx_descriptor(tdes);
 	pbuf_header(p, ETH_PAD_SIZE);
 	LINK_STATS_INC(link.xmit);
+	snmp_add_ifoutoctets(netif, p->tot_len);
+	snmp_inc_ifoutucastpkts(netif);
 	return ERR_OK;
 }
 
@@ -264,6 +273,7 @@ ethernetif_input(struct netif *netif) {
 		mac_release_rx_descriptor(rdesc);
 		LINK_STATS_INC(link.memerr);
 		LINK_STATS_INC(link.drop);
+		snmp_inc_ifindiscards(netif);
 		return 1;
 	}
 	pbuf_header(p, -ETH_PAD_SIZE);
@@ -273,6 +283,8 @@ ethernetif_input(struct netif *netif) {
 	mac_release_rx_descriptor(rdesc);
 	pbuf_header(p, ETH_PAD_SIZE);
 	LINK_STATS_INC(link.recv);
+	snmp_inc_ifinucastpkts(netif);
+	snmp_add_ifinoctets(netif, p->tot_len);
 	if (netif->input(p, netif) != ERR_OK) {
 		pbuf_free(p);
 	}

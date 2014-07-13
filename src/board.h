@@ -10,7 +10,7 @@
 #define _BOARD_H_
 
 
-#define BOARD_NAME				"Laureline NTP Server " BOARD_REV
+#define BOARD_NAME				"Laureline GPS NTP Server"
 #define BOARD_REV				"rev. 5"
 #define STM32F10X_CL
 
