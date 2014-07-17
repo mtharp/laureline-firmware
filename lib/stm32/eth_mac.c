@@ -299,17 +299,14 @@ ETH_IRQHandler(void) {
 static mac_desc_t *
 mac_get_tx_descriptor_once(void) {
 	mac_desc_t *tdes;
-	DISABLE_IRQ();
 	tdes = tx_ptr;
 	if (tdes->des0 & (STM32_TDES0_OWN | STM32_TDES0_LOCKED)) {
-		ENABLE_IRQ();
 		return NULL;
 	}
 	tdes->des0 |= STM32_TDES0_LOCKED;
 	tdes->size = MAC_BUF_SIZE;
 	tdes->offset = 0;
 	tx_ptr = tdes->des_next;
-	ENABLE_IRQ();
 	return tdes;
 }
 
@@ -369,34 +366,31 @@ mac_release_tx_descriptor(mac_desc_t *tdes) {
 
 mac_desc_t *
 mac_get_rx_descriptor(void) {
-	mac_desc_t *rdes;
 	if (!(mac_flags & MFL_RUN)) {
 		return NULL;
 	}
-	DISABLE_IRQ();
-	rdes = rx_ptr;
 	while (1) {
-		if (rdes->des0 & STM32_RDES0_OWN) {
+		uint32_t des0 = rx_ptr->des0;
+		if (des0 & STM32_RDES0_OWN) {
 			break;
 		}
-		if (!(rdes->des0 & (STM32_RDES0_AFM | STM32_RDES0_ES))
+		if (!(des0 & (STM32_RDES0_AFM | STM32_RDES0_ES)) /* Filter match, no error */
 #if STM32_IP_CHECKSUM_OFFLOAD
-				&& !(rdes->des0 & STM32_RDES0_FT & (STM32_RDES0_IPHCE | STM32_RDES0_PCE))
+				&& ( !(des0 & STM32_RDES0_FT) /* Not ethernet */
+					|| !(des0 & (STM32_RDES0_IPHCE | STM32_RDES0_PCE)) ) /* FCS ok */
 #endif
-				&& (rdes->des0 & STM32_RDES0_FS) && (rdes->des0 & STM32_RDES0_LS)) {
+				&& (des0 & STM32_RDES0_FS) && (des0 & STM32_RDES0_LS)) {
 			/* Valid frame */
-			rdes->size = ((rdes->des0 & STM32_RDES0_FL_MASK) >> 16) - 4;
-			rdes->offset = 0;
-			rx_ptr = rdes->des_next;
-			ENABLE_IRQ();
-			return rdes;
-		} else {
-			/* Invalid frame, release it now */
-			rdes->des0 = STM32_RDES0_OWN;
-			rx_ptr = rdes = rdes->des_next;
+			mac_desc_t *ret = rx_ptr;
+			rx_ptr = rx_ptr->des_next;
+			ret->size = ((des0 & STM32_RDES0_FL_MASK) >> 16) - 4;
+			ret->offset = 0;
+			return ret;
 		}
+		/* Invalid frame, release it now */
+		rx_ptr->des0 = STM32_RDES0_OWN;
+		rx_ptr = rx_ptr->des_next;
 	}
-	ENABLE_IRQ();
 	return NULL;
 }
 
@@ -416,11 +410,9 @@ mac_read_rx_descriptor(mac_desc_t *rdes, uint8_t *buf, uint16_t size) {
 
 void
 mac_release_rx_descriptor(mac_desc_t *rdes) {
-	DISABLE_IRQ();
 	rdes->des0 = STM32_RDES0_OWN;
 	if ((ETH->DMASR & ETH_DMASR_RPS) == ETH_DMASR_RPS_Suspended) {
 		ETH->DMASR   = ETH_DMASR_RBUS;
 		ETH->DMARPDR = ETH_DMASR_RBUS;
 	}
-	ENABLE_IRQ();
 }
