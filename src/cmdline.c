@@ -75,6 +75,7 @@ const clivalue_t value_table[] = {
 	{ "ntp_key", VAR_HEX, &cfg.ntp_key, 20 },
 	{ "pps_out", VAR_FLAG, &cfg.flags, FLAG_PPSEN },
 	{ "syslog_ip", VAR_IP4, &cfg.syslog_ip, 0 },
+	{ "timescale_gps", VAR_FLAG, &cfg.flags, FLAG_TIMESCALE_GPS },
 	{ NULL },
 };
 

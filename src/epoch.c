@@ -166,6 +166,12 @@ datetime_to_epoch(uint16_t year, uint8_t month, uint8_t day,
 }
 
 
+uint64_t
+gps_to_epoch(uint16_t wkn, uint32_t tow) {
+	return (uint64_t)NTP_GPS_EPOCH + ((uint64_t)wkn * 604800) + tow;
+}
+
+
 void
 epoch_to_datetime(uint64_t time, struct tm *tm) {
 	uint32_t tod, ordinal;

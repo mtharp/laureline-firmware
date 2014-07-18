@@ -27,6 +27,7 @@
 #define FLAG_NTPKEY_MD5		(1 << 3)
 #define FLAG_NTPKEY_SHA1	(1 << 4)
 #define FLAG_HOLDOVER_TEST	(1 << 5)
+#define FLAG_TIMESCALE_GPS	(1 << 6)
 
 
 #pragma pack(push, 1)

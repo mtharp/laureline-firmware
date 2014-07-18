@@ -12,7 +12,6 @@
 #include "stm32/serial.h"
 
 uint8_t ublox_feed(uint8_t data);
-void ublox_configure(serial_t *ch);
-void ublox_stop(serial_t *ch);
+void ublox_configure(void);
 
 #endif

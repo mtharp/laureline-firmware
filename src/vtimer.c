@@ -320,6 +320,21 @@ vtimer_set_utc(uint16_t year, uint8_t month, uint8_t day,
 
 
 void
+vtimer_set_gps(uint16_t wkn, uint32_t tow, int16_t leap, uint8_t leap_valid) {
+	uint32_t ntp_seconds = gps_to_epoch(wkn, tow);
+	if (!(cfg.flags & FLAG_TIMESCALE_GPS)) {
+		if (!leap_valid) {
+			return;
+		}
+		ntp_seconds -= leap;
+	}
+	DISABLE_IRQ();
+	utc_next = ntp_seconds;
+	ENABLE_IRQ();
+}
+
+
+void
 vtimer_set_correction(float corr, quant_leadlag_t leadlag) {
 	DISABLE_IRQ();
 	if (leadlag == LEADING) {

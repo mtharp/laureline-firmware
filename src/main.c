@@ -85,9 +85,9 @@ void
 enter_standby(void) {
 	/* Shutdown onboard peripherals */
 	mac_stop();
-	if (!(cfg.flags & FLAG_GPSEXT)) {
+	/*if (!(cfg.flags & FLAG_GPSEXT)) {
 		ublox_stop(gps_serial);
-	}
+	}*/
 	serial_drain(cli_serial);
 	serial_drain(gps_serial);
 	GPIO_ON(SDIO_PDOWN);
@@ -143,7 +143,7 @@ main_thread(void *pdata) {
 	test_reset();
 	cli_banner();
 	if (!(cfg.flags & FLAG_GPSEXT)) {
-		ublox_configure(gps_serial);
+		ublox_configure();
 		if (HAS_FEATURE(PPSEN) && (cfg.flags & FLAG_PPSEN)) {
 			GPIO_OFF(PPSEN);
 		}
