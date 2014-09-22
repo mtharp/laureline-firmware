@@ -7,7 +7,6 @@
  */
 
 #include "common.h"
-#include "linker.h"
 #include "stm32/flash.h"
 
 

@@ -95,7 +95,7 @@
 */
 #define LWIP_SNMP                       1
 #define SNMP_WRITE                      0
-#define SNMP_PRIVATE_MIB                0
+#define SNMP_PRIVATE_MIB                1
 
 /*
    ----------------------------------

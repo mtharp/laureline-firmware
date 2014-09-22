@@ -23,6 +23,9 @@
 #define NEXT_PAGE(addr) ((void*)( ((uint8_t*)(addr)) + FLASH_PAGE_SIZE ))
 #define ASSERT_ALIGNED(addr) ASSERT(0 == ((uint32_t)(addr) % FLASH_PAGE_SIZE) )
 
+extern uint32_t _user_start[];
+extern uint32_t _user_end[];
+
 int flash_page_is_erased(void *addr);
 int flash_page_compare(void *page, const uint8_t *data);
 int flash_page_erase(void *addr);
