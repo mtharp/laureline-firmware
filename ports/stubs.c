@@ -10,23 +10,7 @@
 #include <stdint.h>
 
 
-void
-_exit(int rc) {
-    while (1) {}
-}
-
-
-int
-_kill(int pid, int signum) {
-    return ESRCH;
-}
-
-
-int
-_getpid(void) {
-    return 1;
-}
-
+/* sbrk allocator with bounds checking */
 
 extern uint32_t _sheap;
 extern uint32_t _eheap;

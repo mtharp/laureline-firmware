@@ -13,19 +13,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "misc_macros.h"
 #include "board.h"
+#include "core_config.h"
 #include "app_config.h"
 
-#include <CoOS.h>
-#include <stm32f10x.h>
-#include "coos_plat.h"
-
-/* stupid trick to work around cpp macro handling */
-#define _PASTE(x,y) x##y
-#define _PASTE2(x,y) _PASTE(x,y)
-
-#define SET_BITS(var, mask, value) \
-    (var) = ((var) & ~(mask)) | ((value) & (mask))
+#include "FreeRTOS.h"
 
 #define TIMEOUT_NOBLOCK     0
 #define TIMEOUT_FOREVER     -1
