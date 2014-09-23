@@ -13,7 +13,7 @@ vars.Add('HSE_FREQ', '', '0')
 vars.Add('HW_VERSION', '', '0')
 vars.Add('BMP', 'Path to blackmagic probe device', '')
 
-env = Environment(variables=vars, tools=['default', 'embedded_program'])
+env = Environment(variables=vars, tools=['default', 'embedded_program', 'version_h'])
 Help(vars.GenerateHelpText(env))
 
 env.SetARMFlags('cortex-m3')

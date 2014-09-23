@@ -67,25 +67,16 @@ FreeRTOS/Source/tasks.c
 FreeRTOS/Source/timers.c
 """), CFLAGS_USER='$CFLAGS_USER -Wno-unused-value -Wno-error=aggressive-loop-optimizations')
 
-default = env.EmbeddedProgram('laureline.elf', srcs + libs,
+env.VersionH('src/version.h',
+    HW_VERSION='$HW_VERSION',
+    HSE_FREQ='$HSE_FREQ',
+    )
+
+default = env.EmbeddedProgram('laureline.elf',
+    srcs + libs,
     script='ports/STM32F107xB.ld',
     LIBS=['m', 'nosys'],
     )
-
-# Generated version.h with git revision and bootloader settings
-def version_h(source, target, env):
-    import os
-    p = os.popen(str(File('#util/git_version.sh')))
-    version = p.read().strip()
-    if p.close():
-        print 'Failed to detect git version'
-        Exit(1)
-    with open(str(target[0]), 'w') as f:
-        print >> f, '#define VERSION "%s"' % version
-        print >> f, '#define HW_VERSION %s' % env['HW_VERSION']
-        print >> f, '#define HSE_FREQ %s' % env['HSE_FREQ']
-env['BUILDERS']['VersionH'] = Builder(action=version_h)
-AlwaysBuild(env.VersionH('src/version.h', []))
 
 Alias('install', env.GDBInstall(default))
 Return('default')
