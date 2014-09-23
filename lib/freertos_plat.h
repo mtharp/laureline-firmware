@@ -6,15 +6,9 @@
  * be found at http://opensource.org/licenses/MIT
  */
 
-#ifndef __SYS_ARCH_H__
-#define __SYS_ARCH_H__
+#ifndef _FREERTOS_PLAT_H
+#define _FREERTOS_PLAT_H
 
-#include "common.h"
+uint64_t xGetTaskTickCountLong(void);
 
-#define INLINE inline
-#define ROMCONST const
-#define PACK_STRUCT_STRUCT __attribute__((packed))
-#define PACK_STRUCT_BEGIN
-#define PACK_STRUCT_END
-
-#endif /* __SYS_ARCH_H__ */
+#endif

@@ -8,6 +8,7 @@
 
 vars = Variables(None, ARGUMENTS)
 vars.Add(BoolVariable('DEBUG', 'Disable optimizations', 0))
+vars.Add(BoolVariable('WERROR', 'Make warnings into errors', 0))
 vars.Add('HSE_FREQ', '', '0')
 vars.Add('HW_VERSION', '', '0')
 vars.Add('BMP', 'Path to blackmagic probe device', '')
@@ -16,7 +17,10 @@ env = Environment(variables=vars, tools=['default', 'embedded_program'])
 Help(vars.GenerateHelpText(env))
 
 env.SetARMFlags('cortex-m3')
-env['CFLAGS_USER'] = '-std=gnu99 -Werror'
+env['CFLAGS_USER'] = '-std=gnu99'
+if env.get('WERROR'):
+    env['CFLAGS_USER'] += ' -Werror'
 Export('env')
-result = SConscript('SConscript', variant_dir='build')
-Clean(result, 'build')
+default = SConscript('SConscript', variant_dir='build')
+Alias('default', default)
+Clean(default, 'build')

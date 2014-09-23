@@ -21,7 +21,10 @@
 #include "FreeRTOS.h"
 
 #define TIMEOUT_NOBLOCK     0
-#define TIMEOUT_FOREVER     -1
+#define TIMEOUT_FOREVER     portMAX_DELAY
+
+#define DISABLE_IRQ         portENTER_CRITICAL
+#define ENABLE_IRQ          portEXIT_CRITICAL
 
 #define EERR_OK             0
 #define EERR_TIMEOUT        -1

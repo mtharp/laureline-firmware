@@ -7,6 +7,8 @@
  */
 
 #include "common.h"
+#include "task.h"
+
 #include "logging.h"
 #include "lwip/udp.h"
 #include "ppscapture.h"
@@ -18,9 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define NTPCLIENT_STACK 512
-OS_STK ntpclient_stack[NTPCLIENT_STACK];
-OS_TID ntpclient_tid;
+TaskHandle_t thread_ntpclient;
 
 #define MAX_SERVERS_LOG2 2
 #define MAX_SERVERS (1<<(MAX_SERVERS_LOG2))
@@ -32,7 +32,7 @@ static uint8_t query_buf[48];
 
 #define QUERY_INTERVAL 12 /* 4096 seconds, 1.13 hours */
 #define RETRY_INTERVAL 6 /* 64 seconds */
-#define I2ST(x) S2ST((1<<(x)))
+#define I2ST(x) pdMS_TO_TICKS(100*(1<<(x)))
 
 
 static uint64_t
@@ -92,12 +92,12 @@ ntpclient_thread(void *p) {
             }
         }
         if (num_responses == 0) {
-            CoTickDelay(I2ST(RETRY_INTERVAL));
+            vTaskDelay(I2ST(RETRY_INTERVAL));
             continue;
         }
         accum /= num_responses;
         accum <<= MAX_SERVERS_LOG2;
-        CoTickDelay(I2ST(QUERY_INTERVAL));
+        vTaskDelay(I2ST(QUERY_INTERVAL));
     }
 }
 
@@ -105,7 +105,6 @@ void
 ntp_client_start(void) {
     ASSERT((ntp_cli_pcb = udp_new()) != NULL);
     udp_bind(ntp_cli_pcb, IP_ADDR_ANY, 0);
-    ntpclient_tid = CoCreateTask(ntpclient_thread, NULL, THREAD_PRIO_NTPCLIENT,
-            &ntpclient_stack[NTPCLIENT_STACK-1], NTPCLIENT_STACK, "ntpclient");
-    ASSERT(ntpclient_tid != E_CREATE_FAIL);
+    ASSERT(xTaskCreate(ntpclient_thread, "ntpclient", NTPCLIENT_STACK_SIZE,
+                NULL, THREAD_PRIO_NTPCLIENT, &thread_ntpclient));
 }

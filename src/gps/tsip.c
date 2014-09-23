@@ -7,6 +7,8 @@
  */
 
 #include "common.h"
+#include "task.h"
+
 #include "vtimer.h"
 #include "gps/parser.h"
 
@@ -39,11 +41,11 @@ set_quant(uint8_t *qf) {
 
 uint8_t
 tsip_feed(uint8_t val) {
-    if (CoGetOSTime() - rx_last_tick > MS2ST(50)) {
+    if (xTaskGetTickCount() - rx_last_tick > PACKET_TIMEOUT) {
         // No bytes for 50ms, assume synchronization was lost somehow
         rx_count = rx_dle_count = 0;
     }
-    rx_last_tick = CoGetOSTime();
+    rx_last_tick = xTaskGetTickCount();
 
     if (val == 0x10) {
         // "DLE" token

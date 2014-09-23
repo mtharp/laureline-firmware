@@ -31,7 +31,7 @@ def SetARMFlags(env, mcpu):
     env['LINKFLAGS'] = '$MCFLAGS $LDFLAGS_GC'
 
 
-def EmbeddedProgram(env, target, sources, script, with_hex=True, **kwargs):
+def EmbeddedProgram(env, target, sources, script, **kwargs):
     target = _node(env, target)
     script = _node(env, script)
     mapfile = target.target_from_source('', '.map')
@@ -41,13 +41,11 @@ def EmbeddedProgram(env, target, sources, script, with_hex=True, **kwargs):
     elf = env.Program(target, sources, **kwargs)
     env.Depends(elf, script)
     env.Clean(elf, mapfile)
-    if with_hex:
-        hexfile = target.target_from_source('', '.hex')
-        ihex = CopyObject(env, hexfile, target, format='ihex',
-                strip_sections=['.boot_stub'])
-    else:
-        ihex = []
-    return elf + ihex
+    hexfile = target.target_from_source('', '.hex')
+    hexfile = env.Objcopy(hexfile, target, COPYFLAGS='-O ihex -R .boot_stub')
+    lstfile = target.target_from_source('', '.lst')
+    lstfile = env.Objdump(lstfile, target, DUMPFLAGS='-S')
+    return elf + hexfile + lstfile
 
 
 def CopyObject(env, target, source, format=None, strip_sections=None):
@@ -80,18 +78,27 @@ def GDBInstall(env, source):
     return cmd
 
 
+def Globs(env, val):
+    ret = []
+    for glob in val.split():
+        ret += env.Glob(glob)
+    return ret
+
 
 def generate(env):
     env['CC'] = env.WhereIs('arm-none-eabi-gcc', os.environ['PATH'])
     env['AS'] = env.WhereIs('arm-none-eabi-as', os.environ['PATH'])
     env['OBJCOPY'] = env.WhereIs('arm-none-eabi-objcopy', os.environ['PATH'])
+    env['OBJDUMP'] = env.WhereIs('arm-none-eabi-objdump', os.environ['PATH'])
     env['GDB'] = env.WhereIs('arm-none-eabi-gdb', os.environ['PATH'])
 
     env.AddMethod(SetARMFlags)
     env.AddMethod(EmbeddedProgram)
     env.AddMethod(CopyObject)
     env.AddMethod(GDBInstall)
+    env.AddMethod(Globs)
     env['BUILDERS']['Objcopy'] = Builder(action='$OBJCOPY $COPYFLAGS $SOURCE $TARGET')
+    env['BUILDERS']['Objdump'] = Builder(action='$OBJDUMP $DUMPFLAGS $SOURCE > $TARGET')
 
 
 def exists(env):

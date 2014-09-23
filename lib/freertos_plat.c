@@ -9,14 +9,32 @@
 #include "common.h"
 #include "task.h"
 
+uint64_t ticks_wide;
+
 
 void
 vApplicationIdleHook(void) {
-    //__WFI();
+    __WFI();
+}
+
+
+void
+vApplicationTickHook(void) {
+    ticks_wide++;
 }
 
 
 void
 vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) {
     HALT();
+}
+
+
+uint64_t
+xGetTaskTickCountLong(void) {
+    uint64_t ret;
+    taskENTER_CRITICAL();
+    ret = ticks_wide;
+    taskEXIT_CRITICAL();
+    return ret;
 }

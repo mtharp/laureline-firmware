@@ -9,8 +9,8 @@
 #ifndef _GPS_PARSER_H
 #define _GPS_PARSER_H
 
-#define PACKET_TIMEOUT      MS2ST(10)
-#define PARSER_TIMEOUT      S2ST(5)
+#define PACKET_TIMEOUT      pdMS_TO_TICKS(50)
+#define PARSER_TIMEOUT      pdMS_TO_TICKS(5000)
 
 /* Protocols that might be detected */
 #define PROTO_NONE      0

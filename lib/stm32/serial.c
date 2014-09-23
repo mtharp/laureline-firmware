@@ -24,15 +24,22 @@ serial_t Serial4;
 serial_t Serial5;
 #endif
 
-static void serial_outq_cb(void *arg);
+#define _serial_putc(serial, val_ptr, timeout) \
+    xQueueSend(serial->tx_q, val_ptr, timeout); \
+    serial->usart->CR1 |= USART_CR1_TXEIE;
 
 
 void
-serial_start(serial_t *serial, int speed) {
+serial_start(serial_t *serial, int speed, QueueSetHandle_t queue_set) {
     IRQn_Type irqn = 0;
-    queue_init(&serial->tx_q, serial->tx_buf, sizeof(serial->tx_buf));
-    queue_cb(&serial->tx_q, &serial_outq_cb, serial);
-    queue_init(&serial->rx_q, serial->rx_buf, sizeof(serial->rx_buf));
+    serial->tx_q = xQueueCreate(SERIAL_TX_SIZE, 1);
+    serial->rx_q = xQueueCreate(SERIAL_RX_SIZE, 1);
+    serial->mutex = xSemaphoreCreateMutex();
+    ASSERT(serial->tx_q && serial->rx_q && serial->mutex);
+    if (queue_set) {
+        /* Must be added to set while it's still empty */
+        xQueueAddToSet(serial->rx_q, queue_set);
+    }
     serial->speed = speed;
 #ifdef USE_SERIAL_USART1
     if (serial == &Serial1) {
@@ -80,10 +87,7 @@ serial_start(serial_t *serial, int speed) {
         | USART_CR1_TE
         | USART_CR1_RE
         | USART_CR1_RXNEIE
-        | USART_CR1_IDLEIE
         ;
-    serial->mutex_id = CoCreateMutex();
-    ASSERT(serial->mutex_id != E_CREATE_FAIL);
 }
 
 
@@ -102,55 +106,51 @@ serial_set_speed(serial_t *serial) {
 
 void
 serial_puts(serial_t *serial, const char *value) {
-    CoEnterMutexSection(serial->mutex_id);
-    outqueue_put(&serial->tx_q, (const uint8_t*)value, strlen(value), TIMEOUT_FOREVER);
-    CoLeaveMutexSection(serial->mutex_id);
+    xSemaphoreTake(serial->mutex, portMAX_DELAY);
+    while (*value) {
+        _serial_putc(serial, value, portMAX_DELAY);
+        value++;
+    }
+    xSemaphoreGive(serial->mutex);
 }
 
 
 void
 serial_write(serial_t *serial, const char *value, uint16_t size) {
-    CoEnterMutexSection(serial->mutex_id);
-    outqueue_put(&serial->tx_q, (const uint8_t*)value, size, TIMEOUT_FOREVER);
-    CoLeaveMutexSection(serial->mutex_id);
+    unsigned i;
+    xSemaphoreTake(serial->mutex, portMAX_DELAY);
+    for (i = 0; i < size; i++) {
+        _serial_putc(serial, value, portMAX_DELAY);
+        value++;
+    }
+    xSemaphoreGive(serial->mutex);
 }
 
 
 void
 serial_printf(serial_t *serial, const char *fmt, ...) {
+    unsigned i, len;
     static char fmt_buf[64];
     va_list ap;
     va_start(ap, fmt);
-    CoEnterMutexSection(serial->mutex_id);
-    if (vsnprintf(fmt_buf, sizeof(fmt_buf), fmt, ap) >= 0) {
-        outqueue_put(&serial->tx_q, (const uint8_t*)fmt_buf, strlen(fmt_buf), TIMEOUT_FOREVER);
+    xSemaphoreTake(serial->mutex, portMAX_DELAY);
+    len = vsnprintf(fmt_buf, sizeof(fmt_buf), fmt, ap);
+    for (i = 0; i < MIN(len, sizeof(fmt_buf)); i++) {
+        _serial_putc(serial, &fmt_buf[i], portMAX_DELAY);
     }
     va_end(ap);
-    CoLeaveMutexSection(serial->mutex_id);
+    xSemaphoreGive(serial->mutex);
 }
 
 
 int16_t
-serial_get(serial_t *serial, int timeout) {
-    return inqueue_get(&serial->rx_q, timeout);
-}
-
-
-void
-serial_drain(serial_t *serial) {
-    CoEnterMutexSection(serial->mutex_id);
-    outqueue_drain(&serial->tx_q);
-    while (!(serial->usart->SR & USART_SR_TC)) {
-        __NOP();
+serial_get(serial_t *serial, TickType_t timeout) {
+    uint8_t val;
+    if (xQueueReceive(serial->rx_q, &val, timeout)) {
+        return val;
+    } else {
+        return EERR_TIMEOUT;
     }
-    CoLeaveMutexSection(serial->mutex_id);
-}
-
-
-static void
-serial_outq_cb(void *arg) {
-    serial_t *serial = (serial_t*)arg;
-    serial->usart->CR1 |= USART_CR1_TXEIE;
 }
 
 
@@ -158,32 +158,30 @@ static void
 service_interrupt(serial_t *serial) {
     USART_TypeDef *u = serial->usart;
     uint16_t sr, dr;
-    int16_t val;
+    uint8_t val;
+    BaseType_t wakeup = 0;
     sr = u->SR;
     dr = u->DR;
 
     if (sr & USART_SR_RXNE) {
-        inqueue_putI(&serial->rx_q, dr);
-    }
-    if (sr & USART_SR_IDLE) {
-        inqueue_flushI(&serial->rx_q);
+        xQueueSendFromISR(serial->rx_q, &dr, &wakeup);
     }
     if (sr & USART_SR_TXE) {
-        if ((val = outqueue_getI(&serial->tx_q)) < 0) {
-            u->CR1 &= ~USART_CR1_TXEIE;
-        } else {
+        if (xQueueReceiveFromISR(serial->tx_q, &val, &wakeup)) {
             u->DR = val;
+        } else {
+            u->CR1 &= ~USART_CR1_TXEIE;
         }
     }
+
+    portEND_SWITCHING_ISR(wakeup);
 }
 
 
 #if USE_SERIAL_USART1
 void
 USART1_IRQHandler(void) {
-    CoEnterISR();
     service_interrupt(&Serial1);
-    CoExitISR();
 }
 #endif
 
@@ -191,9 +189,7 @@ USART1_IRQHandler(void) {
 #if USE_SERIAL_UART4
 void
 UART4_IRQHandler(void) {
-    CoEnterISR();
     service_interrupt(&Serial4);
-    CoExitISR();
 }
 #endif
 
@@ -201,8 +197,6 @@ UART4_IRQHandler(void) {
 #if USE_SERIAL_UART5
 void
 UART5_IRQHandler(void) {
-    CoEnterISR();
     service_interrupt(&Serial5);
-    CoExitISR();
 }
 #endif

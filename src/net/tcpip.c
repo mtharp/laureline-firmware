@@ -7,6 +7,8 @@
  */
 
 #include "common.h"
+#include "timers.h"
+
 #include "cmdline.h"
 #include "eeprom.h"
 #include "logging.h"
@@ -28,12 +30,7 @@
 #include "lwip/timers.h"
 #include "netif/etharp.h"
 
-#define TCPIP_STACK 512
-OS_STK tcpip_stack[TCPIP_STACK];
-OS_TID tcpip_tid;
-
-OS_TCID timer;
-OS_FlagID timer_flag;
+TaskHandle_t thread_tcpip;
 
 struct netif thisif;
 static int did_startup;
@@ -45,13 +42,14 @@ static void configure_interface(void);
 static err_t ethernetif_init(struct netif *netif);
 static err_t low_level_output(struct netif *netif, struct pbuf *p);
 static int ethernetif_input(struct netif *netif);
-static void tcpip_timer(void);
+static void tcpip_timer(TimerHandle_t timer);
 
 static const uint8_t sysdescr_len = sizeof(BOARD_NAME) - 1;
 
 
 void
 tcpip_start(void) {
+    TimerHandle_t timer;
     lwip_init();
     snmp_set_sysdescr((const u8_t*)BOARD_NAME, &sysdescr_len);
     api_start();
@@ -64,39 +62,32 @@ tcpip_start(void) {
         syslog_start(cfg.syslog_ip);
     }
 
-    ASSERT((timer_flag = CoCreateFlag(1, 0)) != E_CREATE_FAIL);
-    timer = CoCreateTmr(TMR_TYPE_PERIODIC, S2ST(1), S2ST(1), tcpip_timer);
-    ASSERT(timer != E_CREATE_FAIL);
-    CoStartTmr(timer);
+    ASSERT((timer = xTimerCreate("tcpip", pdMS_TO_TICKS(1000), 1, NULL, tcpip_timer)));
+    xTimerStart(timer, 0);
 
-    tcpip_tid = CoCreateTask(tcpip_thread, NULL, THREAD_PRIO_TCPIP,
-            &tcpip_stack[TCPIP_STACK-1], TCPIP_STACK, "tcpip");
-    ASSERT(tcpip_tid != E_CREATE_FAIL);
+    ASSERT(xTaskCreate(tcpip_thread, "tcpip", TCPIP_STACK_SIZE, NULL,
+                THREAD_PRIO_TCPIP, &thread_tcpip));
 }
 
 
 static void
-tcpip_timer(void) {
-    isr_SetFlag(timer_flag);
+tcpip_timer(TimerHandle_t timer) {
+    xEventGroupSetBits(mac_events, TIMER_FLAG);
 }
 
 
 static void
 tcpip_thread(void *p) {
-    uint32_t flags;
+    EventBits_t flags;
 #if LWIP_IPV6
     int i, valid_ip6 = 0;
 #endif
-    StatusType rc;
-    api_set_main_thread(CoGetCurTaskID());
+    api_set_main_thread(xTaskGetCurrentTaskHandle());
     while (1) {
-        flags = CoWaitForMultipleFlags(0
-                | (1 << timer_flag)
-                | (1 << mac_rx_flag)
-                | (1 << api_flag)
-                , OPT_WAIT_ANY, 0, &rc);
-        ASSERT(rc == E_OK);
-        if (flags & (1 << timer_flag)) {
+        flags = xEventGroupWaitBits(mac_events,
+                MAC_RX_FLAG | API_FLAG | TIMER_FLAG,
+                1, 0, portMAX_DELAY);
+        if (flags & TIMER_FLAG) {
             if (smi_poll_link_status()) {
                 if (!netif_is_link_up(&thisif)) {
                     link_changed();
@@ -145,10 +136,10 @@ tcpip_thread(void *p) {
 #endif
             sys_check_timeouts();
         }
-        if (flags & (1 << mac_rx_flag)) {
+        if (flags & MAC_RX_FLAG) {
             while (ethernetif_input(&thisif)) {}
         }
-        if (flags & (1 << api_flag)) {
+        if (flags & API_FLAG) {
             api_accept();
         }
     }
@@ -194,7 +185,7 @@ static void
 configure_interface(void) {
     struct ip_addr ip, gateway, netmask;
     long *seed = (long*)&thisif.hwaddr[2];
-    ASSERT(eeprom_read(0xFA, thisif.hwaddr, 6) == E_OK);
+    ASSERT(eeprom_read(0xFA, thisif.hwaddr, 6) == EERR_OK);
     mac_start();
     mac_set_hwaddr(thisif.hwaddr);
     SRAND(*seed);
@@ -238,7 +229,7 @@ static err_t
 low_level_output(struct netif *netif, struct pbuf *p) {
     struct pbuf *q;
     mac_desc_t *tdes;
-    tdes = mac_get_tx_descriptor(MS2ST(50));
+    tdes = mac_get_tx_descriptor(pdMS_TO_TICKS(50));
     if (tdes == NULL) {
         LINK_STATS_INC(link.err);
         LINK_STATS_INC(link.drop);

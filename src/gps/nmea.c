@@ -7,6 +7,8 @@
  */
 
 #include "common.h"
+#include "task.h"
+
 #include "vtimer.h"
 #include "gps/parser.h"
 #include "util/parse.h"
@@ -28,18 +30,18 @@ typedef enum {
     GPZDA
 } stype_t;
 static stype_t seen_type;
-static uint64_t seen_time;
+static TickType_t seen_time;
 
 
 static uint8_t
 use_sentence(stype_t type) {
     /* Ignore RMC if a ZDA was seen recently */
     if (type < seen_type &&
-            (CoGetOSTime() - seen_time) < S2ST(5)) {
+            (xTaskGetTickCount() - seen_time) < PARSER_TIMEOUT) {
         return 0;
     }
     seen_type = type;
-    seen_time = CoGetOSTime();
+    seen_time = xTaskGetTickCount();
     return 1;
 }
 

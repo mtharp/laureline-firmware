@@ -10,6 +10,8 @@
 #include "eeprom.h"
 #include "epoch.h"
 #include "logging.h"
+#include "semphr.h"
+#include "cmdline/cmdline.h"
 #include "net/tcpapi.h"
 #include "net/tcpip.h"
 #include "vtimer.h"
@@ -21,7 +23,7 @@
 static char log_fmtbuf[256];
 static char log_hostname[16];
 static uint8_t log_facility;
-static OS_MutexID log_mutex;
+static SemaphoreHandle_t log_mutex;
 static serial_t *log_serial;
 static struct udp_pcb *syslog_pcb;
 
@@ -40,7 +42,7 @@ static void syslog_send(const char *data, uint16_t len);
 
 void
 log_start(serial_t *serial) {
-    ASSERT((log_mutex = CoCreateMutex()) != E_CREATE_FAIL);
+    ASSERT((log_mutex = xSemaphoreCreateMutex()));
     log_serial = serial;
     log_facility = LOG_KERN;
     log_sethostname("-");
@@ -49,9 +51,9 @@ log_start(serial_t *serial) {
 
 void
 log_sethostname(const char *hostname) {
-    CoEnterMutexSection(log_mutex);
+    xSemaphoreTake(log_mutex, portMAX_DELAY);
     strncpy(log_hostname, hostname, sizeof(log_hostname) - 1);
-    CoLeaveMutexSection(log_mutex);
+    xSemaphoreGive(log_mutex);
 }
 
 
@@ -65,7 +67,7 @@ log_write(int priority, const char *appname, const char *format, ...) {
     char *ptr;
     ASSERT(log_serial != NULL);
     tstamp = vtimer_now();
-    CoEnterMutexSection(log_mutex);
+    xSemaphoreTake(log_mutex, portMAX_DELAY);
 
     microseconds = (tstamp & NTP_MASK_FRAC) / NTP_TO_US;
     epoch_to_datetime(tstamp >> 32, &tm);
@@ -108,9 +110,8 @@ log_write(int priority, const char *appname, const char *format, ...) {
         *ptr = 0;
         serial_puts(log_serial, log_fmtbuf);
     }
-    CoLeaveMutexSection(log_mutex);
+    xSemaphoreGive(log_mutex);
 }
-
 
 void
 syslog_start(uint32_t addr) {

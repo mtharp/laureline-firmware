@@ -7,6 +7,8 @@
  */
 
 #include "common.h"
+#include "task.h"
+
 #include "net/relay.h"
 #include "ppscapture.h"
 #include "gps/motorola.h"
@@ -36,16 +38,16 @@ const struct parserdecl {
 void
 gps_byte_received(uint8_t data) {
     uint8_t rc;
-    if (CoGetOSTime() - time_last_byte >= PACKET_TIMEOUT) {
+    if (xTaskGetTickCount() - time_last_byte >= PACKET_TIMEOUT) {
         /* Clear the current parser if there is an interpacket gap. */
         current_proto = PROTO_NONE;
         /* Flush the broadcast buffer */
         relay_flush();
     }
-    time_last_byte = CoGetOSTime();
+    time_last_byte = xTaskGetTickCount();
     relay_push(data);
 
-    if (CoGetOSTime() - time_last_packet > PARSER_TIMEOUT) {
+    if (xTaskGetTickCount() - time_last_packet > PARSER_TIMEOUT) {
         /* Clear out the parser state if nothing is recognized for
          * a few seconds
          */
@@ -66,7 +68,7 @@ gps_byte_received(uint8_t data) {
             /* Go back to search mode */
             current_proto = PROTO_NONE;
             last_proto = parser->proto;
-            time_last_packet = CoGetOSTime();
+            time_last_packet = xTaskGetTickCount();
             relay_flush();
             break;
         }

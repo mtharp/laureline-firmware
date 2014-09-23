@@ -7,6 +7,9 @@
  */
 
 #include "common.h"
+#include "semphr.h"
+#include "task.h"
+
 #include "eeprom.h"
 #include "ppscapture.h"
 
@@ -17,7 +20,7 @@ static volatile uint64_t mono_epoch;
 static uint64_t mono_capture;
 /* Next sleep, or 0 if none */
 static uint64_t sleep_epoch;
-static OS_FlagID sleep_flag;
+static SemaphoreHandle_t sleep_flag;
 
 /* Reduce this to 1500 to make it easier to hit edge cases to test the input
  * capture code */
@@ -26,7 +29,7 @@ static OS_FlagID sleep_flag;
 
 void
 ppscapture_start(void) {
-    ASSERT((sleep_flag = CoCreateFlag(1, 0)) != E_CREATE_FAIL);
+    ASSERT((sleep_flag = xSemaphoreCreateBinary()));
     mono_epoch = MONO_PERIOD;
     RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
     TIM3->CR1 = 0;
@@ -49,15 +52,16 @@ ppscapture_start(void) {
 void
 TIM3_IRQHandler(void) {
     uint16_t sr, ccr;
-    CoEnterISR();
     sr = TIM3->SR;
     TIM3->SR = ~sr;
 
     if (sr & TIM_SR_UIF) {
         mono_epoch += MONO_PERIOD;
         if (sleep_epoch != 0 && mono_epoch >= sleep_epoch) {
+            BaseType_t wakeup = 0;
             sleep_epoch = 0;
-            CoSetFlag(sleep_flag);
+            xSemaphoreGiveFromISR(sleep_flag, &wakeup);
+            portEND_SWITCHING_ISR(wakeup);
         }
     }
 
@@ -66,7 +70,6 @@ TIM3_IRQHandler(void) {
     } else if (sr & TIM_SR_CC3IF) {
         ccr = TIM3->CCR3;
     } else {
-        CoExitISR();
         return;
     }
 
@@ -77,7 +80,6 @@ TIM3_IRQHandler(void) {
          */
         mono_capture -= MONO_PERIOD;
     }
-    CoExitISR();
 }
 
 
@@ -121,5 +123,5 @@ monotonic_sleep_until(uint64_t mono_when) {
     DISABLE_IRQ();
     sleep_epoch = mono_when;
     ENABLE_IRQ();
-    CoWaitForSingleFlag(sleep_flag, 0);
+    xSemaphoreTake(sleep_flag, portMAX_DELAY);
 }

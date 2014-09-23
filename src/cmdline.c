@@ -11,6 +11,8 @@
 #include <stdio.h>
 
 #include "common.h"
+#include "task.h"
+
 #include "cmdline.h"
 #include "stm32/eth_mac.h"
 #include "mii.h"
@@ -20,7 +22,6 @@
 #include "eeprom.h"
 #include "net/tcpip.h"
 #include "uptime.h"
-#include "profile.h"
 #include "version.h"
 #include "util/parse.h"
 #include "cmdline/cmdline.h"
@@ -45,9 +46,6 @@ const clicmd_t cmd_table[] = {
     { "fsnum", NULL, cli_cmd_fsnum },
     { "help", "", cli_cmd_help },
     { "info", "show runtime information", cliInfo },
-#ifdef PROFILE_TASKS
-    { "profile", "", cli_cmd_profile },
-#endif
     { "save", "save changes and reboot", cliSave },
     { "set", "name=value or blank or * for list", cli_cmd_set },
     { "uptime", "show the system uptime", cliUptime },
@@ -124,8 +122,8 @@ cliWriteConfig(void) {
     result = eeprom_write_cfg();
     if (result == EERR_OK) {
         cli_puts("OK\r\n");
-        serial_drain(cl_out);
-        CoTickDelay(S2ST(1));
+        // FIXME serial_drain(cl_out);
+        vTaskDelay(pdMS_TO_TICKS(1000));
         NVIC_SystemReset();
     } else {
         show_eeprom_error(result);

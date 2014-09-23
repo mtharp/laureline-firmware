@@ -7,6 +7,8 @@
  */
 
 #include "common.h"
+#include "task.h"
+
 #include "logging.h"
 #include "main.h"
 #include "vtimer.h"
@@ -117,15 +119,15 @@ ublox_feed(uint8_t val) {
             /* NAV-TIMEGPS */
             uint8_t valid = pbuf[4+11];
             if ((valid & TIMEUTC_VALIDWKN) && (valid & TIMEUTC_VALIDTOW)) {
-                vtimer_set_gps(
-                        *(int16_t*)&pbuf[4+8],          /* week number */
-                        (*(uint32_t*)&pbuf[4+0]) / 1000,/* time of week */
-                        pbuf[4+10],                     /* leap seconds */
-                        valid & TIMEUTC_VALIDUTC);      /* leap seconds valid */
+                int16_t wknum = pbuf[4+8] | (pbuf[4+9] << 8);
+                uint32_t tow = pbuf[4+0] | (pbuf[4+1] << 8)
+                    | (pbuf[4+2] << 16) | (pbuf[4+3] << 24);
+                int16_t leap = (int8_t)pbuf[4+10];
+                vtimer_set_gps(wknum, tow, leap, valid & TIMEUTC_VALIDUTC);
             }
-            if (CoGetOSTime() - last_hui > S2ST(5)) {
+            if (xTaskGetTickCount() - last_hui > PARSER_TIMEOUT) {
                 /* Trigger a poll of leap second data */
-                last_hui = CoGetOSTime();
+                last_hui = xTaskGetTickCount();
                 serial_write(gps_serial, ublox_hui_req, sizeof(ublox_hui_req));
             }
 #if 0

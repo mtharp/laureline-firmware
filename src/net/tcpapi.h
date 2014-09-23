@@ -10,6 +10,7 @@
 #define _TCPAPI_H
 
 #include "lwip/tcp.h"
+#include "task.h"
 
 struct tcpapi_msg;
 
@@ -18,7 +19,7 @@ typedef err_t (*api_func)(struct tcpapi_msg *msg);
 typedef struct tcpapi_msg {
     struct tcpapi_msg *next;
     api_func func;
-    OS_EventID sem;
+    SemaphoreHandle_t sem;
     err_t ret;
     uint16_t timeout;
     union {
@@ -56,8 +57,15 @@ typedef struct tcpapi_msg {
 } tcpapi_msg_t;
 
 
+typedef struct tcpapi_sems {
+    TaskHandle_t thread;
+    SemaphoreHandle_t sem;
+    struct tcpapi_sems *next;
+} tcpapi_sems_t;
+
+
 void api_start(void);
-void api_set_main_thread(OS_TID thread);
+void api_set_main_thread(TaskHandle_t thread);
 void api_accept(void);
 
 err_t api_tcp_write(struct tcp_pcb *pcb, const void *data, uint16_t len, uint8_t flags);
@@ -66,7 +74,5 @@ err_t api_udp_connect(struct udp_pcb *pcb, ip_addr_t *addr, uint16_t port);
 err_t api_udp_send(struct udp_pcb *pcb, const void *data, uint16_t len);
 err_t api_udp_recv(struct udp_pcb *pcb, void *data, uint16_t *len, uint16_t timeout);
 err_t api_gethostbyname(const char *name, ip_addr_t *addr);
-
-extern OS_FlagID api_flag;
 
 #endif

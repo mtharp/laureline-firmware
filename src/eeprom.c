@@ -7,8 +7,9 @@
  */
 
 #include <string.h>
-
 #include "common.h"
+#include "task.h"
+
 #include "eeprom.h"
 #include "lwip/inet_chksum.h"
 #include "stm32/i2c.h"
@@ -65,7 +66,7 @@ int16_t
 eeprom_write_page(uint8_t addr, const uint8_t *buf) {
     uint8_t i;
     uint8_t tmp[1 + EEPROM_PAGE_SIZE];
-    uint64_t timeout;
+    TickType_t timeout;
     int16_t status;
     tmp[0] = addr;
     memcpy(&tmp[1], buf, EEPROM_PAGE_SIZE);
@@ -77,9 +78,9 @@ eeprom_write_page(uint8_t addr, const uint8_t *buf) {
             goto cleanup;
         }
         /* Readback EEPROM and compare */
-        timeout = CoGetOSTime() + MS2ST(250);
+        timeout = xTaskGetTickCount() + pdMS_TO_TICKS(250);
         while (1) {
-            if (CoGetOSTime() > timeout) {
+            if (xTaskGetTickCount() > timeout) {
                 status = EERR_TIMEOUT;
                 goto cleanup;
             }

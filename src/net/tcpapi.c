@@ -6,7 +6,11 @@
  */
 
 #include "common.h"
+#include "event_groups.h"
+#include "task.h"
+
 #include "logging.h"
+#include "stm32/eth_mac.h"
 #include "net/tcpapi.h"
 #include "lwip/dns.h"
 #include "lwip/tcp.h"
@@ -14,25 +18,22 @@
 #include "lwip/udp.h"
 #include <string.h>
 
-OS_FlagID api_flag; /* Wakes tcpip thread for a call */
-static OS_TID api_thread;
-static OS_EventID task_sems[1+CFG_MAX_USER_TASKS];
+static TaskHandle_t api_thread;
+static SemaphoreHandle_t api_mutex;
+static tcpapi_sems_t *semlist;
 static tcpapi_msg_t *waitlist;
 
 void
 api_start(void) {
-    int i;
-    for (i = 0; i < 1+CFG_MAX_USER_TASKS; i++) {
-        task_sems[i] = E_CREATE_FAIL;
-    }
+    ASSERT((api_mutex = xSemaphoreCreateMutex()));
+    semlist = NULL;
     waitlist = NULL;
-    ASSERT((api_flag = CoCreateFlag(1, 0)) != E_CREATE_FAIL);
-    api_thread = E_CREATE_FAIL;
+    api_thread = NULL;
 }
 
 
 void
-api_set_main_thread(OS_TID thread) {
+api_set_main_thread(TaskHandle_t thread) {
     api_thread = thread;
 }
 
@@ -40,17 +41,17 @@ api_set_main_thread(OS_TID thread) {
 void
 api_accept(void) {
     tcpapi_msg_t *msg;
-    DISABLE_IRQ();
+    xSemaphoreTake(api_mutex, portMAX_DELAY);
     if (waitlist == NULL) {
-        ENABLE_IRQ();
+        xSemaphoreGive(api_mutex);
         return;
     }
     msg = waitlist;
     waitlist = msg->next;
-    ENABLE_IRQ();
+    xSemaphoreGive(api_mutex);
     msg->ret = msg->func(msg);
     if (msg->ret != ERR_INPROGRESS) {
-        CoPostSem(msg->sem);
+        xSemaphoreGive(msg->sem);
     }
 }
 
@@ -58,7 +59,8 @@ api_accept(void) {
 static err_t
 api_call(tcpapi_msg_t *msg, api_func func) {
     tcpapi_msg_t *mptr;
-    OS_TID tid = CoGetCurTaskID();
+    tcpapi_sems_t *semptr;
+    TaskHandle_t tid = xTaskGetCurrentTaskHandle();
     if (tid == api_thread) {
         /* Run inline */
         err_t ret = func(msg);
@@ -66,14 +68,24 @@ api_call(tcpapi_msg_t *msg, api_func func) {
         return ret;
     }
     msg->func = func;
+    xSemaphoreTake(api_mutex, portMAX_DELAY);
     /* Use semaphore for the caller's thread, creating first if needed */
-    if (task_sems[tid] == E_CREATE_FAIL) {
-        ASSERT((task_sems[tid] = CoCreateSem(0, 1, EVENT_SORT_TYPE_FIFO)) != E_CREATE_FAIL);
+    msg->sem = NULL;
+    for (semptr = semlist; semptr; semptr = semptr->next) {
+        if (semptr->thread == tid) {
+            msg->sem = semptr->sem;
+            break;
+        }
     }
-    msg->sem = task_sems[tid];
+    if (msg->sem == NULL) {
+        ASSERT((semptr = malloc(sizeof(*semptr))));
+        ASSERT((semptr->sem = xSemaphoreCreateBinary()));
+        semptr->thread = tid;
+        semptr->next = semlist;
+        semlist = semptr;
+    }
     msg->next = NULL;
     /* Add msg to tail of wait list */
-    DISABLE_IRQ();
     if (waitlist == NULL) {
         waitlist = msg;
     } else {
@@ -83,10 +95,10 @@ api_call(tcpapi_msg_t *msg, api_func func) {
         }
         mptr->next = msg;
     }
-    ENABLE_IRQ();
+    xSemaphoreGive(api_mutex);
     /* Sleep until result is ready */
-    CoSetFlag(api_flag);
-    CoPendSem(msg->sem, 0);
+    xEventGroupSetBits(mac_events, API_FLAG);
+    xSemaphoreTake(msg->sem, portMAX_DELAY);
     return msg->ret;
 }
 
@@ -188,7 +200,7 @@ got_udp_timedout(void *arg) {
     tcpapi_msg_t *msg = (tcpapi_msg_t*)arg;
     udp_recv(msg->msg.urecv.pcb, NULL, NULL);
     msg->ret = ERR_TIMEOUT;
-    CoPostSem(msg->sem);
+    xSemaphoreGive(msg->sem);
 }
 
 
@@ -201,7 +213,7 @@ got_udp(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, uint16_
             msg->msg.urecv.data, *(msg->msg.urecv.len), 0);
     msg->ret = ERR_OK;
     pbuf_free(p);
-    CoPostSem(msg->sem);
+    xSemaphoreGive(msg->sem);
 }
 
 
@@ -239,7 +251,7 @@ gethost_callback(const char *name, ip_addr_t *addr, void *arg) {
         msg->ret = ERR_OK;
         ip_addr_set(msg->msg.gh.addr, addr);
     }
-    CoPostSem(msg->sem);
+    xSemaphoreGive(msg->sem);
 }
 
 

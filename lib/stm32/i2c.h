@@ -10,12 +10,13 @@
 #define _I2C_H
 
 #include "common.h"
+#include "semphr.h"
 
 
 typedef struct {
-    I2C_TypeDef     *dev;
-    OS_MutexID      mutex;
-    OS_EventID      sem;
+    I2C_TypeDef *dev;
+    SemaphoreHandle_t mutex;
+    SemaphoreHandle_t sem;
     uint8_t *buf;
     uint8_t addr_dir;
     uint8_t count;
@@ -24,7 +25,7 @@ typedef struct {
 } i2c_t;
 
 #define I2C_T_INITIALIZER \
-    /* dev, */ E_CREATE_FAIL, E_CREATE_FAIL, NULL, 0, 0, 0, 0
+    /* dev, */ NULL, NULL, NULL, 0, 0, 0, 0
 
 
 #if USE_I2C1

@@ -7,6 +7,8 @@
  */
 
 #include "common.h"
+#include "task.h"
+
 #include "eeprom.h"
 #include "epoch.h"
 #include "init.h"
@@ -19,11 +21,8 @@
 #include "stm32/iwdg.h"
 #include <math.h>
 
-#define VTIMER_STACK 512
-OS_STK vtimer_stack[VTIMER_STACK];
-OS_TID vtimer_tid;
-
 unsigned sys_able;
+TaskHandle_t thread_vtimer;
 
 /* VT ticks this many NTP fractions per tick of monotonic time */
 static double vt_rate;
@@ -52,15 +51,14 @@ vtimer_start(void) {
     pll_reset();
     quant_corr = quant_corr_deferred = 0.0f;
     vt_rate_nominal = NTP_TO_FLOAT / system_frequency;
-    vtimer_tid = CoCreateTask(pll_thread, NULL, THREAD_PRIO_VTIMER,
-            &vtimer_stack[VTIMER_STACK-1], VTIMER_STACK, "vtimer");
-    ASSERT(vtimer_tid != E_CREATE_FAIL);
+    ASSERT(xTaskCreate(pll_thread, "vtimer", VTIMER_STACK_SIZE, NULL,
+                THREAD_PRIO_VTIMER, &thread_vtimer));
 }
 
 
 static void
 pll_thread(void *p) {
-    static uint64_t last_pps;
+    static TickType_t last_pps;
     static uint64_t tmp, last;
     static int64_t tmps;
     static double delta, ppb;
@@ -98,18 +96,20 @@ pll_thread(void *p) {
             } else {
                 desync = 0;
             }
-            if (((CoGetOSTime() - last_pps) < MS2ST(1100)) && !(status_flags & STATUS_PPS_OK)) {
+            if (((xTaskGetTickCount() - last_pps) < pdMS_TO_TICKS(1100)) && !(status_flags & STATUS_PPS_OK)) {
                 log_write(LOG_NOTICE, "vtimer", "PPS detected");
                 set_status(STATUS_PPS_OK);
             }
-            last_pps = CoGetOSTime();
+            last_pps = xTaskGetTickCount();
             ppb = pll_math(delta);
         } else {
-            if (((CoGetOSTime() - last_pps) >= S2ST(5)) && (status_flags & STATUS_PPS_OK)) {
+            if (((xTaskGetTickCount() - last_pps) >= pdMS_TO_TICKS(5000))
+                    && (status_flags & STATUS_PPS_OK)) {
                 log_write(LOG_WARNING, "vtimer", "PPS is not valid!");
                 clear_status(STATUS_PPS_OK);
             }
-            if (((CoGetOSTime() - last_pps) >= (S2ST(1) * cfg.holdover)) && (status_flags & STATUS_PLL_OK)) {
+            if (((xTaskGetTickCount() - last_pps) >= (pdMS_TO_TICKS(1000) * cfg.holdover))
+                    && (status_flags & STATUS_PLL_OK)) {
                 log_write(LOG_ERR, "vtimer", "PLL lock timed out due to lack of PPS");
                 clear_status(STATUS_PLL_OK);
             }

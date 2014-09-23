@@ -21,22 +21,26 @@
 
 //#define MMCSPI (&SPI3_Dev)
 
-/* Highest priority (lowest number) */
-#define THREAD_PRIO_VTIMER          10
-#define THREAD_PRIO_TCPIP           20
-#define THREAD_PRIO_MAIN            30
-#define THREAD_PRIO_NTPCLIENT       35
-/* Lowest priority (highest number) */
+/* Highest priority (highest number) */
+#define THREAD_PRIO_VTIMER      4
+#define THREAD_PRIO_TCPIP       3
+#define THREAD_PRIO_MAIN        2
+#define THREAD_PRIO_NTPCLIENT   1
+/* Lowest priority (lowest number) */
 
 /* Highest priority (lowest number) */
-#define IRQ_PRIO_PPSCAPTURE         0x20
-#define IRQ_PRIO_ETH                0x40
-#define IRQ_PRIO_SYSTICK            0x80
-#define IRQ_PRIO_I2C                0xC0
-#define IRQ_PRIO_SPI                0xC0
-#define IRQ_PRIO_USART              0xC0
+#define IRQ_PRIO_PPSCAPTURE     2
+#define IRQ_PRIO_ETH            4
+#define IRQ_PRIO_SYSTICK        8
+#define IRQ_PRIO_I2C            12
+#define IRQ_PRIO_SPI            12
+#define IRQ_PRIO_USART          12
 /* Lowest priority (highest number) */
 
-#define MSP_STACK_SIZE 512
+#define MSP_STACK_SIZE          512
+#define MAIN_STACK_SIZE         512
+#define NTPCLIENT_STACK_SIZE    512
+#define TCPIP_STACK_SIZE        512
+#define VTIMER_STACK_SIZE       512
 
 #endif

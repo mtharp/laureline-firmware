@@ -87,9 +87,6 @@ void setup_clocks(double hse_freq) {
     SET_BITS(RCC->CFGR, RCC_CFGR_SW, RCC_CFGR_SW_PLL);
     while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL) {}
     system_frequency = best_freq;
-
-    SysTick->LOAD = system_frequency / configTICK_RATE_HZ - 1;
-    SysTick->VAL = 0;
 }
 
 
@@ -114,12 +111,9 @@ void setup_hsi(void) {
     while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL) {}
 
     system_frequency = 36000000;
-    SysTick->LOAD = 36000000 / configTICK_RATE_HZ - 1;
 #else
     system_frequency = 8000000;
-    SysTick->LOAD = 8000000 / configTICK_RATE_HZ - 1;
 #endif
-    SysTick->VAL = 0;
 }
 
 

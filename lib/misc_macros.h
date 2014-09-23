@@ -16,6 +16,9 @@
 #define SET_BITS(var, mask, value) \
     (var) = ((var) & ~(mask)) | ((value) & (mask))
 
+#define MAX(a, b)  ((a) > (b) ? (a) : (b))
+#define MIN(a, b)  ((a) < (b) ? (a) : (b))
+
 #define HALT()              while(1) {}
 #define ASSERT(x)           if (!(x)) { HALT(); }
 

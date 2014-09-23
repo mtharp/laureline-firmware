@@ -27,6 +27,7 @@ i2c_t I2C2_Dev = {I2C2, I2C_T_INITIALIZER};
 static void
 handle_i2c_event(i2c_t *i2c) {
     I2C_TypeDef *d = i2c->dev;
+    BaseType_t wakeup = 0;
     uint16_t sr1 = d->SR1;
     uint16_t timeout;
     if (sr1 & I2C_SR1_SB) {
@@ -91,8 +92,7 @@ handle_i2c_event(i2c_t *i2c) {
     } else if (sr1 & I2C_SR1_RXNE) {
         i2c->buf[i2c->index++] = d->DR;
         if (i2c->index + 3 == i2c->count) {
-            /* Disable TXE to allow the buffer to flush */
-            d->CR2 &= ~I2C_CR2_ITBUFEN;
+            /* Disable TXE to allow the buffer to flush */ d->CR2 &= ~I2C_CR2_ITBUFEN;
         } else if (i2c->index == i2c->count) {
             i2c->index++; /* done */
         }
@@ -117,14 +117,17 @@ handle_i2c_event(i2c_t *i2c) {
             }
         }
         /* Wake up userspace */
-        isr_PostSem(i2c->sem);
+        xSemaphoreGiveFromISR(i2c->sem, &wakeup);
     }
+
+    portEND_SWITCHING_ISR(wakeup);
 }
 
 
 static void
 handle_i2c_error(i2c_t *i2c) {
     I2C_TypeDef *d = i2c->dev;
+    BaseType_t wakeup = 0;
     uint16_t sr1 = d->SR1;
     (void)d->SR2;
     if (sr1 & I2C_SR1_OVR) {
@@ -153,8 +156,9 @@ handle_i2c_error(i2c_t *i2c) {
         return;
     }
     /* Clear errors and wake up userspace */
-    isr_PostSem(i2c->sem);
+    xSemaphoreGiveFromISR(i2c->sem, &wakeup);
     d->SR1 &= ~0x0F00;
+    portEND_SWITCHING_ISR(wakeup);
 }
 #endif
 
@@ -162,17 +166,13 @@ handle_i2c_error(i2c_t *i2c) {
 #if USE_I2C1
 void
 I2C1_EV_IRQHandler(void) {
-    CoEnterISR();
     handle_i2c_event(&I2C1_Dev);
-    CoExitISR();
 }
 
 
 void
 I2C1_ER_IRQHandler(void) {
-    CoEnterISR();
     handle_i2c_error(&I2C1_Dev);
-    CoExitISR();
 }
 #endif
 
@@ -180,32 +180,26 @@ I2C1_ER_IRQHandler(void) {
 #if USE_I2C2
 void
 I2C2_EV_IRQHandler(void) {
-    CoEnterISR();
     handle_i2c_event(&I2C2_Dev);
-    CoExitISR();
 }
 
 
 void
 I2C2_ER_IRQHandler(void) {
-    CoEnterISR();
     handle_i2c_error(&I2C2_Dev);
-    CoExitISR();
 }
 #endif
 
 
 void
 i2c_start(i2c_t *i2c) {
-    if (i2c->mutex == E_CREATE_FAIL) {
-        i2c->mutex = CoCreateMutex();
-        if (i2c->mutex == E_CREATE_FAIL) { HALT(); }
+    if (!i2c->mutex) {
+        ASSERT((i2c->mutex = xSemaphoreCreateMutex()));
     }
-    if (i2c->sem == E_CREATE_FAIL) {
-        i2c->sem = CoCreateSem(0, 1, EVENT_SORT_TYPE_FIFO);
-        if (i2c->sem == E_CREATE_FAIL) { HALT(); }
+    if (!i2c->sem) {
+        ASSERT((i2c->sem = xSemaphoreCreateBinary()));
     }
-    CoEnterMutexSection(i2c->mutex);
+    xSemaphoreTake(i2c->mutex, portMAX_DELAY);
     i2c_configure(i2c);
 }
 
@@ -251,7 +245,7 @@ i2c_configure(i2c_t *i2c) {
 void
 i2c_stop(i2c_t *i2c) {
     i2c->dev->CR1 = 0;
-    CoLeaveMutexSection(i2c->mutex);
+    xSemaphoreGive(i2c->mutex);
 }
 
 
@@ -266,7 +260,7 @@ i2c_transact(i2c_t *i2c, uint8_t addr_dir,
     i2c->dev->CR1 |= I2C_CR1_START;
     i2c->dev->CR2 |= I2C_CR2_ITEVTEN | I2C_CR2_ITERREN;
     /* Wait for magic to happen */
-    CoPendSem(i2c->sem, 0);
+    xSemaphoreTake(i2c->sem, portMAX_DELAY);
     /* Check if it worked */
     return i2c->error;
 }

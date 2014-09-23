@@ -7,6 +7,7 @@
  */
 
 #include "common.h"
+#include "freertos_plat.h"
 #include "uptime.h"
 
 #include <stdio.h>
@@ -22,7 +23,7 @@ static char fmt_buf[50];
 
 uint32_t
 uptime_get(void) {
-    return CoGetOSTime() / S2ST(1);
+    return xGetTaskTickCountLong() / pdMS_TO_TICKS(1000);
 }
 
 
