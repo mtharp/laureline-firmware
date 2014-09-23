@@ -123,7 +123,7 @@ ublox_feed(uint8_t val) {
                 uint32_t tow = pbuf[4+0] | (pbuf[4+1] << 8)
                     | (pbuf[4+2] << 16) | (pbuf[4+3] << 24);
                 int16_t leap = (int8_t)pbuf[4+10];
-                vtimer_set_gps(wknum, tow, leap, valid & TIMEUTC_VALIDUTC);
+                vtimer_set_gps(wknum, tow / 1000, leap, valid & TIMEUTC_VALIDUTC);
             }
             if (xTaskGetTickCount() - last_hui > PARSER_TIMEOUT) {
                 /* Trigger a poll of leap second data */
