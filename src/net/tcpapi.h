@@ -16,43 +16,43 @@ struct tcpapi_msg;
 typedef err_t (*api_func)(struct tcpapi_msg *msg);
 
 typedef struct tcpapi_msg {
-	struct tcpapi_msg *next;
-	api_func func;
-	OS_EventID sem;
-	err_t ret;
-	uint16_t timeout;
-	union {
-		/* api_tcp_write */
-		struct {
-			struct tcp_pcb *pcb;
-			const void *data;
-			uint16_t len;
-			uint8_t flags;
-		} wr;
-		/* api_udp_connect */
-		struct {
-			struct udp_pcb *pcb;
-			ip_addr_t *addr;
-			uint16_t port;
-		} uconn;
-		/* api_udp_send */
-		struct {
-			struct udp_pcb *pcb;
-			const void *data;
-			uint16_t len;
-		} usend;
-		/* api_udp_recv */
-		struct {
-			struct udp_pcb *pcb;
-			void *data;
-			uint16_t *len;
-		} urecv;
-		/* api_gethostbyname */
-		struct {
-			const char *name;
-			ip_addr_t *addr;
-		} gh;
-	} msg;
+    struct tcpapi_msg *next;
+    api_func func;
+    OS_EventID sem;
+    err_t ret;
+    uint16_t timeout;
+    union {
+        /* api_tcp_write */
+        struct {
+            struct tcp_pcb *pcb;
+            const void *data;
+            uint16_t len;
+            uint8_t flags;
+        } wr;
+        /* api_udp_connect */
+        struct {
+            struct udp_pcb *pcb;
+            ip_addr_t *addr;
+            uint16_t port;
+        } uconn;
+        /* api_udp_send */
+        struct {
+            struct udp_pcb *pcb;
+            const void *data;
+            uint16_t len;
+        } usend;
+        /* api_udp_recv */
+        struct {
+            struct udp_pcb *pcb;
+            void *data;
+            uint16_t *len;
+        } urecv;
+        /* api_gethostbyname */
+        struct {
+            const char *name;
+            ip_addr_t *addr;
+        } gh;
+    } msg;
 } tcpapi_msg_t;
 
 

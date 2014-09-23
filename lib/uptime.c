@@ -12,9 +12,9 @@
 #include <stdio.h>
 
 
-#define SEC_DAY		86400
-#define SEC_HOUR	3600
-#define SEC_MINUTE	60
+#define SEC_DAY     86400
+#define SEC_HOUR    3600
+#define SEC_MINUTE  60
 
 
 static char fmt_buf[50];
@@ -22,28 +22,28 @@ static char fmt_buf[50];
 
 uint32_t
 uptime_get(void) {
-	return CoGetOSTime() / S2ST(1);
+    return CoGetOSTime() / S2ST(1);
 }
 
 
 const char *
 uptime_format(void) {
-	unsigned int t, n;
-	char *ptr = fmt_buf;
-	t = uptime_get();
+    unsigned int t, n;
+    char *ptr = fmt_buf;
+    t = uptime_get();
 
-	n = t / SEC_DAY;
-	ptr += sprintf(ptr, "%u day%s, ", n, (n != 1) ? "s" : "");
-	t -= (n * SEC_DAY);
+    n = t / SEC_DAY;
+    ptr += sprintf(ptr, "%u day%s, ", n, (n != 1) ? "s" : "");
+    t -= (n * SEC_DAY);
 
-	n = t / SEC_HOUR;
-	ptr += sprintf(ptr, "%u hour%s, ", n, (n != 1) ? "s" : "");
-	t -= (n * SEC_HOUR);
+    n = t / SEC_HOUR;
+    ptr += sprintf(ptr, "%u hour%s, ", n, (n != 1) ? "s" : "");
+    t -= (n * SEC_HOUR);
 
-	n = t / SEC_MINUTE;
-	ptr += sprintf(ptr, "%u minute%s, ", n, (n != 1) ? "s" : "");
-	t -= (n * SEC_MINUTE);
+    n = t / SEC_MINUTE;
+    ptr += sprintf(ptr, "%u minute%s, ", n, (n != 1) ? "s" : "");
+    t -= (n * SEC_MINUTE);
 
-	ptr += sprintf(ptr, "%u second%s", t, (t != 1) ? "s" : "");
-	return fmt_buf;
+    ptr += sprintf(ptr, "%u second%s", t, (t != 1) ? "s" : "");
+    return fmt_buf;
 }

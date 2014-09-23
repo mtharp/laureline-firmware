@@ -13,13 +13,13 @@
 #define SMI_DESCRIBE_SIZE 17
 
 typedef struct mac_desc {
-	volatile uint32_t des0;
-	volatile uint32_t des1;
-	uint8_t *des_buf;
-	struct mac_desc *des_next;
+    volatile uint32_t des0;
+    volatile uint32_t des1;
+    uint8_t *des_buf;
+    struct mac_desc *des_next;
 
-	uint32_t size;
-	uint32_t offset;
+    uint32_t size;
+    uint32_t offset;
 } mac_desc_t;
 
 extern OS_FlagID mac_rx_flag, mac_tx_flag;

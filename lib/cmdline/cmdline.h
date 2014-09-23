@@ -17,9 +17,9 @@
 #define idle_printf(...) do { if (!cl_enabled) { serial_printf(cl_out, __VA_ARGS__); } } while (0)
 
 typedef struct {
-	char *name;
-	char *param;
-	void (*func)(char *cmdline);
+    char *name;
+    char *param;
+    void (*func)(char *cmdline);
 } clicmd_t;
 
 

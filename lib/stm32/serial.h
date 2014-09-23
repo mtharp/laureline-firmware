@@ -15,13 +15,13 @@
 
 
 typedef struct {
-	USART_TypeDef	*usart;
-	unsigned int	speed;
-	OS_MutexID		mutex_id;
-	queue_t			tx_q;
-	uint8_t			tx_buf[16];
-	queue_t			rx_q;
-	uint8_t			rx_buf[16];
+    USART_TypeDef   *usart;
+    unsigned int    speed;
+    OS_MutexID      mutex_id;
+    queue_t         tx_q;
+    uint8_t         tx_buf[16];
+    queue_t         rx_q;
+    uint8_t         rx_buf[16];
 } serial_t;
 
 #if USE_SERIAL_USART1

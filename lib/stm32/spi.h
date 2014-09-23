@@ -14,16 +14,16 @@
 
 
 typedef struct {
-	SPI_TypeDef		*spi;
-	const dma_ch_t	*tx_dma;
-	const dma_ch_t	*rx_dma;
-	uint32_t		tx_dma_mode;
-	uint32_t		rx_dma_mode;
+    SPI_TypeDef     *spi;
+    const dma_ch_t  *tx_dma;
+    const dma_ch_t  *rx_dma;
+    uint32_t        tx_dma_mode;
+    uint32_t        rx_dma_mode;
 
-	GPIO_TypeDef	*cs_pad;
-	uint8_t			cs_pin;
+    GPIO_TypeDef    *cs_pad;
+    uint8_t         cs_pin;
 
-	OS_EventID		sem;
+    OS_EventID      sem;
 } spi_t;
 
 #if USE_SPI1

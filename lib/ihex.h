@@ -11,11 +11,11 @@
 
 #include <stdint.h>
 
-#define IHEX_CONTINUE		0
-#define IHEX_EOF			30
-#define IHEX_INVALID		31
-#define IHEX_UNSUPPORTED	32
-#define IHEX_CHECKSUM		33
+#define IHEX_CONTINUE       0
+#define IHEX_EOF            30
+#define IHEX_INVALID        31
+#define IHEX_UNSUPPORTED    32
+#define IHEX_CHECKSUM       33
 
 typedef uint8_t(*ihex_cb)(uint32_t address, const uint8_t *data, uint16_t length);
 

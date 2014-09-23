@@ -12,8 +12,8 @@
 void iwdg_start(uint8_t prescaler, uint16_t reload);
 void iwdg_clear(void);
 
-#define IWDG_KEY_UNLOCK		0x5555
-#define IWDG_KEY_CLEAR		0xAAAA
-#define IWDG_KEY_START		0xCCCC
+#define IWDG_KEY_UNLOCK     0x5555
+#define IWDG_KEY_CLEAR      0xAAAA
+#define IWDG_KEY_START      0xCCCC
 
 #endif

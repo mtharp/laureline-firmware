@@ -12,10 +12,10 @@
 
 const void *
 info_get(const info_entry_t *table, uint32_t type) {
-	for (; table->type != 0; table++) {
-		if (table->type == type) {
-			return table->ptr;
-		}
-	}
-	return NULL;
+    for (; table->type != 0; table++) {
+        if (table->type == type) {
+            return table->ptr;
+        }
+    }
+    return NULL;
 }

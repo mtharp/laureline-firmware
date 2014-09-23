@@ -19,162 +19,162 @@
 #define FEED_COMPLETE 2
 
 static enum {
-	WAITING,
-	SYNC,
-	HEADER,
-	COPYING,
-	CHECKSUM1,
-	CHECKSUM2
+    WAITING,
+    SYNC,
+    HEADER,
+    COPYING,
+    CHECKSUM1,
+    CHECKSUM2
 } ustate;
 
 /* applicable to both NAV-TIMEUTC and NAV-TIMEGPS */
-#define TIMEUTC_VALIDTOW		0x01
-#define TIMEUTC_VALIDWKN		0x02
-#define TIMEUTC_VALIDUTC		0x04
+#define TIMEUTC_VALIDTOW        0x01
+#define TIMEUTC_VALIDWKN        0x02
+#define TIMEUTC_VALIDUTC        0x04
 
 static const uint8_t ublox_cfg[] = {
-	/*  msg   | interval */
-	0x01, 0x06, 0x01, /* NAV-SOL */
-	0x01, 0x20, 0x01, /* NAV-TIMEGPS */
-	0x0B, 0x02, 0x06, /* AID-HUI */
-	0x0D, 0x01, 0x01, /* TIM-TP */
+    /*  msg   | interval */
+    0x01, 0x06, 0x01, /* NAV-SOL */
+    0x01, 0x20, 0x01, /* NAV-TIMEGPS */
+    0x0B, 0x02, 0x06, /* AID-HUI */
+    0x0D, 0x01, 0x01, /* TIM-TP */
 };
 
 
 static const char ublox_hui_req[] = {
-	0xB5, 0x62, 0x0B, 0x02, 0x00, 0x00, 0x0D, 0x32 };
+    0xB5, 0x62, 0x0B, 0x02, 0x00, 0x00, 0x0D, 0x32 };
 
 
 static void
 set_quant_ubx(uint8_t *qf) {
-	int32_t picoseconds = *(int32_t*)qf;
-	float corr = -picoseconds * (1 / 1e12);
-	vtimer_set_correction(corr, LEADING);
+    int32_t picoseconds = *(int32_t*)qf;
+    float corr = -picoseconds * (1 / 1e12);
+    vtimer_set_correction(corr, LEADING);
 }
 
 
 uint8_t
 ublox_feed(uint8_t val) {
-	static uint8_t rx_count, rx_ck1, rx_ck2;
-	static uint16_t rx_pktlen;
-	static uint64_t last_hui;
+    static uint8_t rx_count, rx_ck1, rx_ck2;
+    static uint16_t rx_pktlen;
+    static uint64_t last_hui;
 
-	switch (ustate) {
-	case WAITING:
-		if (val == 0xB5) {
-			ustate = SYNC;
-			return FEED_CONTINUE;
-		}
-		break;
-	case SYNC:
-		if (val == 0x62) {
-			rx_count = 0;
-			rx_ck1 = 0;
-			rx_ck2 = 0;
-			ustate = HEADER;
-			return FEED_CONTINUE;
-		}
-		break;
-	case HEADER:
-		pbuf[rx_count++] = val;
-		rx_ck1 += (uint8_t)val;
-		rx_ck2 += rx_ck1;
-		if (rx_count >= 4) {
-			rx_pktlen = ((pbuf[3] << 8) | pbuf[2]) + 4;
-			if (rx_count >= rx_pktlen) {
-				ustate = CHECKSUM1;
-			} else {
-				ustate = COPYING;
-			}
-		}
-		return FEED_CONTINUE;
-	case COPYING:
-		if (rx_count >= sizeof(pbuf)) {
-			break;
-		}
-		pbuf[rx_count++] = val;
-		rx_ck1 += (uint8_t)val;
-		rx_ck2 += rx_ck1;
-		if (rx_count >= rx_pktlen) {
-			ustate = CHECKSUM1;
-		}
-		return FEED_CONTINUE;
-	case CHECKSUM1:
-		if (rx_ck1 != val) {
-			break;
-		}
-		ustate = CHECKSUM2;
-		return FEED_CONTINUE;
-	case CHECKSUM2:
-		if (rx_ck2 != val) {
-			break;
-		}
-		ustate = WAITING;
-		if (pbuf[0] == 0x01 && pbuf[1] == 0x06 && rx_count >= 4+52) {
-			/* NAV-SOL */
-			gps_fix_svs = pbuf[4+47];
-		} else if (pbuf[0] == 0x01 && pbuf[1] == 0x20 && rx_count >= 4+16) {
-			/* NAV-TIMEGPS */
-			uint8_t valid = pbuf[4+11];
-			if ((valid & TIMEUTC_VALIDWKN) && (valid & TIMEUTC_VALIDTOW)) {
-				vtimer_set_gps(
-						*(int16_t*)&pbuf[4+8],			/* week number */
-						(*(uint32_t*)&pbuf[4+0]) / 1000,/* time of week */
-						pbuf[4+10],						/* leap seconds */
-						valid & TIMEUTC_VALIDUTC);		/* leap seconds valid */
-			}
-			if (CoGetOSTime() - last_hui > S2ST(5)) {
-				/* Trigger a poll of leap second data */
-				last_hui = CoGetOSTime();
-				serial_write(gps_serial, ublox_hui_req, sizeof(ublox_hui_req));
-			}
+    switch (ustate) {
+    case WAITING:
+        if (val == 0xB5) {
+            ustate = SYNC;
+            return FEED_CONTINUE;
+        }
+        break;
+    case SYNC:
+        if (val == 0x62) {
+            rx_count = 0;
+            rx_ck1 = 0;
+            rx_ck2 = 0;
+            ustate = HEADER;
+            return FEED_CONTINUE;
+        }
+        break;
+    case HEADER:
+        pbuf[rx_count++] = val;
+        rx_ck1 += (uint8_t)val;
+        rx_ck2 += rx_ck1;
+        if (rx_count >= 4) {
+            rx_pktlen = ((pbuf[3] << 8) | pbuf[2]) + 4;
+            if (rx_count >= rx_pktlen) {
+                ustate = CHECKSUM1;
+            } else {
+                ustate = COPYING;
+            }
+        }
+        return FEED_CONTINUE;
+    case COPYING:
+        if (rx_count >= sizeof(pbuf)) {
+            break;
+        }
+        pbuf[rx_count++] = val;
+        rx_ck1 += (uint8_t)val;
+        rx_ck2 += rx_ck1;
+        if (rx_count >= rx_pktlen) {
+            ustate = CHECKSUM1;
+        }
+        return FEED_CONTINUE;
+    case CHECKSUM1:
+        if (rx_ck1 != val) {
+            break;
+        }
+        ustate = CHECKSUM2;
+        return FEED_CONTINUE;
+    case CHECKSUM2:
+        if (rx_ck2 != val) {
+            break;
+        }
+        ustate = WAITING;
+        if (pbuf[0] == 0x01 && pbuf[1] == 0x06 && rx_count >= 4+52) {
+            /* NAV-SOL */
+            gps_fix_svs = pbuf[4+47];
+        } else if (pbuf[0] == 0x01 && pbuf[1] == 0x20 && rx_count >= 4+16) {
+            /* NAV-TIMEGPS */
+            uint8_t valid = pbuf[4+11];
+            if ((valid & TIMEUTC_VALIDWKN) && (valid & TIMEUTC_VALIDTOW)) {
+                vtimer_set_gps(
+                        *(int16_t*)&pbuf[4+8],          /* week number */
+                        (*(uint32_t*)&pbuf[4+0]) / 1000,/* time of week */
+                        pbuf[4+10],                     /* leap seconds */
+                        valid & TIMEUTC_VALIDUTC);      /* leap seconds valid */
+            }
+            if (CoGetOSTime() - last_hui > S2ST(5)) {
+                /* Trigger a poll of leap second data */
+                last_hui = CoGetOSTime();
+                serial_write(gps_serial, ublox_hui_req, sizeof(ublox_hui_req));
+            }
 #if 0
-		} else if (pbuf[0] == 0x01 && pbuf[1] == 0x21 && rx_count >= 4+20) {
-			/* NAV-TIMEUTC */
-			if (!(pbuf[4+19] & TIMEUTC_VALIDUTC)) {
-				return FEED_COMPLETE;
-			}
-			/* FIXME: leap second */
-			vtimer_set_utc(
-					(pbuf[4+12] | (pbuf[4+13] << 8)),	/* year */
-					pbuf[4+14],							/* month */
-					pbuf[4+15],							/* day */
-					pbuf[4+16],							/* hour */
-					pbuf[4+17],							/* minute */
-					pbuf[4+18],							/* second */
-					0);									/* leap */
+        } else if (pbuf[0] == 0x01 && pbuf[1] == 0x21 && rx_count >= 4+20) {
+            /* NAV-TIMEUTC */
+            if (!(pbuf[4+19] & TIMEUTC_VALIDUTC)) {
+                return FEED_COMPLETE;
+            }
+            /* FIXME: leap second */
+            vtimer_set_utc(
+                    (pbuf[4+12] | (pbuf[4+13] << 8)),   /* year */
+                    pbuf[4+14],                         /* month */
+                    pbuf[4+15],                         /* day */
+                    pbuf[4+16],                         /* hour */
+                    pbuf[4+17],                         /* minute */
+                    pbuf[4+18],                         /* second */
+                    0);                                 /* leap */
 #endif
-		} else if (pbuf[0] == 0x0B && pbuf[1] == 0x02 && rx_count >= 4+72) {
-			/* AID-HUI */
-		} else if (pbuf[0] == 0x0D && pbuf[1] == 0x01 && rx_count >= 4+16) {
-			/* TIM-TP */
-			set_quant_ubx(&pbuf[4+8]);
-		}
-		return FEED_COMPLETE;
-	}
-	ustate = WAITING;
-	return FEED_UNKNOWN;
+        } else if (pbuf[0] == 0x0B && pbuf[1] == 0x02 && rx_count >= 4+72) {
+            /* AID-HUI */
+        } else if (pbuf[0] == 0x0D && pbuf[1] == 0x01 && rx_count >= 4+16) {
+            /* TIM-TP */
+            set_quant_ubx(&pbuf[4+8]);
+        }
+        return FEED_COMPLETE;
+    }
+    ustate = WAITING;
+    return FEED_UNKNOWN;
 }
 
 
 void
 ublox_configure(void) {
-	static const uint8_t ublox_template[] = { 0xB5, 0x62, 0x06, 0x01, 0x08, 0x00 };
-	const uint8_t *x;
-	uint8_t buf[16], ck1, ck2, i;
-	memset(buf, 0, 14);
-	memcpy(buf, ublox_template, 6);
-	for (x = ublox_cfg; x < ublox_cfg + sizeof(ublox_cfg); x += 3) {
-		buf[6] = x[0];
-		buf[7] = x[1];
-		buf[9] = x[2];
-		ck1 = ck2 = 0;
-		for (i = 2; i < 14; i++) {
-			ck1 += buf[i];
-			ck2 += ck1;
-		}
-		buf[14] = ck1;
-		buf[15] = ck2;
-		serial_write(gps_serial, (const char *)buf, 16);
-	}
+    static const uint8_t ublox_template[] = { 0xB5, 0x62, 0x06, 0x01, 0x08, 0x00 };
+    const uint8_t *x;
+    uint8_t buf[16], ck1, ck2, i;
+    memset(buf, 0, 14);
+    memcpy(buf, ublox_template, 6);
+    for (x = ublox_cfg; x < ublox_cfg + sizeof(ublox_cfg); x += 3) {
+        buf[6] = x[0];
+        buf[7] = x[1];
+        buf[9] = x[2];
+        ck1 = ck2 = 0;
+        for (i = 2; i < 14; i++) {
+            ck1 += buf[i];
+            ck2 += ck1;
+        }
+        buf[14] = ck1;
+        buf[15] = ck2;
+        serial_write(gps_serial, (const char *)buf, 16);
+    }
 }

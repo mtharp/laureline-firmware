@@ -37,75 +37,75 @@ static uint8_t query_buf[48];
 
 static uint64_t
 ntp_query(int index) {
-	uint64_t query_time, result;
-	uint16_t len;
-	memset(query_buf, 0, 48);
-	query_buf[0] = VN_4 | MODE_CLIENT;
-	query_buf[2] = QUERY_INTERVAL;
-	api_udp_connect(ntp_cli_pcb, &ntp_servers[index], NTP_PORT);
-	query_time = monotonic_now();
-	api_udp_send(ntp_cli_pcb, query_buf, 48);
+    uint64_t query_time, result;
+    uint16_t len;
+    memset(query_buf, 0, 48);
+    query_buf[0] = VN_4 | MODE_CLIENT;
+    query_buf[2] = QUERY_INTERVAL;
+    api_udp_connect(ntp_cli_pcb, &ntp_servers[index], NTP_PORT);
+    query_time = monotonic_now();
+    api_udp_send(ntp_cli_pcb, query_buf, 48);
 
-	len = sizeof(query_buf);
-	if (ERR_OK == api_udp_recv(ntp_cli_pcb, query_buf, &len, 1000) && len >= 48) {
-		query_time = monotonic_now() - query_time; /* RTT */
-		result =  ((uint64_t)query_buf[40] << 56)
-				| ((uint64_t)query_buf[41] << 48)
-				| ((uint64_t)query_buf[42] << 40)
-				| ((uint64_t)query_buf[43] << 32)
-				| ((uint64_t)query_buf[44] << 24)
-				| ((uint64_t)query_buf[45] << 16)
-				| ((uint64_t)query_buf[46] <<  8)
-				| ((uint64_t)query_buf[47]);
-		log_write(LOG_INFO, "ntpclient", "ntp response: rtt=%d hi=%d lo=%d",
-				(int)query_time, (int)(result >> 32), (int)result);
-	} else {
-		log_write(LOG_INFO, "ntpclient", "ntp recv failed");
-	}
-	return 0;
+    len = sizeof(query_buf);
+    if (ERR_OK == api_udp_recv(ntp_cli_pcb, query_buf, &len, 1000) && len >= 48) {
+        query_time = monotonic_now() - query_time; /* RTT */
+        result =  ((uint64_t)query_buf[40] << 56)
+                | ((uint64_t)query_buf[41] << 48)
+                | ((uint64_t)query_buf[42] << 40)
+                | ((uint64_t)query_buf[43] << 32)
+                | ((uint64_t)query_buf[44] << 24)
+                | ((uint64_t)query_buf[45] << 16)
+                | ((uint64_t)query_buf[46] <<  8)
+                | ((uint64_t)query_buf[47]);
+        log_write(LOG_INFO, "ntpclient", "ntp response: rtt=%d hi=%d lo=%d",
+                (int)query_time, (int)(result >> 32), (int)result);
+    } else {
+        log_write(LOG_INFO, "ntpclient", "ntp recv failed");
+    }
+    return 0;
 }
 
 
 static void
 ntpclient_thread(void *p) {
-	int i, num_responses;
-	char hostname[DNS_MAX_NAME_LENGTH+1];
-	uint64_t accum, result;
-	hostname[DNS_MAX_NAME_LENGTH] = 0;
-	while (1) {
-		for (i = 0; i < MAX_SERVERS; i++) {
-			snprintf(hostname, DNS_MAX_NAME_LENGTH, ntp_hosts, i);
-			if (ERR_OK != api_gethostbyname(hostname, &ntp_servers[i])) {
-				ntp_servers[i].addr = 0;
-			}
-		}
+    int i, num_responses;
+    char hostname[DNS_MAX_NAME_LENGTH+1];
+    uint64_t accum, result;
+    hostname[DNS_MAX_NAME_LENGTH] = 0;
+    while (1) {
+        for (i = 0; i < MAX_SERVERS; i++) {
+            snprintf(hostname, DNS_MAX_NAME_LENGTH, ntp_hosts, i);
+            if (ERR_OK != api_gethostbyname(hostname, &ntp_servers[i])) {
+                ntp_servers[i].addr = 0;
+            }
+        }
 
-		num_responses = 0;
-		for (i = 0; i < MAX_SERVERS; i++) {
-			if (ntp_servers[i].addr == 0) {
-				continue;
-			}
-			result = ntp_query(i);
-			if (result != 0) {
-				num_responses++;
-				accum += result >> MAX_SERVERS_LOG2;
-			}
-		}
-		if (num_responses == 0) {
-			CoTickDelay(I2ST(RETRY_INTERVAL));
-			continue;
-		}
-		accum /= num_responses;
-		accum <<= MAX_SERVERS_LOG2;
-		CoTickDelay(I2ST(QUERY_INTERVAL));
-	}
+        num_responses = 0;
+        for (i = 0; i < MAX_SERVERS; i++) {
+            if (ntp_servers[i].addr == 0) {
+                continue;
+            }
+            result = ntp_query(i);
+            if (result != 0) {
+                num_responses++;
+                accum += result >> MAX_SERVERS_LOG2;
+            }
+        }
+        if (num_responses == 0) {
+            CoTickDelay(I2ST(RETRY_INTERVAL));
+            continue;
+        }
+        accum /= num_responses;
+        accum <<= MAX_SERVERS_LOG2;
+        CoTickDelay(I2ST(QUERY_INTERVAL));
+    }
 }
 
 void
 ntp_client_start(void) {
-	ASSERT((ntp_cli_pcb = udp_new()) != NULL);
-	udp_bind(ntp_cli_pcb, IP_ADDR_ANY, 0);
-	ntpclient_tid = CoCreateTask(ntpclient_thread, NULL, THREAD_PRIO_NTPCLIENT,
-			&ntpclient_stack[NTPCLIENT_STACK-1], NTPCLIENT_STACK, "ntpclient");
-	ASSERT(ntpclient_tid != E_CREATE_FAIL);
+    ASSERT((ntp_cli_pcb = udp_new()) != NULL);
+    udp_bind(ntp_cli_pcb, IP_ADDR_ANY, 0);
+    ntpclient_tid = CoCreateTask(ntpclient_thread, NULL, THREAD_PRIO_NTPCLIENT,
+            &ntpclient_stack[NTPCLIENT_STACK-1], NTPCLIENT_STACK, "ntpclient");
+    ASSERT(ntpclient_tid != E_CREATE_FAIL);
 }

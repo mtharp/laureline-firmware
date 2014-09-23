@@ -23,7 +23,7 @@ sys_init(void) {
 
 u32_t
 sys_now(void) {
-	return CoGetOSTime() * (1000 / CFG_SYSTICK_FREQ);
+    return CoGetOSTime() * (1000 / CFG_SYSTICK_FREQ);
 }
 
 

@@ -13,18 +13,18 @@
 
 
 typedef struct {
-	I2C_TypeDef		*dev;
-	OS_MutexID		mutex;
-	OS_EventID		sem;
-	uint8_t *buf;
-	uint8_t addr_dir;
-	uint8_t count;
-	uint8_t index;
-	uint8_t error;
+    I2C_TypeDef     *dev;
+    OS_MutexID      mutex;
+    OS_EventID      sem;
+    uint8_t *buf;
+    uint8_t addr_dir;
+    uint8_t count;
+    uint8_t index;
+    uint8_t error;
 } i2c_t;
 
 #define I2C_T_INITIALIZER \
-	/* dev, */ E_CREATE_FAIL, E_CREATE_FAIL, NULL, 0, 0, 0, 0
+    /* dev, */ E_CREATE_FAIL, E_CREATE_FAIL, NULL, 0, 0, 0, 0
 
 
 #if USE_I2C1

@@ -12,19 +12,19 @@
 
 void
 _exit(int rc) {
-	while (1) {}
+    while (1) {}
 }
 
 
 int
 _kill(int pid, int signum) {
-	return ESRCH;
+    return ESRCH;
 }
 
 
 int
 _getpid(void) {
-	return 1;
+    return 1;
 }
 
 
@@ -34,11 +34,11 @@ void *heap_top = &_sheap;
 
 void *
 _sbrk(intptr_t increment) {
-	void *ret;
-	if (heap_top + increment > (void*)&_eheap) {
-		return (void*)-1;
-	}
-	ret = heap_top;
-	heap_top += increment;
-	return ret;
+    void *ret;
+    if (heap_top + increment > (void*)&_eheap) {
+        return (void*)-1;
+    }
+    ret = heap_top;
+    heap_top += increment;
+    return ret;
 }

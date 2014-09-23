@@ -9,23 +9,23 @@
 #ifndef _GPS_PARSER_H
 #define _GPS_PARSER_H
 
-#define PACKET_TIMEOUT		MS2ST(10)
-#define PARSER_TIMEOUT		S2ST(5)
+#define PACKET_TIMEOUT      MS2ST(10)
+#define PARSER_TIMEOUT      S2ST(5)
 
 /* Protocols that might be detected */
-#define PROTO_NONE		0
-#define PROTO_NMEA		1
-#define PROTO_TSIP		2
-#define PROTO_TEP		3
-#define PROTO_ONCORE	4
-#define PROTO_UBLOX		5
+#define PROTO_NONE      0
+#define PROTO_NMEA      1
+#define PROTO_TSIP      2
+#define PROTO_TEP       3
+#define PROTO_ONCORE    4
+#define PROTO_UBLOX     5
 
 /* Status codes for feed_* return */
-#define FEED_UNKNOWN		0
-#define FEED_CONTINUE		1
-#define FEED_COMPLETE		2
+#define FEED_UNKNOWN        0
+#define FEED_CONTINUE       1
+#define FEED_COMPLETE       2
 
-#define PBUF_SIZE			128
+#define PBUF_SIZE           128
 extern uint8_t pbuf[PBUF_SIZE];
 
 extern int gps_fix_svs;

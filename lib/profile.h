@@ -20,9 +20,9 @@ extern uint64_t last_tick;
 #define PROFILE_GET_TIMER monotonic_now()
 
 #define PROFILE_EXIT_THREAD(var) { \
-	U64 now = PROFILE_GET_TIMER; \
-	var += now - last_tick; \
-	last_tick = now; \
+    U64 now = PROFILE_GET_TIMER; \
+    var += now - last_tick; \
+    last_tick = now; \
 }
 
 

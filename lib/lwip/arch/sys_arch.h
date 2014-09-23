@@ -20,11 +20,11 @@
 
 #if !NO_SYS
 
-typedef OS_EventID		sys_sem_t;
-typedef OS_EventID		sys_mbox_t;
-typedef OS_TID			sys_thread_t;
-typedef OS_MutexID		sys_mutex_t;
-typedef uint32_t		sys_prot_t;
+typedef OS_EventID      sys_sem_t;
+typedef OS_EventID      sys_mbox_t;
+typedef OS_TID          sys_thread_t;
+typedef OS_MutexID      sys_mutex_t;
+typedef uint32_t        sys_prot_t;
 
 #define SYS_MBOX_NULL   E_CREATE_FAILED
 #define SYS_THREAD_NULL E_CREATE_FAILED

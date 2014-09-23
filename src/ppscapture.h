@@ -9,8 +9,8 @@
 #ifndef _PPSCAPTURE_H
 #define _PPSCAPTURE_H
 
-#define QUANT_LAGGING			1
-#define QUANT_LEADING			2
+#define QUANT_LAGGING           1
+#define QUANT_LEADING           2
 
 void ppscapture_start(void);
 uint64_t monotonic_getI(void);

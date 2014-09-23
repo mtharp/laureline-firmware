@@ -12,17 +12,17 @@
 
 void
 iwdg_start(uint8_t prescaler, uint16_t reload) {
-	/* Stop IWDG when halted */
-	DBGMCU->CR |= DBGMCU_CR_DBG_IWDG_STOP;
+    /* Stop IWDG when halted */
+    DBGMCU->CR |= DBGMCU_CR_DBG_IWDG_STOP;
 
-	IWDG->KR = IWDG_KEY_UNLOCK;
-	IWDG->PR = prescaler;
-	IWDG->RLR = reload;
-	IWDG->KR = IWDG_KEY_START;
+    IWDG->KR = IWDG_KEY_UNLOCK;
+    IWDG->PR = prescaler;
+    IWDG->RLR = reload;
+    IWDG->KR = IWDG_KEY_START;
 }
 
 
 void
 iwdg_clear(void) {
-	IWDG->KR = IWDG_KEY_CLEAR;
+    IWDG->KR = IWDG_KEY_CLEAR;
 }

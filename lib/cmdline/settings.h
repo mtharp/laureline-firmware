@@ -18,29 +18,29 @@
 
 
 typedef enum {
-	VAR_UINT32,
-	VAR_UINT16,
+    VAR_UINT32,
+    VAR_UINT16,
 #if CLI_TYPE_IP4
-	VAR_IP4,
+    VAR_IP4,
 #endif
 #if CLI_TYPE_IP6
-	VAR_IP6,
+    VAR_IP6,
 #endif
 #if CLI_TYPE_HEX
-	VAR_HEX,
+    VAR_HEX,
 #endif
 #if CLI_TYPE_FLAG
-	VAR_FLAG,
+    VAR_FLAG,
 #endif
-	VAR_INVALID
+    VAR_INVALID
 } vartype_e;
 
 
 typedef struct {
-	const char *name;
-	const vartype_e type;
-	void *ptr;
-	int len;
+    const char *name;
+    const vartype_e type;
+    void *ptr;
+    int len;
 } clivalue_t;
 
 

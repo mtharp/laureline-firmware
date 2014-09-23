@@ -10,10 +10,10 @@
 #ifndef _STATUS_H
 #define _STATUS_H
 
-#define STATUS_PPS_OK				0x01
-#define STATUS_TOD_OK				0x02
-#define STATUS_PLL_OK				0x04
-#define STATUS_USED_QUANT			0x08
+#define STATUS_PPS_OK               0x01
+#define STATUS_TOD_OK               0x02
+#define STATUS_PLL_OK               0x04
+#define STATUS_USED_QUANT           0x08
 
 /* pll is settled */
 #define STATUS_SETTLED (STATUS_PPS_OK | STATUS_PLL_OK)

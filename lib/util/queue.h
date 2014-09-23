@@ -14,12 +14,12 @@
 typedef void (*cb_func_t)(void *arg);
 
 typedef struct {
-	OS_FlagID flag;
-	uint8_t size;
-	volatile uint8_t count, wakeup;
-	uint8_t *p_bot, *p_top, *p_write, *p_read;
-	cb_func_t cb_func;
-	void *cb_arg;
+    OS_FlagID flag;
+    uint8_t size;
+    volatile uint8_t count, wakeup;
+    uint8_t *p_bot, *p_top, *p_write, *p_read;
+    cb_func_t cb_func;
+    void *cb_arg;
 } queue_t;
 
 void queue_init(queue_t *q, uint8_t *buf, uint8_t size);

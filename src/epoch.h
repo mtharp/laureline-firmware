@@ -24,7 +24,7 @@
 #define NTP_GPS_EPOCH 2524953600UL
 
 uint64_t datetime_to_epoch(uint16_t year, uint8_t month, uint8_t day,
-		uint8_t hour, uint8_t minute, uint8_t second);
+        uint8_t hour, uint8_t minute, uint8_t second);
 uint64_t gps_to_epoch(uint16_t wkn, uint32_t tow);
 void epoch_to_datetime(uint64_t time, struct tm *tm);
 

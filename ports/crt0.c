@@ -28,27 +28,27 @@ void main(void);
 
 __attribute__((naked)) void
 Reset_Handler(void) {
-	asm volatile ("cpsid i");
-	asm volatile ("msr MSP, %0" : : "r" (_isr_vector[0]));
-	SCB->VTOR = (uint32_t)&_isr_vector;
-	{
-		uint32_t *ptr;
-		for (ptr = &_sbss; ptr < &_ebss; ptr++) {
-			*ptr = 0;
-		}
-	}
-	{
-		uint32_t *textptr, *dataptr;
-		dataptr = &_sdata;
-		textptr = &_sidata;
-		while (dataptr < &_edata) {
-			*dataptr++ = *textptr++;
-		}
-	}
-	asm volatile ("cpsie i");
+    asm volatile ("cpsid i");
+    asm volatile ("msr MSP, %0" : : "r" (_isr_vector[0]));
+    SCB->VTOR = (uint32_t)&_isr_vector;
+    {
+        uint32_t *ptr;
+        for (ptr = &_sbss; ptr < &_ebss; ptr++) {
+            *ptr = 0;
+        }
+    }
+    {
+        uint32_t *textptr, *dataptr;
+        dataptr = &_sdata;
+        textptr = &_sidata;
+        while (dataptr < &_edata) {
+            *dataptr++ = *textptr++;
+        }
+    }
+    asm volatile ("cpsie i");
 
-	SystemInit();
-	main();
+    SystemInit();
+    main();
 
-	while (1) {}
+    while (1) {}
 }

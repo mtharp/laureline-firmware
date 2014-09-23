@@ -22,8 +22,8 @@ static const uint8_t _days_in_month[] = {
 };
 
 static const uint16_t _days_before_month[] = {
-		0, /* unused; this vector uses 1-based indexing */
-		0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
+        0, /* unused; this vector uses 1-based indexing */
+        0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
 };
 
 /* year -> 1 if leap year, else 0. */
@@ -159,29 +159,29 @@ ord_to_ymd(int ordinal, int *year, int *month, int *day)
 
 uint64_t
 datetime_to_epoch(uint16_t year, uint8_t month, uint8_t day,
-		uint8_t hour, uint8_t minute, uint8_t second)
+        uint8_t hour, uint8_t minute, uint8_t second)
 {
-	int ordinal = days_before_year(year) + days_before_month(year, month) + day - NTP_EPOCH_ORDINAL;
-	return (uint64_t)ordinal * 86400 + (hour * 3600 + minute * 60 + second);
+    int ordinal = days_before_year(year) + days_before_month(year, month) + day - NTP_EPOCH_ORDINAL;
+    return (uint64_t)ordinal * 86400 + (hour * 3600 + minute * 60 + second);
 }
 
 
 uint64_t
 gps_to_epoch(uint16_t wkn, uint32_t tow) {
-	return (uint64_t)NTP_GPS_EPOCH + ((uint64_t)wkn * 604800) + tow;
+    return (uint64_t)NTP_GPS_EPOCH + ((uint64_t)wkn * 604800) + tow;
 }
 
 
 void
 epoch_to_datetime(uint64_t time, struct tm *tm) {
-	uint32_t tod, ordinal;
-	tod = time % 86400;
-	ordinal = time / 86400 + NTP_EPOCH_ORDINAL;
-	tm->tm_sec = tod % 60;
-	tod /= 60;
-	tm->tm_min = tod % 60;
-	tod /= 60;
-	tm->tm_hour = tod % 24;
-	tod /= 24;
-	ord_to_ymd(ordinal, &tm->tm_year, &tm->tm_mon, &tm->tm_mday);
+    uint32_t tod, ordinal;
+    tod = time % 86400;
+    ordinal = time / 86400 + NTP_EPOCH_ORDINAL;
+    tm->tm_sec = tod % 60;
+    tod /= 60;
+    tm->tm_min = tod % 60;
+    tod /= 60;
+    tm->tm_hour = tod % 24;
+    tod /= 24;
+    ord_to_ymd(ordinal, &tm->tm_year, &tm->tm_mon, &tm->tm_mday);
 }

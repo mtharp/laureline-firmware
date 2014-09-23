@@ -28,11 +28,11 @@
 #define MEM_ALIGNMENT                   4
 #define MEM_SIZE                        1600
 #ifdef DEBUG
-# define MEMP_OVERFLOW_CHECK			1
-# define MEMP_SANITY_CHECK				1
+# define MEMP_OVERFLOW_CHECK            1
+# define MEMP_SANITY_CHECK              1
 #else
-# define MEMP_OVERFLOW_CHECK			0
-# define MEMP_SANITY_CHECK				0
+# define MEMP_OVERFLOW_CHECK            0
+# define MEMP_SANITY_CHECK              0
 #endif
 
 /*
@@ -40,12 +40,12 @@
    ---------- Internal Memory Pool Sizes ----------
    ------------------------------------------------
 */
-#define MEMP_NUM_PBUF					4
-#define MEMP_NUM_UDP_PCB				6
-#define MEMP_NUM_TCP_PCB				8
-#define MEMP_NUM_TCP_PCB_LISTEN			2
-#define MEMP_NUM_TCP_SEG				16
-#define PBUF_POOL_SIZE					4
+#define MEMP_NUM_PBUF                   4
+#define MEMP_NUM_UDP_PCB                6
+#define MEMP_NUM_TCP_PCB                8
+#define MEMP_NUM_TCP_PCB_LISTEN         2
+#define MEMP_NUM_TCP_SEG                16
+#define PBUF_POOL_SIZE                  4
 
 /*
    ---------------------------------

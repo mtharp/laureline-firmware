@@ -9,12 +9,12 @@
 #ifndef _BOOTLOADER_H
 #define _BOOTLOADER_H
 
-#define FLASH_ERROR			40
+#define FLASH_ERROR         40
 
-#define BLS_WAITING			0
-#define BLS_FLASHING		1
-#define BLS_DONE			2
-#define BLS_ERROR			3
+#define BLS_WAITING         0
+#define BLS_FLASHING        1
+#define BLS_DONE            2
+#define BLS_ERROR           3
 
 extern uint8_t bootloader_status;
 
