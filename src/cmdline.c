@@ -122,7 +122,7 @@ cliWriteConfig(void) {
     result = eeprom_write_cfg();
     if (result == EERR_OK) {
         cli_puts("OK\r\n");
-        // FIXME serial_drain(cl_out);
+        serial_drain(cl_out);
         vTaskDelay(pdMS_TO_TICKS(1000));
         NVIC_SystemReset();
     } else {

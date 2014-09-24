@@ -59,95 +59,71 @@ dma_service_irq(DMA_TypeDef *dma, const dma_ch_t *ch) {
 
 void
 DMA1_Channel1_IRQHandler(void) {
-    CoEnterISR();
     dma_service_irq(DMA1, &dma_streams[0]);
-    CoExitISR();
 }
 
 
 void
 DMA1_Channel2_IRQHandler(void) {
-    CoEnterISR();
     dma_service_irq(DMA1, &dma_streams[1]);
-    CoExitISR();
 }
 
 
 void
 DMA1_Channel3_IRQHandler(void) {
-    CoEnterISR();
     dma_service_irq(DMA1, &dma_streams[2]);
-    CoExitISR();
 }
 
 
 void
 DMA1_Channel4_IRQHandler(void) {
-    CoEnterISR();
     dma_service_irq(DMA1, &dma_streams[3]);
-    CoExitISR();
 }
 
 
 void
 DMA1_Channel5_IRQHandler(void) {
-    CoEnterISR();
     dma_service_irq(DMA1, &dma_streams[4]);
-    CoExitISR();
 }
 
 
 void
 DMA1_Channel6_IRQHandler(void) {
-    CoEnterISR();
     dma_service_irq(DMA1, &dma_streams[5]);
-    CoExitISR();
 }
 
 
 void
 DMA1_Channel7_IRQHandler(void) {
-    CoEnterISR();
     dma_service_irq(DMA1, &dma_streams[6]);
-    CoExitISR();
 }
 
 
 void
 DMA2_Channel1_IRQHandler(void) {
-    CoEnterISR();
     dma_service_irq(DMA1, &dma_streams[7]);
-    CoExitISR();
 }
 
 
 void
 DMA2_Channel2_IRQHandler(void) {
-    CoEnterISR();
     dma_service_irq(DMA1, &dma_streams[8]);
-    CoExitISR();
 }
 
 
 void
 DMA2_Channel3_IRQHandler(void) {
-    CoEnterISR();
     dma_service_irq(DMA1, &dma_streams[9]);
-    CoExitISR();
 }
 
 
 void
 DMA2_Channel4_IRQHandler(void) {
-    CoEnterISR();
     dma_service_irq(DMA1, &dma_streams[10]);
-    CoExitISR();
 }
 
 
 void
 DMA2_Channel5_IRQHandler(void) {
-    CoEnterISR();
     dma_service_irq(DMA1, &dma_streams[11]);
-    CoExitISR();
 }

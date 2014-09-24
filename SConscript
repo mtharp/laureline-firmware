@@ -32,8 +32,10 @@ src/net/*.c
 lib/cmdline/core.c
 lib/cmdline/settings.c
 lib/freertos_plat.c
+lib/hardfault.c
 lib/info_table.c
 lib/lwip/arch/sys_arch.c
+lib/stm32/dma.c
 lib/stm32/eth_mac.c
 lib/stm32/i2c.c
 lib/stm32/iwdg.c
