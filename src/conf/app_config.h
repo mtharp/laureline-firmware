@@ -23,8 +23,8 @@
 
 /* Highest priority (highest number) */
 #define THREAD_PRIO_VTIMER      4
-#define THREAD_PRIO_TCPIP       3
-#define THREAD_PRIO_MAIN        2
+#define THREAD_PRIO_MAIN        3
+#define THREAD_PRIO_TCPIP       2
 #define THREAD_PRIO_NTPCLIENT   1
 /* Lowest priority (lowest number) */
 

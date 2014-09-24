@@ -9,10 +9,10 @@
 #ifndef _ETH_MAC_H
 #define _ETH_MAC_H
 
-#include "event_groups.h"
+#include "queue.h"
 
-#define MAC_BUF_SIZE 1522
-#define SMI_DESCRIBE_SIZE 17
+#define MAC_BUF_SIZE                1522
+#define SMI_DESCRIBE_SIZE           17
 
 typedef struct mac_desc {
     volatile uint32_t des0;
@@ -23,8 +23,6 @@ typedef struct mac_desc {
     uint32_t size;
     uint32_t offset;
 } mac_desc_t;
-
-extern EventGroupHandle_t mac_events;
 
 void smi_write(uint32_t reg, uint32_t value);
 uint32_t smi_read(uint32_t reg);
@@ -40,11 +38,6 @@ void mac_release_tx_descriptor(mac_desc_t *tdes);
 mac_desc_t *mac_get_rx_descriptor(void);
 uint16_t mac_read_rx_descriptor(mac_desc_t *rdes, uint8_t *buf, uint16_t size);
 void mac_release_rx_descriptor(mac_desc_t *rdes);
-
-#define MAC_RX_FLAG                 0x00000001
-#define MAC_TX_FLAG                 0x00000002
-#define TIMER_FLAG                  0x00000004
-#define API_FLAG                    0x00000008
 
 #define STM32_RDES0_OWN             0x80000000
 #define STM32_RDES0_AFM             0x40000000

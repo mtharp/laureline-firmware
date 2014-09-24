@@ -18,17 +18,17 @@ extern double system_frequency;
 #define configUSE_16_BIT_TICKS          0
 #define configUSE_ALTERNATIVE_API       0
 #define configUSE_CO_ROUTINES           0
-#define configUSE_COUNTING_SEMAPHORES   0
 #define configUSE_RECURSIVE_MUTEXES     0
 #define configUSE_TIME_SLICING          0
+#define configUSE_TIMERS                0
 #define configUSE_TRACE_FACILITY        0
 
+#define configUSE_COUNTING_SEMAPHORES   1
 #define configUSE_IDLE_HOOK             1
 #define configUSE_MUTEXES               1
 #define configUSE_PREEMPTION            1
 #define configUSE_QUEUE_SETS            1
 #define configUSE_TICK_HOOK             1
-#define configUSE_TIMERS                1
 
 #define configASSERT(x)                 if (!(x)) { while(1) {} }
 #define configCPU_CLOCK_HZ              system_frequency
@@ -46,12 +46,12 @@ extern double system_frequency;
 
 #define INCLUDE_vTaskCleanUpResources   0
 #define INCLUDE_vTaskDelete             0
+#define INCLUDE_xTimerPendFunctionCall  0
 #define INCLUDE_uxTaskPriorityGet       1
 #define INCLUDE_vTaskDelay              1
 #define INCLUDE_vTaskDelayUntil         1
 #define INCLUDE_vTaskPrioritySet        1
 #define INCLUDE_vTaskSuspend            1
-#define INCLUDE_xTimerPendFunctionCall  1
 
 /* Use lowest possible interrupt priority for the scheduler */
 #define configKERNEL_INTERRUPT_PRIORITY 0xff

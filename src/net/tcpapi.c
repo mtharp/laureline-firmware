@@ -6,12 +6,11 @@
  */
 
 #include "common.h"
-#include "event_groups.h"
 #include "task.h"
 
 #include "logging.h"
-#include "stm32/eth_mac.h"
 #include "net/tcpapi.h"
+#include "net/tcpqueue.h"
 #include "lwip/dns.h"
 #include "lwip/tcp.h"
 #include "lwip/timers.h"
@@ -21,13 +20,11 @@
 static TaskHandle_t api_thread;
 static SemaphoreHandle_t api_mutex;
 static tcpapi_sems_t *semlist;
-static tcpapi_msg_t *waitlist;
 
 void
 api_start(void) {
     ASSERT((api_mutex = xSemaphoreCreateMutex()));
     semlist = NULL;
-    waitlist = NULL;
     api_thread = NULL;
 }
 
@@ -39,16 +36,8 @@ api_set_main_thread(TaskHandle_t thread) {
 
 
 void
-api_accept(void) {
-    tcpapi_msg_t *msg;
-    xSemaphoreTake(api_mutex, portMAX_DELAY);
-    if (waitlist == NULL) {
-        xSemaphoreGive(api_mutex);
-        return;
-    }
-    msg = waitlist;
-    waitlist = msg->next;
-    xSemaphoreGive(api_mutex);
+api_accept(void *p) {
+    tcpapi_msg_t *msg = (tcpapi_msg_t*)p;
     msg->ret = msg->func(msg);
     if (msg->ret != ERR_INPROGRESS) {
         xSemaphoreGive(msg->sem);
@@ -58,7 +47,6 @@ api_accept(void) {
 
 static err_t
 api_call(tcpapi_msg_t *msg, api_func func) {
-    tcpapi_msg_t *mptr;
     tcpapi_sems_t *semptr;
     TaskHandle_t tid = xTaskGetCurrentTaskHandle();
     if (tid == api_thread) {
@@ -84,20 +72,10 @@ api_call(tcpapi_msg_t *msg, api_func func) {
         semptr->next = semlist;
         semlist = semptr;
     }
-    msg->next = NULL;
-    /* Add msg to tail of wait list */
-    if (waitlist == NULL) {
-        waitlist = msg;
-    } else {
-        mptr = waitlist;
-        while (mptr->next != NULL) {
-            mptr = mptr->next;
-        }
-        mptr->next = msg;
-    }
     xSemaphoreGive(api_mutex);
+    /* Post message to tcpip thread */
+    xQueueSend(tcpip_queue, msg, portMAX_DELAY);
     /* Sleep until result is ready */
-    xEventGroupSetBits(mac_events, API_FLAG);
     xSemaphoreTake(msg->sem, portMAX_DELAY);
     return msg->ret;
 }

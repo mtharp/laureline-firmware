@@ -60,7 +60,6 @@ lwip/src/core/ipv4/*.c
 lwip/src/core/ipv6/*.c
 lwip/src/core/snmp/*.c
 lwip/src/netif/etharp.c
-FreeRTOS/Source/event_groups.c
 FreeRTOS/Source/list.c
 FreeRTOS/Source/portable/GCC/ARM_CM3/port.c
 FreeRTOS/Source/portable/MemMang/heap_3.c

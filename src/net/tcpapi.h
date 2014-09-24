@@ -17,7 +17,6 @@ struct tcpapi_msg;
 typedef err_t (*api_func)(struct tcpapi_msg *msg);
 
 typedef struct tcpapi_msg {
-    struct tcpapi_msg *next;
     api_func func;
     SemaphoreHandle_t sem;
     err_t ret;
@@ -66,7 +65,7 @@ typedef struct tcpapi_sems {
 
 void api_start(void);
 void api_set_main_thread(TaskHandle_t thread);
-void api_accept(void);
+void api_accept(void *p);
 
 err_t api_tcp_write(struct tcp_pcb *pcb, const void *data, uint16_t len, uint8_t flags);
 err_t api_tcp_output(struct tcp_pcb *pcb);

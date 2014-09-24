@@ -7,8 +7,11 @@
  */
 
 #include "common.h"
-#include "event_groups.h"
+#include "queue.h"
+#include "semphr.h"
+#include "task.h"
 
+#include "net/tcpqueue.h"
 #include "stm32/eth_mac.h"
 #include "mii.h"
 #include <string.h>
@@ -21,7 +24,8 @@
 #define MFL_RUN     2
 #define MFL_LINK    4
 
-EventGroupHandle_t mac_events;
+static SemaphoreHandle_t ethmac_tx_sem;
+static uint32_t ethmac_queue_full_events;
 
 static mac_desc_t rx_descs[RX_BUFS];
 static mac_desc_t tx_descs[RX_BUFS];
@@ -47,6 +51,7 @@ smi_write(uint32_t reg, uint32_t value) {
 
 uint32_t
 smi_read(uint32_t reg) {
+    /* FIXME: need nonblocking version of this */
     ETH->MACMIIAR = 0
         | BOARD_PHY_ADDRESS
         | (reg << 6)
@@ -174,12 +179,12 @@ mac_set_hwaddr(const uint8_t *hwaddr) {
 void
 mac_start(void) {
     int i;
-    if (!(mac_flags & MFL_INIT)) {
-        ASSERT((mac_events = xEventGroupCreate()));
-        mac_flags |= MFL_INIT;
-    }
     if (mac_flags & MFL_RUN) {
         HALT();
+    }
+    if (!(mac_flags & MFL_INIT)) {
+        ASSERT((ethmac_tx_sem = xSemaphoreCreateBinary()));
+        mac_flags |= MFL_INIT;
     }
     RCC->AHBRSTR |=  RCC_AHBRSTR_ETHMACRST;
     RCC->AHBRSTR &= ~RCC_AHBRSTR_ETHMACRST;
@@ -288,10 +293,13 @@ ETH_IRQHandler(void) {
     dmasr = ETH->DMASR;
     ETH->DMASR = dmasr;
     if (dmasr & ETH_DMASR_RS) {
-        xEventGroupSetBitsFromISR(mac_events, MAC_RX_FLAG, &wakeup);
+        void *qmsg = NULL;
+        if (!xQueueSendFromISR(tcpip_queue, &qmsg, &wakeup)) {
+            ethmac_queue_full_events++;
+        }
     }
     if (dmasr & ETH_DMASR_TS) {
-        xEventGroupSetBitsFromISR(mac_events, MAC_TX_FLAG, &wakeup);
+        xSemaphoreGiveFromISR(ethmac_tx_sem, &wakeup);
     }
     portEND_SWITCHING_ISR(wakeup);
 }
@@ -325,7 +333,7 @@ mac_get_tx_descriptor(uint32_t timeout) {
         if ((tdes = mac_get_tx_descriptor_once()) != NULL) {
             return tdes;
         }
-        xEventGroupWaitBits(mac_events, MAC_TX_FLAG, 1, 0,
+        xSemaphoreTake(ethmac_tx_sem,
                 timeout ? (timeout - xTaskGetTickCount()) : portMAX_DELAY);
     }
 }

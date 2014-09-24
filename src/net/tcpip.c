@@ -7,7 +7,8 @@
  */
 
 #include "common.h"
-#include "timers.h"
+#include "semphr.h"
+#include "task.h"
 
 #include "cmdline.h"
 #include "eeprom.h"
@@ -19,6 +20,7 @@
 #include "net/relay.h"
 #include "net/tcpapi.h"
 #include "net/tcpip.h"
+#include "net/tcpqueue.h"
 
 #include "lwip/dhcp.h"
 #include "lwip/ethip6.h"
@@ -33,6 +35,8 @@
 TaskHandle_t thread_tcpip;
 
 struct netif thisif;
+QueueHandle_t tcpip_queue;
+
 static int did_startup;
 
 static void tcpip_thread(void *p);
@@ -42,14 +46,15 @@ static void configure_interface(void);
 static err_t ethernetif_init(struct netif *netif);
 static err_t low_level_output(struct netif *netif, struct pbuf *p);
 static int ethernetif_input(struct netif *netif);
-static void tcpip_timer(TimerHandle_t timer);
 
 static const uint8_t sysdescr_len = sizeof(BOARD_NAME) - 1;
+
+#define TCP_TIMER_INTERVAL pdMS_TO_TICKS(1000)
 
 
 void
 tcpip_start(void) {
-    TimerHandle_t timer;
+    ASSERT((tcpip_queue = xQueueCreate(8, sizeof(void*))));
     lwip_init();
     snmp_set_sysdescr((const u8_t*)BOARD_NAME, &sysdescr_len);
     api_start();
@@ -62,86 +67,91 @@ tcpip_start(void) {
         syslog_start(cfg.syslog_ip);
     }
 
-    ASSERT((timer = xTimerCreate("tcpip", pdMS_TO_TICKS(1000), 1, NULL, tcpip_timer)));
-    xTimerStart(timer, 0);
-
     ASSERT(xTaskCreate(tcpip_thread, "tcpip", TCPIP_STACK_SIZE, NULL,
                 THREAD_PRIO_TCPIP, &thread_tcpip));
 }
 
 
 static void
-tcpip_timer(TimerHandle_t timer) {
-    xEventGroupSetBits(mac_events, TIMER_FLAG);
+tcpip_checks(void) {
+#if LWIP_IPV6
+    static int valid_ip6 = 0;
+    int i;
+#endif
+    if (smi_poll_link_status()) {
+        if (!netif_is_link_up(&thisif)) {
+            link_changed();
+            netif_set_link_up(&thisif);
+        }
+        GPIO_OFF(ETH_LED);
+    } else {
+        if (netif_is_link_up(&thisif)) {
+            link_changed();
+            netif_set_link_down(&thisif);
+        }
+        GPIO_ON(ETH_LED);
+    }
+#if LWIP_IPV6
+    for (i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
+        if (ip6_addr_isvalid(netif_ip6_addr_state(&thisif, i))) {
+            if (!((valid_ip6 >> i) & 1)) {
+                ip6_addr_t *addr = netif_ip6_addr(&thisif, i);
+                valid_ip6 |= (1 << i);
+                log_write(LOG_NOTICE, "net",
+                        "IPv6 address assigned: %x:%x:%x:%x:%x:%x:%x:%x%s",
+                        IP6_ADDR_BLOCK1(addr),
+                        IP6_ADDR_BLOCK2(addr),
+                        IP6_ADDR_BLOCK3(addr),
+                        IP6_ADDR_BLOCK4(addr),
+                        IP6_ADDR_BLOCK5(addr),
+                        IP6_ADDR_BLOCK6(addr),
+                        IP6_ADDR_BLOCK7(addr),
+                        IP6_ADDR_BLOCK8(addr),
+                        ip6_addr_islinklocal(addr) ? " (link-local)" : "");
+                if (i == 0 && cfg.ip6_manycast[0] != 0) {
+                    /* Link-local address added, now we can join multicast groups */
+                    ip6_addr_t group;
+                    group.addr[0] = cfg.ip6_manycast[0];
+                    group.addr[1] = cfg.ip6_manycast[1];
+                    group.addr[2] = cfg.ip6_manycast[2];
+                    group.addr[3] = cfg.ip6_manycast[3];
+                    mld6_joingroup(netif_ip6_addr(&thisif, 0), &group);
+                }
+            }
+        } else if ((valid_ip6 >> i) & 1) {
+            /* address removed */
+            valid_ip6 &= ~(1 << i);
+        }
+    }
+#endif
+    sys_check_timeouts();
 }
 
 
 static void
 tcpip_thread(void *p) {
-    EventBits_t flags;
-#if LWIP_IPV6
-    int i, valid_ip6 = 0;
-#endif
+    void *msg;
+    int frame_received = 0;
+    TickType_t last_check = xTaskGetTickCount();
     api_set_main_thread(xTaskGetCurrentTaskHandle());
+    tcpip_checks();
     while (1) {
-        flags = xEventGroupWaitBits(mac_events,
-                MAC_RX_FLAG | API_FLAG | TIMER_FLAG,
-                1, 0, portMAX_DELAY);
-        if (flags & TIMER_FLAG) {
-            if (smi_poll_link_status()) {
-                if (!netif_is_link_up(&thisif)) {
-                    link_changed();
-                    netif_set_link_up(&thisif);
-                }
-                GPIO_OFF(ETH_LED);
-            } else {
-                if (netif_is_link_up(&thisif)) {
-                    link_changed();
-                    netif_set_link_down(&thisif);
-                }
-                GPIO_ON(ETH_LED);
+        /* If a frame was received last cycle then check for another one
+         * immediately, but still peek in the queue first. If no frame was
+         * received then sleep between events.
+         */
+        if (xQueueReceive(tcpip_queue, &msg,
+                    frame_received ? 0 : pdMS_TO_TICKS(20))) {
+            if (msg != NULL) {
+                /* API call */
+                api_accept(msg);
             }
-#if LWIP_IPV6
-            for (i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
-                if (ip6_addr_isvalid(netif_ip6_addr_state(&thisif, i))) {
-                    if (!((valid_ip6 >> i) & 1)) {
-                        ip6_addr_t *addr = netif_ip6_addr(&thisif, i);
-                        valid_ip6 |= (1 << i);
-                        log_write(LOG_NOTICE, "net",
-                                "IPv6 address assigned: %x:%x:%x:%x:%x:%x:%x:%x%s",
-                                IP6_ADDR_BLOCK1(addr),
-                                IP6_ADDR_BLOCK2(addr),
-                                IP6_ADDR_BLOCK3(addr),
-                                IP6_ADDR_BLOCK4(addr),
-                                IP6_ADDR_BLOCK5(addr),
-                                IP6_ADDR_BLOCK6(addr),
-                                IP6_ADDR_BLOCK7(addr),
-                                IP6_ADDR_BLOCK8(addr),
-                                ip6_addr_islinklocal(addr) ? " (link-local)" : "");
-                        if (i == 0 && cfg.ip6_manycast[0] != 0) {
-                            /* Link-local address added, now we can join multicast groups */
-                            ip6_addr_t group;
-                            group.addr[0] = cfg.ip6_manycast[0];
-                            group.addr[1] = cfg.ip6_manycast[1];
-                            group.addr[2] = cfg.ip6_manycast[2];
-                            group.addr[3] = cfg.ip6_manycast[3];
-                            mld6_joingroup(netif_ip6_addr(&thisif, 0), &group);
-                        }
-                    }
-                } else if ((valid_ip6 >> i) & 1) {
-                    /* address removed */
-                    valid_ip6 &= ~(1 << i);
-                }
-            }
-#endif
-            sys_check_timeouts();
         }
-        if (flags & MAC_RX_FLAG) {
-            while (ethernetif_input(&thisif)) {}
+        if (xTaskGetTickCount() - last_check >= TCP_TIMER_INTERVAL) {
+            last_check += TCP_TIMER_INTERVAL;
+            tcpip_checks();
         }
-        if (flags & API_FLAG) {
-            api_accept();
-        }
+        frame_received = ethernetif_input(&thisif);
     }
 }
 
