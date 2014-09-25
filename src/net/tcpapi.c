@@ -49,6 +49,7 @@ static err_t
 api_call(tcpapi_msg_t *msg, api_func func) {
     tcpapi_sems_t *semptr;
     TaskHandle_t tid = xTaskGetCurrentTaskHandle();
+    ASSERT(api_thread);
     if (tid == api_thread) {
         /* Run inline */
         err_t ret = func(msg);
@@ -67,14 +68,14 @@ api_call(tcpapi_msg_t *msg, api_func func) {
     }
     if (msg->sem == NULL) {
         ASSERT((semptr = malloc(sizeof(*semptr))));
-        ASSERT((semptr->sem = xSemaphoreCreateBinary()));
+        ASSERT((msg->sem = semptr->sem = xSemaphoreCreateBinary()));
         semptr->thread = tid;
         semptr->next = semlist;
         semlist = semptr;
     }
     xSemaphoreGive(api_mutex);
     /* Post message to tcpip thread */
-    xQueueSend(tcpip_queue, msg, portMAX_DELAY);
+    xQueueSend(tcpip_queue, &msg, portMAX_DELAY);
     /* Sleep until result is ready */
     xSemaphoreTake(msg->sem, portMAX_DELAY);
     return msg->ret;

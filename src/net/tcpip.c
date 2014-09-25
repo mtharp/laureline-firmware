@@ -32,6 +32,8 @@
 #include "lwip/timers.h"
 #include "netif/etharp.h"
 
+#include <stdio.h>
+
 TaskHandle_t thread_tcpip;
 
 struct netif thisif;
@@ -58,14 +60,14 @@ tcpip_start(void) {
     lwip_init();
     snmp_set_sysdescr((const u8_t*)BOARD_NAME, &sysdescr_len);
     api_start();
-    configure_interface();
-    ntp_server_start();
     if (cfg.gps_listen_port) {
         relay_server_start(cfg.gps_listen_port);
     }
     if (cfg.syslog_ip) {
         syslog_start(cfg.syslog_ip);
     }
+    configure_interface();
+    ntp_server_start();
 
     ASSERT(xTaskCreate(tcpip_thread, "tcpip", TCPIP_STACK_SIZE, NULL,
                 THREAD_PRIO_TCPIP, &thread_tcpip));
@@ -134,6 +136,11 @@ tcpip_thread(void *p) {
     int frame_received = 0;
     TickType_t last_check = xTaskGetTickCount();
     api_set_main_thread(xTaskGetCurrentTaskHandle());
+    if (cfg.ip_addr == 0 || cfg.ip_netmask == 0) {
+        dhcp_start(&thisif);
+    } else {
+        netif_set_up(&thisif);
+    }
     tcpip_checks();
     while (1) {
         /* If a frame was received last cycle then check for another one
@@ -161,6 +168,10 @@ link_changed(void) {
     char buf[SMI_DESCRIBE_SIZE];
     smi_describe_link(buf);
     log_write(LOG_NOTICE, "net", "Link changed status: %s", buf);
+    if (!thisif.dhcp && !did_startup) {
+        did_startup = 1;
+        log_startup();
+    }
 }
 
 
@@ -178,11 +189,16 @@ interface_changed(struct netif *netif) {
     if (!(thisif.flags & NETIF_FLAG_UP)) {
         return;
     }
-    if (!did_startup) {
-        did_startup = 1;
-        log_startup();
+    {
+        char buf[16];
+        sprintf(buf, "%lu.%lu.%lu.%lu", IP_DIGITS(thisif.ip_addr.addr));
+        log_sethostname(buf);
     }
     if (thisif.dhcp) {
+        if (!did_startup) {
+            did_startup = 1;
+            log_startup();
+        }
         log_write(LOG_NOTICE, "net",
                 "IP address acquired from DHCP: %d.%d.%d.%d",
                 IP_DIGITS(thisif.ip_addr.addr));
@@ -208,11 +224,6 @@ configure_interface(void) {
     netif_set_default(&thisif);
     netif_set_status_callback(&thisif, interface_changed);
     /* TODO: IGMP filter. Allowing all multicast for now.  */
-    if (ip.addr == 0 || netmask.addr == 0) {
-        dhcp_start(&thisif);
-    } else {
-        netif_set_up(&thisif);
-    }
 }
 
 

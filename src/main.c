@@ -89,7 +89,6 @@ main_thread(void *pdata) {
     serial_start(&Serial5, cfg.gps_baud_rate ? cfg.gps_baud_rate : 57600, qs);
     cli_set_output(cli_serial);
     log_start(cli_serial);
-    log_sethostname("gps-ntp");
     cl_enabled = 1;
 
     load_eeprom();

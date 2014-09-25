@@ -91,7 +91,7 @@ pll_thread(void *p) {
                     pll_reset();
                     desync = 0;
                     log_write(LOG_NOTICE, "vtimer",
-                            "step(PPS) %d us\r\n", (int)(-delta * 1e6));
+                            "step(PPS) %d us", (int)(-delta * 1e6));
                 }
             } else {
                 desync = 0;
