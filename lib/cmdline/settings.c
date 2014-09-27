@@ -12,6 +12,7 @@
 
 #if CLI_TYPE_IP4 || CLI_TYPE_IP6
 # include "lwip/def.h"
+# include "lwip/ip_addr.h"
 #endif
 
 
@@ -27,24 +28,24 @@ cliPrintVar(const clivalue_t *var, uint8_t full) {
 #if CLI_TYPE_IP4
     case VAR_IP4:
         {
-            uint8_t *addr = (uint8_t*)var->ptr;
-            cli_printf("%d.%d.%d.%d", addr[0], addr[1], addr[2], addr[3]);
+            ip_addr_t *ptr = (ip_addr_t*)var->ptr;
+            cli_printf(IP_DIGITS_FMT, IP_DIGITS(ptr));
             break;
         }
 #endif
 #if CLI_TYPE_IP6
     case VAR_IP6:
         {
-            uint32_t *ptr = (uint32_t*)var->ptr;
-            cli_printf("%x:%x:%x:%x:%x:%x:%x:%x",
-                    (uint16_t)(htonl(ptr[0]) >> 16) & 0xffff,
-                    (uint16_t)(htonl(ptr[0])      ) & 0xffff,
-                    (uint16_t)(htonl(ptr[1]) >> 16) & 0xffff,
-                    (uint16_t)(htonl(ptr[1])      ) & 0xffff,
-                    (uint16_t)(htonl(ptr[2]) >> 16) & 0xffff,
-                    (uint16_t)(htonl(ptr[2])      ) & 0xffff,
-                    (uint16_t)(htonl(ptr[3]) >> 16) & 0xffff,
-                    (uint16_t)(htonl(ptr[3])      ) & 0xffff);
+            ip6_addr_t *ptr = (ip6_addr_t*)var->ptr;
+            cli_printf(IP6_DIGITS_FMT,
+                    IP6_ADDR_BLOCK1(ptr),
+                    IP6_ADDR_BLOCK2(ptr),
+                    IP6_ADDR_BLOCK3(ptr),
+                    IP6_ADDR_BLOCK4(ptr),
+                    IP6_ADDR_BLOCK5(ptr),
+                    IP6_ADDR_BLOCK6(ptr),
+                    IP6_ADDR_BLOCK7(ptr),
+                    IP6_ADDR_BLOCK8(ptr));
             break;
         }
 #endif

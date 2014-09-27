@@ -7,9 +7,11 @@
  */
 
 #include "common.h"
+#include "logging.h"
 #include "main.h"
 #include "net/relay.h"
 #include "net/tcpapi.h"
+#include "net/tcpip.h"
 #include "lwip/tcp.h"
 #include "stm32/serial.h"
 
@@ -51,8 +53,10 @@ client_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err) {
 
 static err_t
 relay_accept(void *arg, struct tcp_pcb *pcb, err_t err) {
+    log_write(LOG_NOTICE, "relay", "Client connected to GPS relay port: " IP_DIGITS_FMT ":%d",
+            IP_DIGITS(&pcb->remote_ip.ip4), pcb->remote_port);
     if (relay_client != NULL) {
-        tcp_abort(relay_client);
+        tcp_close(relay_client);
     }
     relay_client = pcb;
     tcp_arg(pcb, (void*)++client_sigil);

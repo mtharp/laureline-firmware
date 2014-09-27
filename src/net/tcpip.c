@@ -100,7 +100,7 @@ tcpip_checks(void) {
                 ip6_addr_t *addr = netif_ip6_addr(&thisif, i);
                 valid_ip6 |= (1 << i);
                 log_write(LOG_NOTICE, "net",
-                        "IPv6 address assigned: %x:%x:%x:%x:%x:%x:%x:%x%s",
+                        "IPv6 address assigned: " IP6_DIGITS_FMT "%s",
                         IP6_ADDR_BLOCK1(addr),
                         IP6_ADDR_BLOCK2(addr),
                         IP6_ADDR_BLOCK3(addr),
@@ -110,14 +110,9 @@ tcpip_checks(void) {
                         IP6_ADDR_BLOCK7(addr),
                         IP6_ADDR_BLOCK8(addr),
                         ip6_addr_islinklocal(addr) ? " (link-local)" : "");
-                if (i == 0 && cfg.ip6_manycast[0] != 0) {
+                if (i == 0 && !ip6_addr_isany(&cfg.ip6_manycast)) {
                     /* Link-local address added, now we can join multicast groups */
-                    ip6_addr_t group;
-                    group.addr[0] = cfg.ip6_manycast[0];
-                    group.addr[1] = cfg.ip6_manycast[1];
-                    group.addr[2] = cfg.ip6_manycast[2];
-                    group.addr[3] = cfg.ip6_manycast[3];
-                    mld6_joingroup(netif_ip6_addr(&thisif, 0), &group);
+                    mld6_joingroup(netif_ip6_addr(&thisif, 0), &cfg.ip6_manycast);
                 }
             }
         } else if ((valid_ip6 >> i) & 1) {
@@ -136,7 +131,7 @@ tcpip_thread(void *p) {
     int frame_received = 0;
     TickType_t last_check = xTaskGetTickCount();
     api_set_main_thread(xTaskGetCurrentTaskHandle());
-    if (cfg.ip_addr == 0 || cfg.ip_netmask == 0) {
+    if (cfg.ip_addr.addr == 0 || cfg.ip_netmask.addr == 0) {
         dhcp_start(&thisif);
     } else {
         netif_set_up(&thisif);
@@ -178,13 +173,11 @@ link_changed(void) {
 
 static void
 interface_changed(struct netif *netif) {
-    if (cfg.ip_manycast) {
-        ip_addr_t ip;
-        ip.addr = cfg.ip_manycast;
+    if (cfg.ip_manycast.addr != 0) {
         if (thisif.flags & NETIF_FLAG_UP) {
-            igmp_joingroup(IP_ADDR_ANY, &ip);
+            igmp_joingroup(IP_ADDR_ANY, &cfg.ip_manycast);
         } else {
-            igmp_leavegroup(IP_ADDR_ANY, &ip);
+            igmp_leavegroup(IP_ADDR_ANY, &cfg.ip_manycast);
         }
     }
     if (!(thisif.flags & NETIF_FLAG_UP)) {
@@ -192,7 +185,7 @@ interface_changed(struct netif *netif) {
     }
     {
         char buf[16];
-        sprintf(buf, "%lu.%lu.%lu.%lu", IP_DIGITS(thisif.ip_addr.addr));
+        sprintf(buf, IP_DIGITS_FMT, IP_DIGITS(&thisif.ip_addr));
         log_sethostname(buf);
     }
     if (thisif.dhcp) {
@@ -201,8 +194,8 @@ interface_changed(struct netif *netif) {
             log_startup();
         }
         log_write(LOG_NOTICE, "net",
-                "IP address acquired from DHCP: %d.%d.%d.%d",
-                IP_DIGITS(thisif.ip_addr.addr));
+                "IP address acquired from DHCP: " IP_DIGITS_FMT,
+                IP_DIGITS(&thisif.ip_addr));
     }
 }
 
@@ -210,17 +203,14 @@ interface_changed(struct netif *netif) {
 
 static void
 configure_interface(void) {
-    struct ip_addr ip, gateway, netmask;
     long *seed = (long*)&thisif.hwaddr[2];
     ASSERT(eeprom_read(0xFA, thisif.hwaddr, 6) == EERR_OK);
     mac_start();
     mac_set_hwaddr(thisif.hwaddr);
     SRAND(*seed);
 
-    ip.addr = cfg.ip_addr;
-    gateway.addr = cfg.ip_gateway;
-    netmask.addr = cfg.ip_netmask;
-    netif_add(&thisif, &ip, &netmask, &gateway, NULL, ethernetif_init, ethernet_input);
+    netif_add(&thisif, &cfg.ip_addr, &cfg.ip_netmask, &cfg.ip_gateway, NULL,
+            ethernetif_init, ethernet_input);
 
     netif_set_default(&thisif);
     netif_set_status_callback(&thisif, interface_changed);

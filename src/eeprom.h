@@ -9,6 +9,8 @@
 #ifndef _EEPROM_H
 #define _EEPROM_H
 
+#include "lwip/ip_addr.h"
+
 #define EEPROM_ADDR         0b1010000
 #define EEPROM_I2C          (&I2C1_Dev)
 
@@ -42,18 +44,18 @@ typedef struct {
 /* Remainder is user-modifiable configuration */
 typedef struct {
     uint16_t version;
-    uint32_t ip_addr;
-    uint32_t ip_gateway;
-    uint32_t ip_netmask;
+    ip_addr_t ip_addr;
+    ip_addr_t ip_gateway;
+    ip_addr_t ip_netmask;
     uint32_t gps_baud_rate;
     uint8_t admin_key[8];
     uint16_t gps_listen_port;
     uint32_t syslog_ip;
     uint32_t flags;
-    uint32_t ip_manycast;
+    ip_addr_t ip_manycast;
     uint8_t ntp_key[20];
     uint32_t holdover;
-    uint32_t ip6_manycast[4];
+    ip6_addr_t ip6_manycast;
     uint16_t loopstats_interval;
     uint8_t _reserved[36];
     uint16_t crc;

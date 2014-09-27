@@ -55,7 +55,7 @@ const clicmd_t cmd_table[] = {
 
 
 const clivalue_t value_table[] = {
-    { "admin_key", VAR_HEX, &cfg.admin_key, 8 },
+    //{ "admin_key", VAR_HEX, &cfg.admin_key, 8 },
     { "gps_baud_rate", VAR_UINT32, &cfg.gps_baud_rate, 0 },
     { "gps_ext_in", VAR_FLAG, &cfg.flags, FLAG_GPSEXT },
     { "gps_ext_out", VAR_FLAG, &cfg.flags, FLAG_GPSOUT },
@@ -203,7 +203,7 @@ cli_print_hwaddr(void) {
 
 static void
 print_ipaddr(uint32_t addr) {
-    cli_printf("%d.%d.%d.%d",
+    cli_printf(IP_DIGITS_FMT,
             (addr      ) & 0xff,
             (addr >>  8) & 0xff,
             (addr >> 16) & 0xff,
@@ -214,7 +214,7 @@ print_ipaddr(uint32_t addr) {
 #if LWIP_IPV6
 static void
 print_ip6addr(ip6_addr_t *addr) {
-    cli_printf("%x:%x:%x:%x:%x:%x:%x:%x%s",
+    cli_printf(IP6_DIGITS_FMT "%s",
             IP6_ADDR_BLOCK1(addr),
             IP6_ADDR_BLOCK2(addr),
             IP6_ADDR_BLOCK3(addr),

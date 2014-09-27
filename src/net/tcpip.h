@@ -11,8 +11,7 @@
 
 #include "queue.h"
 #include "lwip/netif.h"
-
-#define IP_DIGITS(addr) (addr) & 0xff, (addr >> 8) & 0xff, (addr >> 16) & 0xff, (addr >> 24) & 0xff
+#include "cmdline/settings.h"
 
 extern struct netif thisif;
 extern QueueHandle_t tcpip_queue;

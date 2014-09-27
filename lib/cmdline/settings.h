@@ -16,6 +16,11 @@
 #define CLI_TYPE_HEX 1
 #define CLI_TYPE_FLAG 1
 
+#define IP_DIGITS(x) ((x)->addr) & 0xff, ((x)->addr >> 8) & 0xff, \
+    ((x)->addr >> 16) & 0xff, ((x)->addr >> 24) & 0xff
+#define IP_DIGITS_FMT "%lu.%lu.%lu.%lu"
+#define IP6_DIGITS_FMT "%x:%x:%x:%x:%x:%x:%x:%x"
+
 
 typedef enum {
     VAR_UINT32,
