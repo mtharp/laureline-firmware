@@ -72,7 +72,7 @@ Internal Connectors
 -------------------
 
 P2, P3 - Debug
-=============
+==============
 Serial Wire Debug connection for flashing and debugging the main
 microcontroller. P2 is a "ST-Link" header without the SWV pin. P3 is a Tag
 Connect pad for use with the TC2030-CTX-NL cable.

@@ -102,16 +102,6 @@ Settings are viewed and modified with the :ref:`set` command.
 Setting changes must be saved with the :ref:`save` command before they will have any effect.
 Saving causes the system to reboot, which will cause a 2 minute period where NTP service is not available while the PLL settles.
 
-admin_key
----------
-| **Format**: 16 hexadecimal digits
-| **Default**: 0
-
-Currently unimplemented, this feature may be added at a later date.
-Used to authenticate remote configuration access.
-You must supply the same key to the configuration client tool in order to discover and configure this server remotely.
-If set to all zeroes (the default), remote access is not possible.
-
 .. _gps_baud_rate:
 
 gps_baud_rate
@@ -313,6 +303,23 @@ syslog_ip
 
 If non-zero, Laureline will forward logging data in the `syslog`_ format to the specified IP address.
 Log lines will be sent in plain UDP format to port 514.
+
+.. _timescale_gps:
+
+timescale_gps
+-------------
+| **Format**: boolean (true or false)
+| **Default**: false
+
+If true, then the GPS timescale will be used instead of UTC. The GPS timescale
+is offset from UTC by an integral number of seconds (+16 as of the time of this
+writing), but the offset changes instantaneously when a leap second occurs.
+Users who wish to have a timescale that does not have the leap second
+discontinuity may select this option at the cost of being out of sync with UTC.
+
+Selecting this option also speeds up the time from cold boot until NTP is
+ready, because the server does not need to wait to receive the UTC offset data
+from the GPS almanac.
 
 
 Hardware Jumpers

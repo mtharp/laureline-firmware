@@ -16,7 +16,7 @@ To perform a firmware upgrade:
 Firmware Changelog
 ==================
 
-Version 3.1
+Version 4.0
 -----------
 * Added IPv6 support. Only stateless autoconfiguration is supported; static IPs
   will be added later. The :ref:`ip6_manycast` option can be used to join an
@@ -25,11 +25,15 @@ Version 3.1
   data. Reports are emitted periodically, by default every 60 seconds but
   adjustable using the :ref:`loopstats_interval` option. See :ref:`logging` for
   details.
-* Fixed log messages being sent that had the "time-of-day OK" status flag set
-  before the time-of-day was actually applied (`#2`_).
+* Added a :ref:`timescale_gps` option to select the GPS timescale instead of UTC.
 * The :ref:`gps_baud_rate` option can now be used in combination with
   :ref:`gps_ext_out` to output data at a faster rate than the internal 57600
   baud. However, it may not be set to less than 57600 when used as an output.
+* Fixed log messages being sent that had the "time-of-day OK" status flag set
+  before the time-of-day was actually applied (`#2`_).
+* Fixed a stability issue that could cause a spontaneous reset, especially
+  under extremely high network load.
+* Now based on the FreeRTOS kernel; see :doc:`resources`.
 
 Version 3.0
 -----------
