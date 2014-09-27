@@ -12,6 +12,7 @@
 #include "stm32/serial.h"
 
 extern serial_t *gps_serial;
+extern uint8_t watchdog_main, watchdog_net;
 
 void log_startup(void);
 void enter_standby(void);

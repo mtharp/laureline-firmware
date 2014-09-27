@@ -20,9 +20,3 @@ iwdg_start(uint8_t prescaler, uint16_t reload) {
     IWDG->RLR = reload;
     IWDG->KR = IWDG_KEY_START;
 }
-
-
-void
-iwdg_clear(void) {
-    IWDG->KR = IWDG_KEY_CLEAR;
-}

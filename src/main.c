@@ -29,6 +29,8 @@
 TaskHandle_t thread_main;
 serial_t *const cli_serial = &Serial1;
 serial_t *gps_serial;
+uint8_t watchdog_main, watchdog_net;
+
 static int did_watchdog;
 
 /* info table for the boot stub */
@@ -117,6 +119,7 @@ main_thread(void *pdata) {
     }
     cl_enabled = 0;
     while (1) {
+        watchdog_main = 5;
         active = xQueueSelectFromSet(qs, pdMS_TO_TICKS(1000));
         if (active == cli_serial->rx_q) {
             val = serial_get(cli_serial, TIMEOUT_NOBLOCK);
@@ -141,7 +144,8 @@ main(void) {
     unstick_i2c();
     GPIO_ON(E_NRST);
     setup_clocks((int)info_get(boot_table, INFO_HSE_FREQ));
-    //iwdg_start(4, 0xFFF);
+    iwdg_start(4, 0xFFF);
+    watchdog_main = watchdog_net = 5;
     ASSERT(xTaskCreate(main_thread, "main", MAIN_STACK_SIZE, NULL,
                 THREAD_PRIO_MAIN, &thread_main));
     vTaskStartScheduler();

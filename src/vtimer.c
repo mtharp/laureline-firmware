@@ -13,6 +13,7 @@
 #include "epoch.h"
 #include "init.h"
 #include "logging.h"
+#include "main.h"
 #include "ntpns.h"
 #include "pll.h"
 #include "ppscapture.h"
@@ -132,6 +133,11 @@ pll_thread(void *p) {
             utc_next = 0;
             status_flags |= STATUS_TOD_OK;
         }
+        if (watchdog_main && watchdog_net) {
+            iwdg_clear();
+            watchdog_main--;
+            watchdog_net--;
+        }
         ENABLE_IRQ();
 
         if (tmps != 0) {
@@ -220,7 +226,6 @@ pll_thread(void *p) {
         GPIO_OFF(LED2);
         tmp += (PLL_SUB_TIME - PPS_BLINK_TIME) * NTP_SECOND;
         vtimer_sleep_until(tmp);
-        iwdg_clear(); /* TODO: check on other threads */
     }
 }
 

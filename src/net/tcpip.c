@@ -155,6 +155,7 @@ tcpip_thread(void *p) {
             }
         }
         if (xTaskGetTickCount() - last_check >= TCP_TIMER_INTERVAL) {
+            watchdog_net = 5;
             last_check += TCP_TIMER_INTERVAL;
             tcpip_checks();
         }
