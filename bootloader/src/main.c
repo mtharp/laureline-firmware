@@ -11,7 +11,6 @@
 
 #include "bootloader.h"
 #include "ff.h"
-#include "info_table.h"
 #include "init.h"
 #include "version.h"
 #include "stm32/flash.h"
@@ -26,13 +25,6 @@ FATFS MMC_FS;
 #define JUMP_TOKEN 0xeefc63d2
 uint32_t __attribute__((section(".uninit"))) jump_token;
 const uint32_t *user_vtor = _user_start;
-
-const info_entry_t boot_table[] = {
-    {INFO_BOOTVER, VERSION},
-    {INFO_HWVER, (void*)HW_VERSION},
-    {INFO_HSE_FREQ, (void*)HSE_FREQ},
-    {INFO_END, NULL},
-};
 
 
 static void

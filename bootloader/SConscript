@@ -9,7 +9,6 @@
 
 Import('env')
 env = env.Clone()
-env['FLASH_SIZE'] = '256k'
 env['LINK'] = './util/resize_ld.py $FLASH_SIZE $CC'
 
 # Include path
@@ -25,8 +24,9 @@ src
 """.split())
 
 # Regular sources
-srcs = env.Globs("""
-src/*.c
+srcs = env.Object(env.Globs("""
+src/bootloader.c
+src/main.c
 ../src/board.c
 ../src/init.c
 ../lib/crc7.c
@@ -43,7 +43,7 @@ src/*.c
 ../ports/crt0.c
 ../ports/stubs.c
 ../ports/vectors.c
-""")
+"""))
 
 # Build third-party code with relaxed warnings
 libs = env.Object(env.Globs("""
@@ -56,15 +56,28 @@ libs = env.Object(env.Globs("""
 ../FreeRTOS/Source/timers.c
 """), CFLAGS_USER='$CFLAGS_USER -Wno-unused-value -Wno-error=aggressive-loop-optimizations')
 
-env.VersionH('src/version.h',
-    HW_VERSION='$HW_VERSION',
-    HSE_FREQ='$HSE_FREQ',
-    )
+env.VersionH('src/version.h')
 
-default = env.EmbeddedProgram('bootloader.elf',
-    srcs + libs,
-    script='ports/STM32F107xB.ld',
-    LIBS=['m', 'nosys'],
-    )
 
-Return('default')
+# Build a separate binary for every hardware target
+results = []
+for hw_maj, hw_min, hse_freq, flash_size in [
+        (6, 0, 25e6, 256),
+        (6, 0, 26e6, 256),
+        (7, 0, 25e6, 256),
+        ]:
+    name = 'bootloader-hw%d.%d-%dmhz.elf' % (hw_maj, hw_min, int(hse_freq / 1e6))
+    table = env.Object('src/boot_table.%s' % name, 'src/boot_table.c', CPPDEFINES={
+        'HW_VERSION': '0x%02x%02x' % (hw_maj, hw_min),
+        'HSE_FREQ': str(int(hse_freq)),
+        })
+    out = env.EmbeddedProgram(name,
+            srcs + libs + table,
+            script='ports/STM32F107xB.ld',
+            LIBS=['m', 'nosys'],
+            FLASH_SIZE='%dk' % flash_size,
+            )
+    dest = env.Command('../../' + name, out, Copy('$TARGET', '$SOURCE'))
+    results += dest
+
+Return('results')
