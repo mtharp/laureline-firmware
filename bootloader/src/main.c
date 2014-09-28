@@ -140,7 +140,7 @@ main(void) {
         jump_application();
     }
     setup_hsi();
-    serial_start(&Serial1, 115200, NULL);
+    serial_start(&Serial1, 115200);
     ASSERT(xTaskCreate(main_thread, "main", MAIN_STACK_SIZE, NULL,
                 THREAD_PRIO_MAIN, &thread_main));
     vTaskStartScheduler();

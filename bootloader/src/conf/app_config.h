@@ -9,6 +9,8 @@
 #ifndef _APP_CONFIG_H
 #define _APP_CONFIG_H
 
+#define BOOTLOADER
+
 #define USE_I2C1                0
 #define USE_I2C2                0
 #define USE_SERIAL_USART1       1

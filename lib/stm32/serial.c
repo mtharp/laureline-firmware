@@ -33,14 +33,20 @@ static void usart_tcie(void *param, uint32_t flags);
 
 
 void
-serial_start(serial_t *serial, int speed, QueueSetHandle_t queue_set) {
+serial_start(serial_t *serial, int speed
+#if configUSE_QUEUE_SETS
+        , QueueSetHandle_t queue_set
+#endif
+        ) {
     IRQn_Type irqn = 0;
     ASSERT((serial->rx_q = xQueueCreate(SERIAL_RX_SIZE, 1)));
     ASSERT((serial->mutex = xSemaphoreCreateMutex()));
+#if configUSE_QUEUE_SETS
     if (queue_set) {
         /* Must be added to set while it's still empty */
         xQueueAddToSet(serial->rx_q, queue_set);
     }
+#endif
     serial->speed = speed;
     serial->tx_dma = NULL;
 #ifdef USE_SERIAL_USART1
