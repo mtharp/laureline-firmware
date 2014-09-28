@@ -20,9 +20,15 @@ SECTIONS
         . = 512;
         boot_table = .;
         KEEP(*(*.boot_table))
-        . = 2k;
-        _user_start = .;
+        /* pack some big functions into this page, to potentially save a page
+         * from the other region.
+         */
+        *(*chk_mounted*);
+        *(*follow_path);
+        *(*try_flash);
+        *(*_free_r);
     } > flash1
+    _user_start = 2k;
 
     .data :
     {
