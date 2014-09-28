@@ -17,11 +17,7 @@ def version_h(source, target, env):
 
 
 def VersionH(env, target, **extra_vars):
-    p = os.popen(str(env.File('#util/git_version.sh')))
-    version = p.read().strip()
-    if p.close():
-        sys.exit('Failed to detect git version')
-    lines = ['#define VERSION "%s"\n' % version]
+    lines = ['#define VERSION "%s"\n' % env['VERSION']]
     for name, value in sorted(extra_vars.items()):
         resolved = env.subst(value)
         if not resolved:
@@ -32,6 +28,10 @@ def VersionH(env, target, **extra_vars):
 
 
 def generate(env):
+    p = os.popen(str(env.File('#util/git_version.sh')))
+    env['VERSION'] = p.read().strip()
+    if p.close():
+        sys.exit('Failed to detect git version')
     env.AddMethod(VersionH)
     env['BUILDERS']['WriteVersionH'] = Builder(action=version_h)
 

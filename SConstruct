@@ -9,9 +9,9 @@
 vars = Variables(None, ARGUMENTS)
 vars.Add(BoolVariable('DEBUG', 'Disable optimizations', 0))
 vars.Add(BoolVariable('WERROR', 'Make warnings into errors', 0))
-vars.Add('HSE_FREQ', '', '0')
-vars.Add('HW_VERSION', '', '0')
-vars.Add('BMP', 'Path to blackmagic probe device', '')
+vars.Add('HSE_FREQ', "Default oscillator frequency for the application's boot stub", '25000000')
+vars.Add('HW_VERSION', "Hardware version for the application's boot stub", '0x0700')
+vars.Add('BMP', 'Path to blackmagic probe device for installation', '')
 
 env = Environment(variables=vars, tools=['default', 'embedded_program', 'version_h'])
 Help(vars.GenerateHelpText(env))
@@ -22,13 +22,28 @@ if env.get('WERROR'):
     env['CFLAGS_USER'] += ' -Werror'
 
 Export('env')
+all = []
 
+# scons default - main application
 default = SConscript('SConscript', variant_dir='build')
+all += default
 Alias('default', default)
 Default(default)
 
+# scons bootloader - bootloaders for all targets
 VariantDir('build/bootloader', '.')
 loader = SConscript('build/bootloader/bootloader/SConscript')
+all += loader
 Alias('bootloader', loader)
 
-Clean(default + loader, 'build')
+# scons dist
+dist = []
+dist += env.Command('dist/laureline-${VERSION}.elf', default, Copy('$TARGET', '$SOURCE'))
+for bl in loader:
+    name = bl.name.replace('bootloader-', 'bootloader-${VERSION}-')
+    dist += env.Command('dist/' + name, bl, Copy('$TARGET', '$SOURCE'))
+NoClean(dist)
+Alias('dist', dist)
+
+Clean(all, 'build')
+Alias('all', all)
