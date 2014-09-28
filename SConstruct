@@ -27,6 +27,8 @@ all = []
 # scons default - main application
 default = SConscript('SConscript', variant_dir='build')
 all += default
+main_elf = [x for x in default if x.name.endswith('.elf')]
+main_hex = [x for x in default if x.name.endswith('.hex')]
 Alias('default', default)
 Default(default)
 
@@ -38,7 +40,8 @@ Alias('bootloader', loader)
 
 # scons dist
 dist = []
-dist += env.Command('dist/laureline-${VERSION}.elf', default, Copy('$TARGET', '$SOURCE'))
+dist += env.Command('dist/laureline-${VERSION}.elf', main_elf, Copy('$TARGET', '$SOURCE'))
+dist += env.Command('dist/laureline-${VERSION}.hex', main_hex, Copy('$TARGET', '$SOURCE'))
 for bl in loader:
     name = bl.name.replace('bootloader-', 'bootloader-${VERSION}-')
     dist += env.Command('dist/' + name, bl, Copy('$TARGET', '$SOURCE'))
