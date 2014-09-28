@@ -1,0 +1,70 @@
+#
+# Copyright (c) Michael Tharp <gxti@partiallystapled.com>
+#
+# This file is distributed under the terms of the MIT License.
+# See the LICENSE file at the top of this tree, or if it is missing a copy can
+# be found at http://opensource.org/licenses/MIT
+#
+
+
+Import('env')
+env = env.Clone()
+env['FLASH_SIZE'] = '256k'
+env['LINK'] = './util/resize_ld.py $FLASH_SIZE $CC'
+
+# Include path
+env.PrependUnique(CPPPATH="""
+src/conf
+src
+../src
+../ports
+../lib
+../fatfs
+../FreeRTOS/Source/include
+../FreeRTOS/Source/portable/GCC/ARM_CM3
+""".split())
+
+# Regular sources
+srcs = env.Globs("""
+src/*.c
+../src/board.c
+../src/init.c
+../lib/crc7.c
+../lib/fatfs/mmc_diskio.c
+../lib/freertos_plat.c
+../lib/ihex.c
+../lib/info_table.c
+../lib/stm32/dma.c
+../lib/stm32/flash.c
+../lib/stm32/mmc.c
+../lib/stm32/serial.c
+../lib/stm32/spi.c
+../ports/core_cm3.c
+../ports/crt0.c
+../ports/stubs.c
+../ports/vectors.c
+""")
+
+# Build third-party code with relaxed warnings
+libs = env.Object(env.Globs("""
+../fatfs/ff.c
+../FreeRTOS/Source/list.c
+../FreeRTOS/Source/portable/GCC/ARM_CM3/port.c
+../FreeRTOS/Source/portable/MemMang/heap_3.c
+../FreeRTOS/Source/queue.c
+../FreeRTOS/Source/tasks.c
+../FreeRTOS/Source/timers.c
+"""), CFLAGS_USER='$CFLAGS_USER -Wno-unused-value -Wno-error=aggressive-loop-optimizations')
+
+env.VersionH('src/version.h',
+    HW_VERSION='$HW_VERSION',
+    HSE_FREQ='$HSE_FREQ',
+    )
+
+default = env.EmbeddedProgram('bootloader.elf',
+    srcs + libs,
+    script='ports/STM32F107xB.ld',
+    LIBS=['m', 'nosys'],
+    )
+
+Return('default')

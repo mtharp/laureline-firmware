@@ -10,6 +10,8 @@
 #define _SPI_H
 
 #include "common.h"
+#include "semphr.h"
+
 #include "stm32/dma.h"
 
 
@@ -23,7 +25,7 @@ typedef struct {
     GPIO_TypeDef    *cs_pad;
     uint8_t         cs_pin;
 
-    OS_EventID      sem;
+    SemaphoreHandle_t sem;
 } spi_t;
 
 #if USE_SPI1

@@ -20,7 +20,15 @@ env.SetARMFlags('cortex-m3')
 env['CFLAGS_USER'] = '-std=gnu99'
 if env.get('WERROR'):
     env['CFLAGS_USER'] += ' -Werror'
+
 Export('env')
+
 default = SConscript('SConscript', variant_dir='build')
 Alias('default', default)
-Clean(default, 'build')
+Default(default)
+
+VariantDir('build/bootloader', '.')
+loader = SConscript('build/bootloader/bootloader/SConscript')
+Alias('bootloader', loader)
+
+Clean(default + loader, 'build')

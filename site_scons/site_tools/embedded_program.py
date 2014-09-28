@@ -36,7 +36,7 @@ def EmbeddedProgram(env, target, sources, script, **kwargs):
     script = _node(env, script)
     mapfile = target.target_from_source('', '.map')
     flags = kwargs.get('LINKFLAGS', '$LINKFLAGS')
-    flags += ' -nostartfiles -T%s -Wl,-Map=%s,--cref' % (script, mapfile.path)
+    flags += ' -nostartfiles -T%s -Wl,-Map=%s,--cref' % (script.path, mapfile.path)
     kwargs['LINKFLAGS'] = flags
     elf = env.Program(target, sources, **kwargs)
     env.Depends(elf, script)
@@ -45,7 +45,9 @@ def EmbeddedProgram(env, target, sources, script, **kwargs):
     hexfile = env.Objcopy(hexfile, target, COPYFLAGS='-O ihex -R .boot_stub')
     lstfile = target.target_from_source('', '.lst')
     lstfile = env.Objdump(lstfile, target, DUMPFLAGS='-S')
-    return elf + hexfile + lstfile
+    nostub = target.target_from_source('', '.elf.nostub')
+    nostub = env.Objcopy(nostub, target, COPYFLAGS='-R .boot_stub')
+    return elf + hexfile + lstfile + nostub
 
 
 def CopyObject(env, target, source, format=None, strip_sections=None):

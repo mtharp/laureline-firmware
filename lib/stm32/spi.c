@@ -7,6 +7,7 @@
  */
 
 #include "common.h"
+
 #include "init.h"
 #include "stm32/spi.h"
 
@@ -23,8 +24,7 @@ static void rx_isr(void *param, uint32_t flags);
 void
 spi_start(spi_t *spi, uint32_t cr1) {
     ASSERT(spi->cs_pad != NULL);
-    spi->sem = CoCreateSem(0, 1, EVENT_SORT_TYPE_FIFO);
-    ASSERT(spi->sem != E_CREATE_FAIL);
+    ASSERT((spi->sem = xSemaphoreCreateBinary()));
 #if USE_SPI1
     if (spi == &SPI1_Dev) {
         spi->spi = SPI1;
@@ -97,14 +97,16 @@ spi_exchange(spi_t *spi, const uint8_t *tx_buf, uint8_t *rx_buf, uint16_t size) 
     dma_enable(spi->tx_dma);
     dma_enable(spi->rx_dma);
     ENABLE_IRQ();
-    CoPendSem(spi->sem, 0);
+    xSemaphoreTake(spi->sem, portMAX_DELAY);
 }
 
 
 static void
 rx_isr(void *param, uint32_t flags) {
+    BaseType_t wakeup = 0;
     spi_t *spi = (spi_t*)param;
     dma_disable(spi->tx_dma);
     dma_disable(spi->rx_dma);
-    isr_PostSem(spi->sem);
+    xSemaphoreGiveFromISR(spi->sem, &wakeup);
+    portEND_SWITCHING_ISR(wakeup);
 }

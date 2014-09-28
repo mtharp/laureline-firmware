@@ -7,6 +7,8 @@
  */
 
 #include "common.h"
+#include "task.h"
+
 #include "crc7.h"
 #include "init.h"
 #include "stm32/mmc.h"
@@ -23,23 +25,23 @@ static void
 mmc_ll_wait_idle(void) {
     int i;
     uint8_t result;
-    U64 deadline;
+    TickType_t start;
     for (i = 0; i < 16; i++) {
         spi_exchange(MMCSPI, NULL, &result, 1);
         if (result == 0xFF) {
             return;
         }
     }
-    deadline = CoGetOSTime() + MMC_IDLE_DEADLINE;
+    start = xTaskGetTickCount();
     while (1) {
         spi_exchange(MMCSPI, NULL, &result, 1);
         if (result == 0xFF) {
             return;
         }
-        if (CoGetOSTime() > deadline) {
+        if (xTaskGetTickCount() - start > MMC_IDLE_DEADLINE) {
             return;
         }
-        CoTickDelay(MS2ST(10));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 
@@ -110,7 +112,7 @@ mmc_start(void) {
 
 int16_t
 mmc_connect(void) {
-    U64 deadline;
+    TickType_t start;
     uint8_t n, buf[4];
 
     /* Run SPI in slow mode and clear the bus by clocking a few bytes */
@@ -120,32 +122,32 @@ mmc_connect(void) {
     spi_exchange(MMCSPI, NULL, NULL, 16);
 
     /* Select SPI mode */
-    deadline = CoGetOSTime() + MMC_RESET_DEADLINE;
+    start = xTaskGetTickCount();
     while (1) {
         if (mmc_cmd_r1(MMC_CMDGOIDLE, 0) == 0x01) {
             break;
         }
-        if (CoGetOSTime() >= deadline) {
+        if (xTaskGetTickCount() - start > MMC_RESET_DEADLINE) {
             mmc_state = MMC_UNLOADED;
             return EERR_TIMEOUT;
         }
-        CoTickDelay(MS2ST(10));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 
     /* Detect card type */
     if (mmc_cmd_r3(MMC_CMDINTERFACE_CONDITION, 0x01AA, buf) != 0x05) {
         /* Switch to v2 */
-        deadline = CoGetOSTime() + MMC_INIT_DEADLINE;
+        start = xTaskGetTickCount();
         while (1) {
             if ((mmc_cmd_r1(MMC_CMDAPP, 0) == 0x01)
                     && (mmc_cmd_r3(MMC_ACMDOPCONDITION, 0x400001aa, buf) == 0x00)) {
                 break;
             }
-            if (CoGetOSTime() >= deadline) {
+            if (xTaskGetTickCount() - start > MMC_INIT_DEADLINE) {
                 mmc_state = MMC_UNLOADED;
                 return EERR_TIMEOUT;
             }
-            CoTickDelay(MS2ST(10));
+            vTaskDelay(pdMS_TO_TICKS(10));
         }
         /* Check for block mode */
         mmc_cmd_r3(MMC_CMDREADOCR, 0, buf);
@@ -154,7 +156,7 @@ mmc_connect(void) {
         }
     } else {
         /* MMC or SDv1 */
-        deadline = CoGetOSTime() + MMC_INIT_DEADLINE;
+        start = xTaskGetTickCount();
         while (1) {
             n = mmc_cmd_r1(MMC_CMDINIT, 0);
             if (n == 0x00) {
@@ -163,11 +165,11 @@ mmc_connect(void) {
                 mmc_state = MMC_UNLOADED;
                 return EERR_FAULT;
             }
-            if (CoGetOSTime() >= deadline) {
+            if (xTaskGetTickCount() - start > MMC_INIT_DEADLINE) {
                 mmc_state = MMC_UNLOADED;
                 return EERR_TIMEOUT;
             }
-            CoTickDelay(MS2ST(10));
+            vTaskDelay(pdMS_TO_TICKS(10));
         }
     }
 
@@ -236,11 +238,11 @@ mmc_start_read(uint32_t lba) {
 int16_t
 mmc_read_sector(uint8_t *out) {
     uint8_t r;
-    U64 deadline;
+    TickType_t start;
     if (mmc_state != MMC_READING) {
         return EERR_INVALID;
     }
-    deadline = CoGetOSTime() + MMC_DATA_DEADLINE;
+    start = xTaskGetTickCount();
     while (1) {
         spi_exchange(MMCSPI, NULL, &r, 1);
         if (r == 0xFE) {
@@ -249,7 +251,7 @@ mmc_read_sector(uint8_t *out) {
             /* TODO: check CRC */
             return EERR_OK;
         }
-        if (CoGetOSTime() >= deadline) {
+        if (xTaskGetTickCount() - start > MMC_DATA_DEADLINE) {
             break;
         }
     }

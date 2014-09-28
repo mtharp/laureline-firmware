@@ -7,6 +7,8 @@
  */
 
 #include "common.h"
+#include "task.h"
+
 #include "bootloader.h"
 #include "ff.h"
 #include "info_table.h"
@@ -17,10 +19,7 @@
 #include "stm32/serial.h"
 #include "stm32/spi.h"
 
-#define MAIN_STACK 512
-OS_STK main_stack[MAIN_STACK];
-OS_TID main_tid;
-
+TaskHandle_t thread_main;
 FATFS MMC_FS;
 #define MMC_FIRMWARE_FILENAME "ll.hex"
 
@@ -68,7 +67,7 @@ try_flash(void) {
     spi_start(&SPI3_Dev, 0);
     mmc_start();
     GPIO_OFF(SDIO_PDOWN);
-    CoTickDelay(MS2ST(100));
+    vTaskDelay(pdMS_TO_TICKS(100));
 
     serial_puts(&Serial1, "Bootloader version: " VERSION "\r\n");
     rc = mmc_connect();
@@ -132,11 +131,11 @@ main_thread(void *pdata) {
     try_flash();
     if (user_vtor[1] == 0xFFFFFFFF) {
         serial_puts(&Serial1, "No application loaded, trying to load again in 10 seconds\r\n");
-        CoTickDelay(S2ST(10));
+        vTaskDelay(pdMS_TO_TICKS(10000));
         NVIC_SystemReset();
     } else {
         serial_puts(&Serial1, "Booting application\r\n");
-        CoTickDelay(MS2ST(250));
+        vTaskDelay(pdMS_TO_TICKS(250));
         reset_and_jump();
     }
 }
@@ -148,12 +147,9 @@ main(void) {
         jump_token = 0;
         jump_application();
     }
-    CoInitOS();
     setup_hsi();
-    serial_start(&Serial1, 115200);
-    main_tid = CoCreateTask(main_thread, NULL, THREAD_PRIO_MAIN,
-            &main_stack[MAIN_STACK-1], MAIN_STACK, "main");
-    ASSERT(main_tid != E_CREATE_FAIL);
-    CoStartOS();
-    while (1) {}
+    serial_start(&Serial1, 115200, NULL);
+    ASSERT(xTaskCreate(main_thread, "main", MAIN_STACK_SIZE, NULL,
+                THREAD_PRIO_MAIN, &thread_main));
+    vTaskStartScheduler();
 }

@@ -19,8 +19,6 @@
 #define USE_SPI1                0
 #define USE_SPI3                0
 
-//#define MMCSPI (&SPI3_Dev)
-
 /* Highest priority (highest number) */
 #define THREAD_PRIO_VTIMER      4
 #define THREAD_PRIO_MAIN        3

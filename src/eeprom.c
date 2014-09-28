@@ -66,7 +66,7 @@ int16_t
 eeprom_write_page(uint8_t addr, const uint8_t *buf) {
     uint8_t i;
     uint8_t tmp[1 + EEPROM_PAGE_SIZE];
-    TickType_t timeout;
+    TickType_t start;
     int16_t status;
     tmp[0] = addr;
     memcpy(&tmp[1], buf, EEPROM_PAGE_SIZE);
@@ -78,9 +78,9 @@ eeprom_write_page(uint8_t addr, const uint8_t *buf) {
             goto cleanup;
         }
         /* Readback EEPROM and compare */
-        timeout = xTaskGetTickCount() + pdMS_TO_TICKS(250);
+        start = xTaskGetTickCount();
         while (1) {
-            if (xTaskGetTickCount() > timeout) {
+            if (xTaskGetTickCount() - start > pdMS_TO_TICKS(250)) {
                 status = EERR_TIMEOUT;
                 goto cleanup;
             }

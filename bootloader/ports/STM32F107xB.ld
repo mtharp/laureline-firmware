@@ -59,4 +59,10 @@ SECTIONS
     {
         *(.uninit)
     } > ram
+
+    .heap :
+    {
+        PROVIDE(_sheap = .);
+    } > ram
+    PROVIDE(_eheap = ORIGIN(ram) + LENGTH(ram));
 }

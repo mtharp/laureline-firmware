@@ -79,5 +79,5 @@ default = env.EmbeddedProgram('laureline.elf',
     LIBS=['m', 'nosys'],
     )
 
-Alias('install', env.GDBInstall(default))
+Alias('install', env.GDBInstall(default[0]))
 Return('default')
