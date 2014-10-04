@@ -19,6 +19,7 @@
 #include "app_config.h"
 
 #include "FreeRTOS.h"
+#include "task.h"
 
 #define TIMEOUT_NOBLOCK     0
 #define TIMEOUT_FOREVER     portMAX_DELAY
@@ -36,5 +37,9 @@
 
 #define GPIO_ON(pfx)        _PASTE2(pfx, _PAD)->BSRR = _PASTE2(pfx, _PIN);
 #define GPIO_OFF(pfx)       _PASTE2(pfx, _PAD)->BRR  = _PASTE2(pfx, _PIN);
+#define MS2ST(ms)           (((ms) * configTICK_RATE_HZ) / 1000)
+#define S2ST(ms)            ((ms) * configTICK_RATE_HZ)
+#define DELAY_MS(ms)        vTaskDelay(MS2ST(ms))
+#define DELAY_S(ms)         vTaskDelay(S2ST(ms))
 
 #endif

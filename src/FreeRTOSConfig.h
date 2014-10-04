@@ -11,14 +11,13 @@
 
 #include "app_config.h"
 
+extern sysfreq_t system_frequency;
 #ifdef BOOTLOADER
-extern uint32_t system_frequency;
 #define configUSE_IDLE_HOOK             0
 #define configUSE_QUEUE_SETS            0
 #define configUSE_TICK_HOOK             0
 #define configCHECK_FOR_STACK_OVERFLOW  0
 #else
-extern double system_frequency;
 #define configUSE_IDLE_HOOK             1
 #define configUSE_QUEUE_SETS            1
 #define configUSE_TICK_HOOK             1

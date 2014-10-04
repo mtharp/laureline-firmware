@@ -7,7 +7,6 @@
  */
 
 #include "common.h"
-#include "task.h"
 
 #include "crc7.h"
 #include "init.h"
@@ -41,7 +40,7 @@ mmc_ll_wait_idle(void) {
         if (xTaskGetTickCount() - start > MMC_IDLE_DEADLINE) {
             return;
         }
-        vTaskDelay(pdMS_TO_TICKS(10));
+        DELAY_MS(10);
     }
 }
 
@@ -131,7 +130,7 @@ mmc_connect(void) {
             mmc_state = MMC_UNLOADED;
             return EERR_TIMEOUT;
         }
-        vTaskDelay(pdMS_TO_TICKS(10));
+        DELAY_MS(10);
     }
 
     /* Detect card type */
@@ -147,7 +146,7 @@ mmc_connect(void) {
                 mmc_state = MMC_UNLOADED;
                 return EERR_TIMEOUT;
             }
-            vTaskDelay(pdMS_TO_TICKS(10));
+            DELAY_MS(10);
         }
         /* Check for block mode */
         mmc_cmd_r3(MMC_CMDREADOCR, 0, buf);
@@ -169,7 +168,7 @@ mmc_connect(void) {
                 mmc_state = MMC_UNLOADED;
                 return EERR_TIMEOUT;
             }
-            vTaskDelay(pdMS_TO_TICKS(10));
+            DELAY_MS(10);
         }
     }
 

@@ -28,10 +28,10 @@ int16_t mmc_start_read(uint32_t lba);
 int16_t mmc_read_sector(uint8_t *out);
 int16_t mmc_stop_read(void);
 
-#define MMC_RESET_DEADLINE          pdMS_TO_TICKS(100)
-#define MMC_INIT_DEADLINE           pdMS_TO_TICKS(1000)
-#define MMC_DATA_DEADLINE           pdMS_TO_TICKS(100)
-#define MMC_IDLE_DEADLINE           pdMS_TO_TICKS(1000)
+#define MMC_RESET_DEADLINE          MS2ST(100)
+#define MMC_INIT_DEADLINE           MS2ST(1000)
+#define MMC_DATA_DEADLINE           MS2ST(100)
+#define MMC_IDLE_DEADLINE           MS2ST(1000)
 
 #define MMC_CMDGOIDLE               0
 #define MMC_CMDINIT                 1

@@ -23,11 +23,7 @@
 #define GPIO_AFIO_OD            0b1100
 
 
-#ifdef BOOTLOADER
-extern uint32_t system_frequency;
-#else
-extern double system_frequency;
-#endif
+extern sysfreq_t system_frequency;
 
 typedef struct {
     uint8_t flags;

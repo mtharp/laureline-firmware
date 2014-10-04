@@ -11,11 +11,7 @@
 #include "init.h"
 
 
-#ifdef BOOTLOADER
-uint32_t system_frequency;
-#else
-double system_frequency;
-#endif
+sysfreq_t system_frequency;
 
 
 void setup_clocks(double hse_freq) {

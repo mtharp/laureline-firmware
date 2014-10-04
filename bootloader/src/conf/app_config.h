@@ -9,7 +9,8 @@
 #ifndef _APP_CONFIG_H
 #define _APP_CONFIG_H
 
-#define BOOTLOADER
+#define BOOTLOADER              1
+typedef uint32_t sysfreq_t;
 
 #define USE_I2C1                0
 #define USE_I2C2                0
