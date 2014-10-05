@@ -6,15 +6,12 @@
  * be found at http://opensource.org/licenses/MIT
  */
 
-#include "common.h"
+#include "vectors.h"
 
 __attribute__ ((naked)) void
 Default_Handler(void) {
     while (1) {}
 }
-
-typedef void  (*irq_vector_t)(void);
-#define BootRAM 0xF1E0F85F
 
 uint32_t msp_stack[MSP_STACK_SIZE / 4];
 #define _estack msp_stack[MSP_STACK_SIZE / 4]

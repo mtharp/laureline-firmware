@@ -7,6 +7,7 @@
  */
 
 #include "common.h"
+#include "vectors.h"
 
 /* These variables are placeholders which the linker will define. Only their
  * address is meaningful, their value is not. */
@@ -19,8 +20,6 @@ extern uint32_t _sidata;
 /* Bounds of BSS (zeroed part of RAM) */
 extern uint32_t _sbss;
 extern uint32_t _ebss;
-/* Start of the vector table */
-extern uint32_t _isr_vector[16];
 
 void SystemInit(void);
 void main(void);
