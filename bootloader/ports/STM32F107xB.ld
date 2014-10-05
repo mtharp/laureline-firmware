@@ -48,6 +48,7 @@ SECTIONS
         *(.text.*)
         *(.rodata)
         *(.rodata.*)
+        . = ALIGN(4);
     } > flash
 
     .bss :
