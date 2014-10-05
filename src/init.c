@@ -10,41 +10,50 @@
 #include "common.h"
 #include "init.h"
 
+uint32_t system_frequency;
 
-sysfreq_t system_frequency;
+#define DIV_MIN     1
+#define DIV_MAX     16
+#define MUL_MIN     4
+#define MUL_MAX     10
+/* 4-9 and 6.5 are the available multipliers; 10 represents 6.5 */
+
+#define DIV1_MIN     3000000
+#define DIV1_MAX    12000000
+#define PLL_MIN     18000000
+#define PLL_MAX     72000000
 
 
-void setup_clocks(double hse_freq) {
-    int div, mul;
-    int best_div, best_mul;
+void
+setup_clocks(uint32_t hse_freq) {
+    uint32_t best_div, best_mul, best_freq;
     uint32_t reg;
-    double best_freq;
-    double f;
     ASSERT(hse_freq > 1000000);
     ASSERT(hse_freq < 50000000);
 
     best_freq = best_div = best_mul = 0;
-    for (div = 1; div <= 16; div++) {
+    for (int div = DIV_MIN; div <= DIV_MAX; div++) {
         /* Check PLL input clock */
-        f = hse_freq / div;
-        if (f < 3e6 || f > 12e6) {
+        uint32_t div1 = hse_freq / div;
+        if (div1 < DIV1_MIN || div1 > DIV1_MAX) {
             continue;
         }
-        for (mul = 4; mul <= 10; mul++) {
+        for (int mul = MUL_MIN; mul <= MUL_MAX; mul++) {
             /* Check PLL output clock */
+            uint32_t freq;
             if (mul == 10) {
-                f = hse_freq / div * 6.5;
+                freq = hse_freq * 13 / 2 / div; /* times 6.5 */
             } else {
-                f = hse_freq / div * mul;
+                freq = hse_freq * mul / div;
             }
-            if (f < 18e6 || f > 72e6) {
+            if (freq < PLL_MIN || freq > PLL_MAX) {
                 continue;
             }
             /* See if it beats the previous best */
-            if (f < best_freq) {
+            if (freq < best_freq) {
                 continue;
             }
-            best_freq = f;
+            best_freq = freq;
             best_div = div;
             best_mul = mul;
         }

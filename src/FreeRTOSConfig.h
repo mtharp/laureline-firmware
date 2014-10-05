@@ -11,7 +11,7 @@
 
 #include "app_config.h"
 
-extern sysfreq_t system_frequency;
+extern uint32_t system_frequency;
 #ifdef BOOTLOADER
 #define configUSE_IDLE_HOOK             0
 #define configUSE_QUEUE_SETS            0
