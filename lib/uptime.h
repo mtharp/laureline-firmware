@@ -11,8 +11,6 @@
 
 #include <stdint.h>
 
-void uptime_refresh(void);
-uint32_t uptime_get(void);
 const char *uptime_format(void);
 
 

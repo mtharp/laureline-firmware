@@ -21,12 +21,12 @@ typedef uint32_t        u32_t;
 typedef int32_t         s32_t;
 typedef uint32_t        mem_ptr_t;
 
-#define U16_F "%hu"
-#define S16_F "%hd"
-#define X16_F "%hx"
-#define U32_F "%lu"
-#define S32_F "%ld"
-#define X32_F "%lx"
+#define U16_F "hu"
+#define S16_F "hd"
+#define X16_F "hx"
+#define U32_F "lu"
+#define S32_F "ld"
+#define X32_F "lx"
 
 #define LWIP_PLATFORM_DIAG(x) cli_printf x
 #define LWIP_PLATFORM_ASSERT(x) { HALT(); }

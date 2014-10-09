@@ -51,7 +51,8 @@ static int ethernetif_input(struct netif *netif);
 
 static const uint8_t sysdescr_len = sizeof(BOARD_NAME) - 1;
 
-#define TCP_TIMER_INTERVAL pdMS_TO_TICKS(1000)
+/* milliseconds */
+#define TCPIP_CHECKS_TMR_INTERVAL 1000
 
 
 void
@@ -75,11 +76,12 @@ tcpip_start(void) {
 
 
 static void
-tcpip_checks(void) {
+tcpip_checks(void *arg) {
 #if LWIP_IPV6
     static int valid_ip6 = 0;
     int i;
 #endif
+    watchdog_net = 5;
     if (smi_poll_link_status()) {
         if (!netif_is_link_up(&thisif)) {
             link_changed();
@@ -121,7 +123,7 @@ tcpip_checks(void) {
         }
     }
 #endif
-    sys_check_timeouts();
+    sys_timeout(TCPIP_CHECKS_TMR_INTERVAL, tcpip_checks, NULL);
 }
 
 
@@ -129,14 +131,13 @@ static void
 tcpip_thread(void *p) {
     void *msg;
     int frame_received = 0;
-    TickType_t last_check = xTaskGetTickCount();
     api_set_main_thread(xTaskGetCurrentTaskHandle());
     if (cfg.ip_addr.addr == 0 || cfg.ip_netmask.addr == 0) {
         dhcp_start(&thisif);
     } else {
         netif_set_up(&thisif);
     }
-    tcpip_checks();
+    sys_timeout(TCPIP_CHECKS_TMR_INTERVAL, tcpip_checks, NULL);
     while (1) {
         /* If a frame was received last cycle then check for another one
          * immediately, but still peek in the queue first. If no frame was
@@ -149,11 +150,7 @@ tcpip_thread(void *p) {
                 api_accept(msg);
             }
         }
-        if (xTaskGetTickCount() - last_check >= TCP_TIMER_INTERVAL) {
-            watchdog_net = 5;
-            last_check += TCP_TIMER_INTERVAL;
-            tcpip_checks();
-        }
+        sys_check_timeouts();
         frame_received = ethernetif_input(&thisif);
     }
 }

@@ -8,6 +8,7 @@
 
 #include "common.h"
 #include "task.h"
+#include "freertos_plat.h"
 
 #include "lwip/opt.h"
 #include "lwip/mem.h"
@@ -24,5 +25,5 @@ sys_init(void) {
 
 u32_t
 sys_now(void) {
-    return xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
+    return (u32_t)milliseconds_get();
 }

@@ -16,6 +16,10 @@ To perform a firmware upgrade:
 Firmware Changelog
 ==================
 
+Version 4.1
+-----------
+* Fixed DHCP leases not renewing as often as they should (`#6`_).
+
 Version 4.0
 -----------
 * Added IPv6 support. Only stateless autoconfiguration is supported; static IPs
@@ -52,3 +56,4 @@ Version 2.4
 
 .. _Laureline releases page: https://github.com/mtharp/laureline-firmware/releases
 .. _#2: https://github.com/mtharp/laureline-firmware/issues/2
+.. _#6: https://github.com/mtharp/laureline-firmware/issues/6

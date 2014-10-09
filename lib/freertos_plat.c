@@ -9,7 +9,7 @@
 #include "common.h"
 #include "task.h"
 
-uint64_t ticks_wide;
+static uint64_t milliseconds;
 
 
 void
@@ -20,7 +20,7 @@ vApplicationIdleHook(void) {
 
 void
 vApplicationTickHook(void) {
-    ticks_wide++;
+    milliseconds += 1000 / configTICK_RATE_HZ;
 }
 
 
@@ -31,10 +31,10 @@ vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) {
 
 
 uint64_t
-xGetTaskTickCountLong(void) {
+milliseconds_get(void) {
     uint64_t ret;
     taskENTER_CRITICAL();
-    ret = ticks_wide;
+    ret = milliseconds;
     taskEXIT_CRITICAL();
     return ret;
 }

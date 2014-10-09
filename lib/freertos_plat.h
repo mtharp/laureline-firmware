@@ -9,6 +9,6 @@
 #ifndef _FREERTOS_PLAT_H
 #define _FREERTOS_PLAT_H
 
-uint64_t xGetTaskTickCountLong(void);
+uint64_t milliseconds_get(void);
 
 #endif

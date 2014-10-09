@@ -21,17 +21,11 @@
 static char fmt_buf[50];
 
 
-uint32_t
-uptime_get(void) {
-    return xGetTaskTickCountLong() / pdMS_TO_TICKS(1000);
-}
-
-
 const char *
 uptime_format(void) {
     unsigned int t, n;
     char *ptr = fmt_buf;
-    t = uptime_get();
+    t = milliseconds_get() / 1000;
 
     n = t / SEC_DAY;
     ptr += sprintf(ptr, "%u day%s, ", n, (n != 1) ? "s" : "");
