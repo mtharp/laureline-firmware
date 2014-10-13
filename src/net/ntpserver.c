@@ -92,26 +92,49 @@ ntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, u16_t 
     msg->origin_ts[0] = msg->tx_ts[0];
     msg->origin_ts[1] = msg->tx_ts[1];
 
-    /* Write current time into reference and receive fields */
+    /* Write current time into reference and receive fields. The transmit field
+     * and (optional) digest will be added right before the packet goes out, in
+     * ntp_finish().
+     */
     now = vtimer_now();
-    msg->ref_ts[0] = msg->rx_ts[0] = msg->tx_ts[0] = PP_HTONL((now >> 32));
-    msg->ref_ts[1] = msg->rx_ts[1] = msg->tx_ts[1] = PP_HTONL(now);
-    if (cfg.flags & FLAG_NTPKEY_SHA1) {
-        SHA_CTX sha;
-        SHA1_Init(&sha);
-        SHA1_Update(&sha, &cfg.ntp_key, 20);
-        SHA1_Update(&sha, msg, 48);
-        SHA1_Final(msg->digest, &sha);
-    } else if (cfg.flags & FLAG_NTPKEY_MD5) {
-        MD5_CTX md5;
-        MD5_Init(&md5);
-        MD5_Update(&md5, &cfg.ntp_key, 20);
-        MD5_Update(&md5, msg, 48);
-        MD5_Final(msg->digest, &md5);
-    }
+    msg->ref_ts[0] = msg->rx_ts[0] = PP_HTONL((now >> 32));
+    msg->ref_ts[1] = msg->rx_ts[1] = PP_HTONL(now);
 
+    p->flags |= PBUF_FLAG_NTP;
     udp_sendto(pcb, p, addr, port);
     pbuf_free(p);
+}
+
+
+void
+ntp_finish(struct pbuf *p) {
+    struct ntp_msg *msg;
+    uint64_t now;
+
+    ASSERT(p->len >= 48);
+    msg = (struct ntp_msg*)p->payload;
+    now = vtimer_now();
+    msg->tx_ts[0] = PP_HTONL((now >> 32));
+    msg->tx_ts[1] = PP_HTONL(now);
+    if (p->len > 48) {
+        if (cfg.flags & FLAG_NTPKEY_SHA1) {
+            SHA_CTX sha;
+            ASSERT(p->len == 72);
+            SHA1_Init(&sha);
+            SHA1_Update(&sha, &cfg.ntp_key, 20);
+            SHA1_Update(&sha, msg, 48);
+            SHA1_Final(msg->digest, &sha);
+        } else if (cfg.flags & FLAG_NTPKEY_MD5) {
+            MD5_CTX md5;
+            ASSERT(p->len == 68);
+            MD5_Init(&md5);
+            MD5_Update(&md5, &cfg.ntp_key, 20);
+            MD5_Update(&md5, msg, 48);
+            MD5_Final(msg->digest, &md5);
+        } else {
+            ASSERT(0);
+        }
+    }
 }
 
 

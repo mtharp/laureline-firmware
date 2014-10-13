@@ -9,6 +9,8 @@
 #ifndef _NTPSERVER_H
 #define _NTPSERVER_H
 
+#include "lwip/pbuf.h"
+
 #define NTP_PORT                123
 
 #define LEAP_MASK               0xC0
@@ -22,6 +24,9 @@
 #define MODE_CLIENT             0x3
 #define MODE_SERVER             0x4
 
+#define PBUF_FLAG_NTP           0x80U
+
 void ntp_server_start(void);
+void ntp_finish(struct pbuf *p);
 
 #endif
