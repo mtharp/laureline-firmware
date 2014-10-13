@@ -16,42 +16,56 @@
 #include "net/ntpserver.h"
 #include <string.h>
 
+#pragma pack(push, 1)
+struct ntp_msg {
+    uint8_t mode;
+    uint8_t stratum;
+    uint8_t poll;
+    uint8_t precision;
+    uint32_t root_delay;
+    uint32_t root_dispersion;
+    uint32_t ref_id;
+    uint32_t ref_ts[2];
+    uint32_t origin_ts[2];
+    uint32_t rx_ts[2];
+    uint32_t tx_ts[2];
+    /* Optional below here */
+    uint32_t key_id;
+    uint8_t digest[20];
+};
+#pragma pack(pop)
+
 
 static void
 ntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, u16_t port) {
-    char *buf;
+    struct ntp_msg *msg;
     uint64_t now;
     uint8_t md[20];
-    int do_md, out_size;
-    union {
-        SHA_CTX sha;
-        MD5_CTX md5;
-    } ctx;
+    int out_size;
 
-    buf = p->payload;
-    if (p->len < 48 || (buf[0] & MODE_MASK) != MODE_CLIENT) {
+    msg = (struct ntp_msg*)p->payload;
+    if (p->len < 48 || (msg->mode & MODE_MASK) != MODE_CLIENT) {
         pbuf_free(p);
         return;
     }
-    do_md = 0;
     out_size = 48;
     if (p->len == 72 && (cfg.flags & FLAG_NTPKEY_SHA1)) {
-        SHA1_Init(&ctx.sha);
-        SHA1_Update(&ctx.sha, &cfg.ntp_key, 20);
-        SHA1_Update(&ctx.sha, buf, 48);
-        SHA1_Final(md, &ctx.sha);
-        if (!memcmp(md, &buf[52], 20)) {
+        SHA_CTX sha;
+        SHA1_Init(&sha);
+        SHA1_Update(&sha, &cfg.ntp_key, 20);
+        SHA1_Update(&sha, msg, 48);
+        SHA1_Final(md, &sha);
+        if (!memcmp(md, msg->digest, 20)) {
             out_size = 72;
-            do_md = 1;
         }
     } else if (p->len == 68 && (cfg.flags & FLAG_NTPKEY_MD5)) {
-        MD5_Init(&ctx.md5);
-        MD5_Update(&ctx.md5, &cfg.ntp_key, 20);
-        MD5_Update(&ctx.md5, buf, 48);
-        MD5_Final(md, &ctx.md5);
-        if (!memcmp(md, &buf[52], 16)) {
+        MD5_CTX md5;
+        MD5_Init(&md5);
+        MD5_Update(&md5, &cfg.ntp_key, 20);
+        MD5_Update(&md5, msg, 48);
+        MD5_Final(md, &md5);
+        if (!memcmp(md, msg->digest, 16)) {
             out_size = 68;
-            do_md = 1;
         }
     }
     if (p->len > out_size) {
@@ -59,55 +73,47 @@ ntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, ip_addr_t *addr, u16_t 
     }
 
     /* FIXME: leap seconds */
-    buf[0] = LEAP_NONE | VN_4 | MODE_SERVER;
+    msg->mode = LEAP_NONE | VN_4 | MODE_SERVER;
     if (~status_flags & STATUS_READY) {
         /* not synced, advertise as such */
-        buf[1] = 16;
+        msg->stratum = 16;
     } else {
         /* operating normally */
-        buf[1] = 1;
+        msg->stratum = 1;
     }
-    if (buf[2] < 6) {
-        /* Minimum poll interval of 64s */
-        buf[2] = 6;
+    if (msg->poll < 6) {
+        msg->poll = 6;
     }
-    /* Leave poll interval as the client specified */
-    buf[3] = -24;                           /* precision -  59ns */
-    buf[4] = buf[5] = buf[6] = buf[7] = 0;              /* root delay */
-    buf[8] = 0; buf[9] = 0; buf[10] = 0; buf[11] = 0;       /* root dispersion */
-    buf[12] = 'G'; buf[13] = 'P', buf[14] = 'S', buf[15] = 0;   /* refid */
-    memcpy(&buf[24], &buf[40], 8);                  /* copy transmit to origin */
+    msg->precision = -24; /* 59ns */
+    msg->root_delay = 0;
+    msg->root_dispersion = 0;
+    msg->ref_id = PP_HTONL(0x47505300); /* GPS */
+    /* copy transmit to origin */
+    msg->origin_ts[0] = msg->tx_ts[0];
+    msg->origin_ts[1] = msg->tx_ts[1];
 
-    /* Write current time into reference and transmit fields */
+    /* Write current time into reference and receive fields */
     now = vtimer_now();
-    buf[16] = now >> 56;
-    buf[17] = now >> 48;
-    buf[18] = now >> 40;
-    buf[19] = now >> 32;
-    buf[20] = now >> 24;
-    buf[21] = now >> 16;
-    buf[22] = now >> 8;
-    buf[23] = now;
-    memcpy(&buf[32], &buf[16], 8);
-    memcpy(&buf[40], &buf[16], 8);
-    if (do_md) {
-        /* Leave keyid from the client */
-        if (cfg.flags & FLAG_NTPKEY_SHA1) {
-            SHA1_Init(&ctx.sha);
-            SHA1_Update(&ctx.sha, &cfg.ntp_key, 20);
-            SHA1_Update(&ctx.sha, buf, 48);
-            SHA1_Final((uint8_t*)&buf[52], &ctx.sha);
-        } else if (cfg.flags & FLAG_NTPKEY_MD5) {
-            MD5_Init(&ctx.md5);
-            MD5_Update(&ctx.md5, &cfg.ntp_key, 20);
-            MD5_Update(&ctx.md5, buf, 48);
-            MD5_Final((uint8_t*)&buf[52], &ctx.md5);
-        }
+    msg->ref_ts[0] = msg->rx_ts[0] = msg->tx_ts[0] = PP_HTONL((now >> 32));
+    msg->ref_ts[1] = msg->rx_ts[1] = msg->tx_ts[1] = PP_HTONL(now);
+    if (cfg.flags & FLAG_NTPKEY_SHA1) {
+        SHA_CTX sha;
+        SHA1_Init(&sha);
+        SHA1_Update(&sha, &cfg.ntp_key, 20);
+        SHA1_Update(&sha, msg, 48);
+        SHA1_Final(msg->digest, &sha);
+    } else if (cfg.flags & FLAG_NTPKEY_MD5) {
+        MD5_CTX md5;
+        MD5_Init(&md5);
+        MD5_Update(&md5, &cfg.ntp_key, 20);
+        MD5_Update(&md5, msg, 48);
+        MD5_Final(msg->digest, &md5);
     }
 
     udp_sendto(pcb, p, addr, port);
     pbuf_free(p);
 }
+
 
 struct udp_pcb *ntp_pcb;
 #if LWIP_IPV6
