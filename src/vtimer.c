@@ -25,8 +25,8 @@
 unsigned sys_able;
 TaskHandle_t thread_vtimer;
 
-/* VT ticks this many NTP fractions per tick of monotonic time */
-static double vt_rate;
+/* (vt_rate / 2^VT_RATE_PREC) NTP fractions per tick of monotonic time */
+static uint64_t vt_rate;
 /* Nominal rate for the current nominal system frequency */
 static double vt_rate_nominal;
 /* VT value at the last timer update */
@@ -38,6 +38,8 @@ static uint32_t utc_next;
 static float quant_corr, quant_corr_deferred;
 /* Saved loopstats report for SNMP */
 int32_t loopstats_values[LOOPSTATS_VALUES];
+
+#define VT_RATE_PREC 28
 
 static void pll_thread(void *p);
 static uint64_t vtimer_getI(uint64_t mono_next);
@@ -233,17 +235,18 @@ pll_thread(void *p) {
 static uint64_t
 vtimer_getI(uint64_t mono_next) {
     /* Returns the current vtimer time given the current monotonic time */
-    return vt_last + (int64_t)((double)(mono_next - mono_last) * vt_rate);
+    int32_t delta_ticks = mono_next - mono_last;
+    int64_t frac_part = vt_rate * delta_ticks;
+    return vt_last + (frac_part >> VT_RATE_PREC);
 }
 
 static void
 vtimer_updateI(void) {
     /* Advance the vtimer's "base". Must be called once per second to maintain
      * accuracy. */
-    uint64_t mono_next, vt_next;
+    uint64_t mono_next;
     mono_next = monotonic_now();
-    vt_next = vtimer_getI(mono_next);
-    vt_last = vt_next;
+    vt_last = vtimer_getI(mono_next);
     mono_last = mono_next;
 }
 
@@ -279,15 +282,13 @@ vtimer_get_frac_delta(uint64_t mono_capture) {
 void
 kern_freq(double f) {
     /* Change the rate at which the vtimer ticks */
-    double next_rate;
     if (f > 500e-6) {
         f = 500e-6;
     } else if (f < -500e-6) {
         f = -500e-6;
     }
-    next_rate = vt_rate_nominal * (1.0 + f);
     DISABLE_IRQ();
-    vt_rate = next_rate;
+    vt_rate = vt_rate_nominal * (1.0 + f) * (1ULL<<VT_RATE_PREC);
     ENABLE_IRQ();
 }
 
@@ -355,8 +356,10 @@ vtimer_set_correction(float corr, quant_leadlag_t leadlag) {
 void
 vtimer_sleep_until(uint64_t vt_when) {
     uint64_t mono_when;
+    int64_t delta_vt;
     DISABLE_IRQ();
-    mono_when = mono_last + (uint64_t)((float)(vt_when - vt_last) / vt_rate);
+    delta_vt = (vt_when - vt_last) << VT_RATE_PREC;
+    mono_when = mono_last + (delta_vt / vt_rate);
     ENABLE_IRQ();
     monotonic_sleep_until(mono_when);
 }
