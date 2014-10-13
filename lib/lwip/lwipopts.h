@@ -53,8 +53,8 @@
    ---------------------------------
 */
 #define LWIP_ARP                        1
-#define ARP_TABLE_SIZE                  4
-#define ARP_QUEUEING                    1
+#define ARP_TABLE_SIZE                  32
+#define ARP_QUEUEING                    0
 #define ETHARP_TRUST_IP_MAC             1
 #define ETH_PAD_SIZE                    2
 
@@ -219,6 +219,7 @@
    ---------- Debugging options ----------
    ---------------------------------------
 */
+//#define LWIP_DEBUG
 #define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_ALL
 #define LWIP_DBG_TYPES_ON               LWIP_DBG_ON
 #define ETHARP_DEBUG                    LWIP_DBG_OFF
