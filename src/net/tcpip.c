@@ -245,11 +245,6 @@ low_level_output(struct netif *netif, struct pbuf *p) {
         snmp_inc_ifoutdiscards(netif);
         return ERR_TIMEOUT;
     }
-    if (p->flags & PBUF_FLAG_NTP) {
-        pbuf_header(p, -(SIZEOF_ETH_HDR + IP_HLEN + UDP_HLEN));
-        ntp_finish(p);
-        pbuf_header(p, SIZEOF_ETH_HDR + IP_HLEN + UDP_HLEN);
-    }
     pbuf_header(p, -ETH_PAD_SIZE);
     for (q = p; q != NULL; q = q->next) {
         mac_write_tx_descriptor(tdes, q->payload, q->len);
