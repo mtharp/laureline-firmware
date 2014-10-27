@@ -17,7 +17,7 @@
 #include <string.h>
 
 #define RX_BUFS 4
-#define TX_BUFS 2
+#define TX_BUFS 4
 #define BUF_WORDS ((((MAC_BUF_SIZE - 1) | 3) + 1) / 4)
 
 #define MFL_INIT    1
@@ -28,10 +28,11 @@ static SemaphoreHandle_t ethmac_tx_sem;
 static uint32_t ethmac_queue_full_events;
 
 static mac_desc_t rx_descs[RX_BUFS];
-static mac_desc_t tx_descs[RX_BUFS];
-static mac_desc_t *rx_ptr, *tx_ptr;
+static mac_desc_t *rx_ptr;
 static uint32_t rx_bufs[RX_BUFS][BUF_WORDS];
-static uint32_t tx_bufs[TX_BUFS][BUF_WORDS];
+
+static mac_tdes_t tx_descs[TX_BUFS];
+static mac_tdes_t *tx_ptr, *tx_active;
 static uint8_t mac_flags;
 
 
@@ -202,11 +203,12 @@ mac_start(void) {
     for (i = 0; i < TX_BUFS; i++) {
         tx_descs[i].des0 = STM32_TDES0_TCH;
         tx_descs[i].des1 = 0;
-        tx_descs[i].des_buf = (uint8_t*)tx_bufs[i];
+        tx_descs[i].des_buf = NULL;
         tx_descs[i].des_next = &tx_descs[(i+1) % TX_BUFS];
     }
     rx_ptr = &rx_descs[0];
     tx_ptr = &tx_descs[0];
+    tx_active = NULL;
     ETH->DMABMR |= ETH_DMABMR_SR;
     while (ETH->DMABMR & ETH_DMABMR_SR) {}
     ETH->DMARDLAR = (uint32_t)rx_ptr;
@@ -305,70 +307,69 @@ ETH_IRQHandler(void) {
 }
 
 
-static mac_desc_t *
-mac_get_tx_descriptor_once(void) {
-    mac_desc_t *tdes;
-    tdes = tx_ptr;
-    if (tdes->des0 & (STM32_TDES0_OWN | STM32_TDES0_LOCKED)) {
-        return NULL;
-    }
-    tdes->des0 |= STM32_TDES0_LOCKED;
-    tdes->size = MAC_BUF_SIZE;
-    tdes->offset = 0;
-    tx_ptr = tdes->des_next;
-    return tdes;
-}
-
-
-mac_desc_t *
-mac_get_tx_descriptor(uint32_t timeout) {
-    mac_desc_t *tdes;
-    if (timeout) {
-        timeout += xTaskGetTickCount();
-    }
-    while (1) {
-        if (!(mac_flags & MFL_LINK) || (timeout && xTaskGetTickCount() > timeout)) {
-            return NULL;
+static void
+maczero_housekeeping(void) {
+    /* Free pbufs after DMA has released the related transmit descriptor */
+    while (tx_active && !(tx_active->des0 & STM32_TDES0_OWN)) {
+        if (tx_active->pbuf) {
+            pbuf_free(tx_active->pbuf);
         }
-        if ((tdes = mac_get_tx_descriptor_once()) != NULL) {
-            return tdes;
+        tx_active = tx_active->des_next;
+        if (tx_active == tx_ptr) {
+            /* Caught up with the head of the chain */
+            tx_active = NULL;
         }
-        xSemaphoreTake(ethmac_tx_sem,
-                timeout ? (timeout - xTaskGetTickCount()) : portMAX_DELAY);
     }
 }
 
 
-uint16_t
-mac_write_tx_descriptor(mac_desc_t *tdes, const uint8_t *buf, uint16_t size) {
-    if (size > tdes->size - tdes->offset) {
-        size = tdes->size - tdes->offset;
+err_t
+maczero_transmit(struct pbuf *p, uint32_t timeout) {
+    struct pbuf *q;
+    mac_tdes_t *tdes_first = NULL, *tdes = tx_ptr;
+    uint32_t start = xTaskGetTickCount();
+    for (q = p; q != NULL; q = q->next) {
+        while (1) {
+            if (!(mac_flags & MFL_LINK)
+                    || (timeout && (xTaskGetTickCount() - start) >= timeout)) {
+                return ERR_TIMEOUT;
+            }
+            maczero_housekeeping();
+            if (!(tdes->des0 & STM32_TDES0_OWN)) {
+                tx_ptr = tdes->des_next;
+                break;
+            }
+            xSemaphoreTake(ethmac_tx_sem, timeout ? timeout : portMAX_DELAY);
+        }
+        tdes->des1 = q->len;
+        tdes->des_buf = q->payload;
+        tdes->des0 = 0
+            | STM32_TDES0_CIC(STM32_IP_CHECKSUM_OFFLOAD)
+            | STM32_TDES0_IC
+            | STM32_TDES0_TCH
+            ;
+        tdes->pbuf = NULL;
+        if (q == p) {
+            /* First */
+            tdes->pbuf = p;
+            tdes_first = tdes;
+        } else {
+            /* Subsequent */
+            tdes->des0 |= STM32_TDES0_OWN;
+        }
+        if (q->next == NULL) {
+            /* Last */
+            tdes->des0 |= STM32_TDES0_LS;
+        }
     }
-    if (size > 0) {
-        memcpy(tdes->des_buf + tdes->offset, buf, size);
-        tdes->offset = tdes->offset + size;
+    tdes_first->des0 |= STM32_TDES0_OWN | STM32_TDES0_FS;
+    ETH->DMATPDR = 0;
+    /* Can't free the pbuf until DMA is complete */
+    pbuf_ref(p);
+    if (tx_active == NULL) {
+        tx_active = tdes_first;
     }
-    return size;
-}
-
-
-void
-mac_release_tx_descriptor(mac_desc_t *tdes) {
-    DISABLE_IRQ();
-    tdes->des1 = tdes->offset;
-    tdes->des0 = 0
-        | STM32_TDES0_CIC(STM32_IP_CHECKSUM_OFFLOAD)
-        | STM32_TDES0_IC
-        | STM32_TDES0_LS
-        | STM32_TDES0_FS
-        | STM32_TDES0_TCH
-        | STM32_TDES0_OWN
-        ;
-    if ((ETH->DMASR & ETH_DMASR_TPS) == ETH_DMASR_TPS_Suspended) {
-        ETH->DMASR   = ETH_DMASR_TBUS;
-        ETH->DMATPDR = ETH_DMASR_TBUS;
-    }
-    ENABLE_IRQ();
+    return ERR_OK;
 }
 
 

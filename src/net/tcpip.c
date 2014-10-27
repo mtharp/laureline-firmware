@@ -236,25 +236,17 @@ ethernetif_init(struct netif *netif) {
 
 static err_t
 low_level_output(struct netif *netif, struct pbuf *p) {
-    struct pbuf *q;
-    mac_desc_t *tdes;
-    tdes = mac_get_tx_descriptor(pdMS_TO_TICKS(50));
-    if (tdes == NULL) {
-        LINK_STATS_INC(link.err);
-        LINK_STATS_INC(link.drop);
-        snmp_inc_ifoutdiscards(netif);
-        return ERR_TIMEOUT;
-    }
+    err_t rc;
     pbuf_header(p, -ETH_PAD_SIZE);
-    for (q = p; q != NULL; q = q->next) {
-        mac_write_tx_descriptor(tdes, q->payload, q->len);
+    rc = maczero_transmit(p, MS2ST(50));
+    if (rc) {
+        snmp_inc_ifoutdiscards(netif);
+    } else {
+        LINK_STATS_INC(link.xmit);
+        snmp_add_ifoutoctets(netif, p->tot_len);
+        snmp_inc_ifoutucastpkts(netif);
     }
-    mac_release_tx_descriptor(tdes);
-    pbuf_header(p, ETH_PAD_SIZE);
-    LINK_STATS_INC(link.xmit);
-    snmp_add_ifoutoctets(netif, p->tot_len);
-    snmp_inc_ifoutucastpkts(netif);
-    return ERR_OK;
+    return rc;
 }
 
 

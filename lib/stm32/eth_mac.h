@@ -10,6 +10,7 @@
 #define _ETH_MAC_H
 
 #include "queue.h"
+#include "lwip/pbuf.h"
 
 #define MAC_BUF_SIZE                1522
 #define SMI_DESCRIBE_SIZE           17
@@ -24,6 +25,16 @@ typedef struct mac_desc {
     uint32_t offset;
 } mac_desc_t;
 
+
+typedef struct mac_tdes {
+    volatile uint32_t des0;
+    volatile uint32_t des1;
+    const void *des_buf;
+    struct mac_tdes *des_next;
+
+    struct pbuf *pbuf;
+} mac_tdes_t;
+
 void smi_write(uint32_t reg, uint32_t value);
 uint32_t smi_read(uint32_t reg);
 uint8_t smi_poll_link_status(void);
@@ -32,9 +43,7 @@ void smi_describe_link(char *buf);
 void mac_start(void);
 void mac_stop(void);
 void mac_set_hwaddr(const uint8_t *hwaddr);
-mac_desc_t *mac_get_tx_descriptor(uint32_t timeout);
-uint16_t mac_write_tx_descriptor(mac_desc_t *tdes, const uint8_t *buf, uint16_t size);
-void mac_release_tx_descriptor(mac_desc_t *tdes);
+err_t maczero_transmit(struct pbuf *p, uint32_t timeout);
 mac_desc_t *mac_get_rx_descriptor(void);
 uint16_t mac_read_rx_descriptor(mac_desc_t *rdes, uint8_t *buf, uint16_t size);
 void mac_release_rx_descriptor(mac_desc_t *rdes);
