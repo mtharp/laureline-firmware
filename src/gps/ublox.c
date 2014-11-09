@@ -9,6 +9,9 @@
 #include "common.h"
 #include "task.h"
 
+#include "gps/ublox.h"
+#include "cmdline.h"
+#include "eeprom.h"
 #include "logging.h"
 #include "main.h"
 #include "vtimer.h"
@@ -29,22 +32,21 @@ static enum {
     CHECKSUM2
 } ustate;
 
-/* applicable to both NAV-TIMEUTC and NAV-TIMEGPS */
-#define TIMEUTC_VALIDTOW        0x01
-#define TIMEUTC_VALIDWKN        0x02
-#define TIMEUTC_VALIDUTC        0x04
-
 static const uint8_t ublox_cfg[] = {
     /*  msg   | interval */
     0x01, 0x06, 0x01, /* NAV-SOL */
-    0x01, 0x20, 0x01, /* NAV-TIMEGPS */
-    0x0B, 0x02, 0x06, /* AID-HUI */
+    0x01, 0x20, 0x05, /* NAV-TIMEGPS */
+    0x01, 0x21, 0x01, /* NAV-TIMEUTC */
     0x0D, 0x01, 0x01, /* TIM-TP */
 };
 
 
-static const char ublox_hui_req[] = {
-    0xB5, 0x62, 0x0B, 0x02, 0x00, 0x00, 0x0D, 0x32 };
+static const uint8_t ublox_startup[] = {
+    0xB5, 0x62, 0x0A, 0x04, 0x00, 0x00, 0x0E, 0x34, /* MON-VER */
+};
+static const uint8_t ublox_hui_req[] = {
+    0xB5, 0x62, 0x0B, 0x02, 0x00, 0x00, 0x0D, 0x32,
+};
 
 
 static void
@@ -117,35 +119,21 @@ ublox_feed(uint8_t val) {
             gps_fix_svs = pbuf[4+47];
         } else if (pbuf[0] == 0x01 && pbuf[1] == 0x20 && rx_count >= 4+16) {
             /* NAV-TIMEGPS */
-            uint8_t valid = pbuf[4+11];
-            if ((valid & TIMEUTC_VALIDWKN) && (valid & TIMEUTC_VALIDTOW)) {
-                int16_t wknum = pbuf[4+8] | (pbuf[4+9] << 8);
-                uint32_t tow = pbuf[4+0] | (pbuf[4+1] << 8)
-                    | (pbuf[4+2] << 16) | (pbuf[4+3] << 24);
-                int16_t leap = (int8_t)pbuf[4+10];
-                vtimer_set_gps(wknum, tow / 1000, leap, valid & TIMEUTC_VALIDUTC);
+            nav_timegps_t *msg = (nav_timegps_t *)pbuf;
+            if ((cfg.flags & FLAG_TIMESCALE_GPS)
+                    && (msg->valid & TIMEUTC_VALIDWKN)
+                    && (msg->valid & TIMEUTC_VALIDTOW)) {
+                vtimer_set_gps(msg->week, msg->iTOW / 1000);
             }
-            if (xTaskGetTickCount() - last_hui > PARSER_TIMEOUT) {
-                /* Trigger a poll of leap second data */
-                last_hui = xTaskGetTickCount();
-                serial_write(gps_serial, ublox_hui_req, sizeof(ublox_hui_req));
-            }
-#if 0
         } else if (pbuf[0] == 0x01 && pbuf[1] == 0x21 && rx_count >= 4+20) {
             /* NAV-TIMEUTC */
-            if (!(pbuf[4+19] & TIMEUTC_VALIDUTC)) {
-                return FEED_COMPLETE;
+            nav_timeutc_t *msg = (nav_timeutc_t *)pbuf;
+            if (!(cfg.flags & FLAG_TIMESCALE_GPS)
+                    && (msg->valid & TIMEUTC_VALIDUTC)) {
+                /* FIXME: leap second */
+                vtimer_set_utc(msg->year, msg->month, msg->day, msg->hour,
+                        msg->min, msg->sec);
             }
-            /* FIXME: leap second */
-            vtimer_set_utc(
-                    (pbuf[4+12] | (pbuf[4+13] << 8)),   /* year */
-                    pbuf[4+14],                         /* month */
-                    pbuf[4+15],                         /* day */
-                    pbuf[4+16],                         /* hour */
-                    pbuf[4+17],                         /* minute */
-                    pbuf[4+18],                         /* second */
-                    0);                                 /* leap */
-#endif
         } else if (pbuf[0] == 0x0B && pbuf[1] == 0x02 && rx_count >= 4+72) {
             /* AID-HUI */
         } else if (pbuf[0] == 0x0D && pbuf[1] == 0x01 && rx_count >= 4+16) {

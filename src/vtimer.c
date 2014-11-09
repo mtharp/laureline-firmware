@@ -316,7 +316,7 @@ vtimer_now(void) {
 
 void
 vtimer_set_utc(uint16_t year, uint8_t month, uint8_t day,
-        uint8_t hour, uint8_t minute, uint8_t second, uint8_t leap) {
+        uint8_t hour, uint8_t minute, uint8_t second) {
     uint32_t ntp_seconds;
     ntp_seconds = datetime_to_epoch(year, month, day, hour, minute, second);
     DISABLE_IRQ();
@@ -326,14 +326,8 @@ vtimer_set_utc(uint16_t year, uint8_t month, uint8_t day,
 
 
 void
-vtimer_set_gps(uint16_t wkn, uint32_t tow, int16_t leap, uint8_t leap_valid) {
+vtimer_set_gps(uint16_t wkn, uint32_t tow) {
     uint32_t ntp_seconds = gps_to_epoch(wkn, tow);
-    if (!(cfg.flags & FLAG_TIMESCALE_GPS)) {
-        if (!leap_valid) {
-            return;
-        }
-        ntp_seconds -= leap;
-    }
     DISABLE_IRQ();
     utc_next = ntp_seconds;
     ENABLE_IRQ();

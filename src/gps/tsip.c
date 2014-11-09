@@ -77,8 +77,7 @@ tsip_feed(uint8_t val) {
                     pbuf[15],                       /* day */
                     pbuf[14],                       /* hour */
                     pbuf[13],                       /* minute */
-                    pbuf[12],                       /* second */
-                    0);                             /* leap */
+                    pbuf[12]);                      /* second */
         } else if (rx_count > 65 && pbuf[1] == 0x8f && pbuf[2] == 0xac) {
             set_quant(&pbuf[62]);
         }

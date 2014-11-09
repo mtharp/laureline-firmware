@@ -90,8 +90,7 @@ motorola_feed(uint8_t data) {
                     pbuf[1],                    /* day */
                     pbuf[4],                    /* hour */
                     pbuf[5],                    /* minute */
-                    pbuf[6],                    /* second */
-                    0);                         /* leap */
+                    pbuf[6]);                   /* second */
         }
         return FEED_COMPLETE;
     }

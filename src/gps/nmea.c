@@ -120,8 +120,7 @@ nmea_feed(uint8_t val) {
                 day,        /* day */
                 hour,       /* hour */
                 minute,     /* minute */
-                second,     /* second */
-                0);         /* leap */
+                second);    /* second */
 
     } else if (strcmp(ptr, "GPRMC") == 0 && use_sentence(GPRMC)) {
         /* Time of day */
@@ -156,8 +155,7 @@ nmea_feed(uint8_t val) {
                 day,        /* day */
                 hour,       /* hour */
                 minute,     /* minute */
-                second,     /* second */
-                0);         /* leap */
+                second);    /* second */
 
     } else if (strcmp(ptr, "PGRMF") == 0 && use_sentence(PGRMF)) {
         /* Skip some stuff */
@@ -186,8 +184,7 @@ nmea_feed(uint8_t val) {
                 day,        /* day */
                 hour,       /* hour */
                 minute,     /* minute */
-                second,     /* second */
-                0);         /* leap */
+                second);    /* second */
     }
     return FEED_COMPLETE;
 }
