@@ -83,7 +83,6 @@ static void
 main_thread(void *pdata) {
     QueueSetHandle_t qs;
     QueueSetMemberHandle_t active;
-    int16_t val;
 
     ASSERT((qs = xQueueCreateSet(SERIAL_RX_SIZE * 3)));
     serial_start(cli_serial, 115200, qs);
@@ -122,17 +121,22 @@ main_thread(void *pdata) {
         watchdog_main = 5;
         active = xQueueSelectFromSet(qs, pdMS_TO_TICKS(1000));
         if (active == cli_serial->rx_q) {
-            val = serial_get(cli_serial, TIMEOUT_NOBLOCK);
+            int16_t val = serial_get(cli_serial, TIMEOUT_NOBLOCK);
             ASSERT(val >= 0);
             cli_feed(val);
         } else if (active == gps_serial->rx_q) {
-            val = serial_get(gps_serial, TIMEOUT_NOBLOCK);
+            int16_t val = serial_get(gps_serial, TIMEOUT_NOBLOCK);
             ASSERT(val >= 0);
             gps_byte_received(val);
             if (cfg.flags & FLAG_GPSOUT) {
                 char tmp = val;
                 serial_write(&Serial5, &tmp, 1);
             }
+#if 0
+        } else if (active == Serial5.rx_q) {
+            char tmp = serial_get(&Serial5, TIMEOUT_NOBLOCK);
+            serial_write(&Serial4, &tmp, 1);
+#endif
         }
     }
 }
