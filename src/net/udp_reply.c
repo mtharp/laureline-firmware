@@ -32,6 +32,7 @@ udp_reply(struct udp_pcb *pcb, struct pbuf *p, struct netif *netif) {
     }
 
     /* IP (layer 3) */
+#if LWIP_IPV6
     if (PCB_ISIPV6(pcb)) {
         struct ip6_hdr *ip6hdr;
         ASSERT(!pbuf_header(p, IP6_HLEN));
@@ -44,7 +45,9 @@ udp_reply(struct udp_pcb *pcb, struct pbuf *p, struct netif *netif) {
         ip6_addr_copy(ip6hdr->src,
                 *ip6_select_source_address(netif, (ip6_addr_t *)&ip6hdr->dest));
         IP6_STATS_INC(ip6.xmit);
-    } else {
+    } else
+#endif
+    {
         struct ip_hdr *iphdr;
         ASSERT(!pbuf_header(p, IP_HLEN));
         iphdr = (struct ip_hdr *)p->payload;

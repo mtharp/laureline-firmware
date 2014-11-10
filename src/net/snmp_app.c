@@ -14,6 +14,7 @@
 #include "lwip/snmp_asn1.h"
 #include "lwip/snmp_structs.h"
 
+#if LWIP_SNMP
 
 static void
 loopstats_get_object_def(uint8_t ident_len, int32_t *ident, struct obj_def *od) {
@@ -235,3 +236,5 @@ const struct mib_array_node mib_private = {
     mib_private_ids,
     mib_private_nodes
 };
+
+#endif

@@ -53,7 +53,7 @@
    ---------------------------------
 */
 #define LWIP_ARP                        1
-#define ARP_TABLE_SIZE                  32
+#define ARP_TABLE_SIZE                  16
 #define ARP_QUEUEING                    0
 #define ETHARP_TRUST_IP_MAC             1
 #define ETH_PAD_SIZE                    2

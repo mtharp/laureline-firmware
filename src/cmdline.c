@@ -62,7 +62,9 @@ const clivalue_t value_table[] = {
     { "gps_listen_port", VAR_UINT16, &cfg.gps_listen_port, 0 },
     { "holdover_test", VAR_FLAG, &cfg.flags, FLAG_HOLDOVER_TEST },
     { "holdover_time", VAR_UINT32, &cfg.holdover, 0 },
+#if LWIP_IPV6
     { "ip6_manycast", VAR_IP6, &cfg.ip6_manycast, 0 },
+#endif
     { "ip_addr", VAR_IP4, &cfg.ip_addr, 0 },
     { "ip_gateway", VAR_IP4, &cfg.ip_gateway, 0 },
     { "ip_manycast", VAR_IP4, &cfg.ip_manycast, 0 },

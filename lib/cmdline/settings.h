@@ -10,9 +10,10 @@
 #define _CMDLINE_SETTINGS_H
 
 #include <stdint.h>
+#include "lwipopts.h"
 
 #define CLI_TYPE_IP4 1
-#define CLI_TYPE_IP6 1
+#define CLI_TYPE_IP6 LWIP_IPV6
 #define CLI_TYPE_HEX 1
 #define CLI_TYPE_FLAG 1
 

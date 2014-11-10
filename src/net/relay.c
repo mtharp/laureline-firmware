@@ -54,7 +54,7 @@ client_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err) {
 static err_t
 relay_accept(void *arg, struct tcp_pcb *pcb, err_t err) {
     log_write(LOG_NOTICE, "relay", "Client connected to GPS relay port: " IP_DIGITS_FMT ":%d",
-            IP_DIGITS(&pcb->remote_ip.ip4), pcb->remote_port);
+            IP_DIGITS(ipX_2_ip(&pcb->remote_ip)), pcb->remote_port);
     if (relay_client != NULL) {
         tcp_close(relay_client);
     }

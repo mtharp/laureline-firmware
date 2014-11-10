@@ -55,7 +55,11 @@ typedef struct {
     ip_addr_t ip_manycast;
     uint8_t ntp_key[20];
     uint32_t holdover;
+#if LWIP_IPV6
     ip6_addr_t ip6_manycast;
+#else
+    uint32_t ip6_manycast[4];
+#endif
     uint16_t loopstats_interval;
     uint8_t _reserved[36];
     uint16_t crc;
