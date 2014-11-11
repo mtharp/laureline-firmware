@@ -20,6 +20,7 @@ Version 4.2
 -----------
 * Fixed NTP replies being delayed by an ARP or NDP lookup. Replies are now
   always returned to the same MAC address from which they originated. (`#8`_).
+* Faster, zero-copy Ethernet transmission.
 
 Version 4.1
 -----------
